@@ -1,2 +1,8 @@
 # deps
 node_modules/
+
+# environment files
+.env
+
+# docker
+.docker/
