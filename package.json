@@ -1,18 +1,39 @@
 {
     "name": "ris-api",
+    "version": "1.0.0",
+    "type": "module",
+    "license": "MIT",
+    "author": {
+        "name": "Muhammad Haykal",
+        "email": "developer.kidzeroll@gmail.com",
+        "url": "https://github.com/haykal-fe-verd"
+    },
+    "publisher": "@kdiz.eroll",
+    "description": "RIS (Radiology Information System) API built with Hono and Bun",
+    "repository": "https://github.com/haykal-fe-verd/ris-api",
     "scripts": {
         "dev": "bun run --hot src/index.ts",
-        "lint:check": "bunx biome check",
-        "lint:fix": "bunx biome check --write"
+        "db:generate": "bunx drizzle-kit generate",
+        "db:migrate": "bunx drizzle-kit migrate",
+        "db:push": "bunx drizzle-kit push",
+        "db:seed": "bun run src/database/seed.ts",
+        "db:studio": "bunx drizzle-kit studio",
+        "biome:check": "bunx biome check",
+        "biome:fix": "bunx biome check --write"
     },
     "dependencies": {
+        "@faker-js/faker": "^10.1.0",
         "@hono/zod-validator": "^0.7.4",
         "@scalar/hono-api-reference": "^0.9.24",
+        "drizzle-orm": "^0.44.7",
         "hono": "^4.10.6",
+        "pg": "^8.16.3",
         "zod": "^4.1.12"
     },
     "devDependencies": {
         "@biomejs/biome": "2.3.6",
-        "@types/bun": "latest"
+        "@types/bun": "latest",
+        "@types/pg": "^8.15.6",
+        "drizzle-kit": "^0.31.7"
     }
 }
