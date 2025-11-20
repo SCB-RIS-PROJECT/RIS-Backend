@@ -1,19 +1,11 @@
-import { Hono } from "hono";
-import { configCors } from "@/config/cors";
+import configureOpenAPI from "@/config/configure-open-api";
+import createApp from "@/config/create-app";
 import env from "@/config/env";
-import { pinoLogger } from "@/config/log";
 
-const app = new Hono();
+const app = createApp();
+configureOpenAPI(app);
 
-// log
-app.use("*", pinoLogger);
-
-// cors
-app.use("*", configCors);
-
-app.get("/", (c) => {
-    return c.text("Hello Hono!");
-});
+// route
 
 export default {
     port: env.PORT,
