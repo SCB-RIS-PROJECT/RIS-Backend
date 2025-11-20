@@ -3,10 +3,12 @@ import type { AppOpenAPI } from "@/interface";
 import packageJSON from "../../package.json";
 
 export default function configureOpenAPI(app: AppOpenAPI) {
+    const title = "RIS (Radiology Information System) API Documentation";
+
     app.doc("/documentation", {
         openapi: "3.0.0",
         info: {
-            title: packageJSON.name,
+            title: title,
             version: packageJSON.version,
             description: packageJSON.description,
             contact: {
@@ -24,7 +26,8 @@ export default function configureOpenAPI(app: AppOpenAPI) {
     app.get(
         "/docs",
         Scalar({
-            title: "API Reference Documentation",
+            pageTitle: title,
+            title,
             url: "/documentation",
             theme: "laserwave",
             layout: "classic",
