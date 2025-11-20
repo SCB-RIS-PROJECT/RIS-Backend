@@ -99,8 +99,9 @@ CREATE TABLE "tb_user_role" (
 CREATE TABLE "tb_session" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"id_user" uuid NOT NULL,
-	"token" text NOT NULL,
 	"expires_at" timestamp NOT NULL,
+	"ip" text,
+	"user_agent" text,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp
 );
@@ -140,6 +141,5 @@ CREATE INDEX "id_permission_user_idx" ON "tb_user_permission" USING btree ("id_p
 CREATE INDEX "id_user_role_idx" ON "tb_user_role" USING btree ("id_user");--> statement-breakpoint
 CREATE INDEX "id_role_user_idx" ON "tb_user_role" USING btree ("id_role");--> statement-breakpoint
 CREATE INDEX "id_user_idx" ON "tb_session" USING btree ("id_user");--> statement-breakpoint
-CREATE INDEX "token_idx" ON "tb_session" USING btree ("token");--> statement-breakpoint
 CREATE UNIQUE INDEX "email_idx" ON "tb_user" USING btree ("email");--> statement-breakpoint
 CREATE INDEX "name_idx" ON "tb_user" USING btree ("name");

@@ -1,6 +1,6 @@
 {
-  "id": "b0a45fdd-7427-409a-a9fa-c6f59469b663",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "3d1ea913-2982-4cdd-ba49-81fb09a1e113",
+  "prevId": "b0a45fdd-7427-409a-a9fa-c6f59469b663",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -939,6 +939,21 @@
           "columns": [
             {
               "expression": "id_user",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "expires_at_idx": {
+          "name": "expires_at_idx",
+          "columns": [
+            {
+              "expression": "expires_at",
               "isExpression": false,
               "asc": true,
               "nulls": "last"

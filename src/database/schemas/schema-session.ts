@@ -11,13 +11,14 @@ export const sessionTable = pgTable(
                 onDelete: "cascade",
                 onUpdate: "cascade",
             }),
-        token: text("token").notNull(),
         expires_at: timestamp("expires_at").notNull(),
+        ip: text("ip"),
+        user_agent: text("user_agent"),
         created_at: timestamp("created_at").notNull().defaultNow(),
         updated_at: timestamp("updated_at"),
     },
     (t) => ({
         id_user_idx: index("id_user_idx").on(t.id_user),
-        token_idx: index("token_idx").on(t.token),
+        expires_at_idx: index("expires_at_idx").on(t.expires_at),
     })
 );
