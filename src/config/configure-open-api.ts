@@ -18,7 +18,7 @@ export default function configureOpenAPI(app: AppOpenAPI) {
             },
             license: {
                 name: "MIT",
-                url: "https://github.com/haykal-fe-verd/ris-api/blob/main/license/mit/",
+                url: "https://github.com/haykal-fe-verd/ris-api?tab=MIT-1-ov-file#readme",
             },
         },
     });
