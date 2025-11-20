@@ -18,11 +18,9 @@ const ALLOWED_HEADERS = [
     "X-Default-Locale",
 ];
 
-const corsMiddleware = cors({
+export const configCors = cors({
     origin: ALLOWED_ORIGINS,
     allowHeaders: ALLOWED_HEADERS,
     allowMethods: ALLOWED_METHODS,
     credentials: true,
 });
-
-export default corsMiddleware;

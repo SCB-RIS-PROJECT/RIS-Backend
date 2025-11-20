@@ -1,15 +1,15 @@
 import { Hono } from "hono";
-import corsMiddleware from "@/config/cors";
+import { configCors } from "@/config/cors";
 import env from "@/config/env";
-import { PinoLogger } from "@/config/log";
+import { pinoLogger } from "@/config/log";
 
 const app = new Hono();
 
-// logger
-app.use("*", PinoLogger());
+// log
+app.use("*", pinoLogger);
 
 // cors
-app.use("*", corsMiddleware);
+app.use("*", configCors);
 
 app.get("/", (c) => {
     return c.text("Hello Hono!");

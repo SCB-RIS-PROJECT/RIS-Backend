@@ -10,8 +10,6 @@ export const loggerPino = pino(
     env.NODE_ENV === "production" ? undefined : pretty()
 );
 
-export function PinoLogger() {
-    return logger({
-        pino: loggerPino,
-    });
-}
+export const pinoLogger = logger({
+    pino: loggerPino,
+});

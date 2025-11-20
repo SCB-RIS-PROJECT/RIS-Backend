@@ -13,6 +13,8 @@ const EnvSchema = z.object({
 
     // Session
     SESSION_SECRET: z.string(),
+    SESSION_COOKIE_NAME: z.string().default("session_id"),
+    SESSION_LIFETIME_MS: z.coerce.number().default(604800000),
 
     // Rate Limit
     RATE_LIMIT_KEY_GENERATOR: z.string(),
