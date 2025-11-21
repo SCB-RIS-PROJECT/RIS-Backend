@@ -1,22 +1,142 @@
-import { describe, expect, it } from "bun:test";
+import { afterAll, beforeAll, describe, expect, it } from "bun:test";
 import * as HttpStatusCodes from "stoker/http-status-codes";
+import { TestUtil, UserTest } from "@/__test__/test-util";
 import configureOpenAPI from "@/config/configure-open-api";
 import createApp from "@/config/create-app";
 import { loggerPino } from "@/config/log";
+import authController from "@/controller/auth.controller";
 import satuSehatController from "@/controller/satu-sehat.controller";
 
 const app = createApp();
 configureOpenAPI(app);
+app.route("/", authController);
 app.route("/", satuSehatController);
 
 describe("Satu Sehat Integration", () => {
+    let adminCookie: string;
+    let officerCookie: string;
+    let userWithoutPermissionCookie: string;
+
+    beforeAll(async () => {
+        // Create users with roles
+        await UserTest.createWithRole("admin@test.com", ["admin"]);
+        await UserTest.createWithRole("officer@test.com", ["officer"]);
+        // Create user without satu_sehat permission
+        await UserTest.createWithRole("user@test.com", []);
+
+        await TestUtil.sleep(100);
+
+        // Login users
+        adminCookie = await UserTest.loginAs("admin@test.com");
+        officerCookie = await UserTest.loginAs("officer@test.com");
+        userWithoutPermissionCookie = await UserTest.loginAs("user@test.com");
+
+        await TestUtil.sleep(100);
+    });
+
+    afterAll(async () => {
+        // Cleanup
+        await UserTest.deleteByEmail("admin@test.com");
+        await UserTest.deleteByEmail("officer@test.com");
+        await UserTest.deleteByEmail("user@test.com");
+    });
+
+    describe("Authentication & Authorization", () => {
+        it("should return 401 when not authenticated - IHS Patient", async () => {
+            const nik = "9104025209000006";
+
+            const response = await app.request(`/api/satu-sehat/ihs-patient/${nik}`, {
+                method: "GET",
+            });
+
+            expect(response.status).toBe(HttpStatusCodes.UNAUTHORIZED);
+
+            const body = await response.json();
+            loggerPino.debug(body, "Unauthorized Response");
+
+            expect(body).toHaveProperty("message");
+        });
+
+        it("should return 401 when not authenticated - IHS Practitioner", async () => {
+            const nik = "3322071302900002";
+
+            const response = await app.request(`/api/satu-sehat/ihs-practitioner/${nik}`, {
+                method: "GET",
+            });
+
+            expect(response.status).toBe(HttpStatusCodes.UNAUTHORIZED);
+
+            const body = await response.json();
+            loggerPino.debug(body, "Unauthorized Response");
+
+            expect(body).toHaveProperty("message");
+        });
+
+        it("should return 403 when user does not have read:satu_sehat permission", async () => {
+            const nik = "9104025209000006";
+
+            const response = await app.request(`/api/satu-sehat/ihs-patient/${nik}`, {
+                method: "GET",
+                headers: {
+                    Cookie: userWithoutPermissionCookie,
+                },
+            });
+
+            expect(response.status).toBe(HttpStatusCodes.FORBIDDEN);
+
+            const body = await response.json();
+            loggerPino.debug(body, "Forbidden Response");
+
+            expect(body).toHaveProperty("message");
+        });
+
+        it("should allow access with admin role (has read:satu_sehat permission)", async () => {
+            const nik = "9104025209000006";
+
+            const response = await app.request(`/api/satu-sehat/ihs-patient/${nik}`, {
+                method: "GET",
+                headers: {
+                    Cookie: adminCookie,
+                },
+            });
+
+            expect(response.status).toBe(HttpStatusCodes.OK);
+
+            const body = await response.json();
+            loggerPino.debug(body, "Admin Access Success");
+
+            expect(body).toHaveProperty("resourceType", "Bundle");
+        });
+
+        it("should allow access with officer role (has read:satu_sehat permission)", async () => {
+            const nik = "3322071302900002";
+
+            const response = await app.request(`/api/satu-sehat/ihs-practitioner/${nik}`, {
+                method: "GET",
+                headers: {
+                    Cookie: officerCookie,
+                },
+            });
+
+            expect(response.status).toBe(HttpStatusCodes.OK);
+
+            const body = await response.json();
+            loggerPino.debug(body, "Officer Access Success");
+
+            expect(body).toHaveProperty("resourceType", "Bundle");
+        });
+    });
+
     describe("GET /api/satu-sehat/ihs-patient/:nik - Get IHS Patient", () => {
-        it("should get IHS patient data by valid NIK", async () => {
+        it("should get IHS patient data by valid NIK with admin permission", async () => {
             // Using a known NIK from staging environment
             const nik = "9104025209000006";
 
             const response = await app.request(`/api/satu-sehat/ihs-patient/${nik}`, {
                 method: "GET",
+                headers: {
+                    Cookie: adminCookie,
+                },
             });
 
             expect(response.status).toBe(HttpStatusCodes.OK);
@@ -45,6 +165,9 @@ describe("Satu Sehat Integration", () => {
 
             const response = await app.request(`/api/satu-sehat/ihs-patient/${invalidNik}`, {
                 method: "GET",
+                headers: {
+                    Cookie: adminCookie,
+                },
             });
 
             expect(response.status).toBe(HttpStatusCodes.UNPROCESSABLE_ENTITY);
@@ -64,6 +187,9 @@ describe("Satu Sehat Integration", () => {
 
             const response = await app.request(`/api/satu-sehat/ihs-patient/${nik}`, {
                 method: "GET",
+                headers: {
+                    Cookie: adminCookie,
+                },
             });
 
             // Could be OK with empty results or NOT_FOUND
@@ -83,12 +209,15 @@ describe("Satu Sehat Integration", () => {
     });
 
     describe("GET /api/satu-sehat/ihs-practitioner/:nik - Get IHS Practitioner", () => {
-        it("should get IHS practitioner data by valid NIK", async () => {
+        it("should get IHS practitioner data by valid NIK with officer permission", async () => {
             // Using a known NIK from staging environment
             const nik = "3322071302900002";
 
             const response = await app.request(`/api/satu-sehat/ihs-practitioner/${nik}`, {
                 method: "GET",
+                headers: {
+                    Cookie: officerCookie,
+                },
             });
 
             expect(response.status).toBe(HttpStatusCodes.OK);
@@ -117,6 +246,9 @@ describe("Satu Sehat Integration", () => {
 
             const response = await app.request(`/api/satu-sehat/ihs-practitioner/${invalidNik}`, {
                 method: "GET",
+                headers: {
+                    Cookie: adminCookie,
+                },
             });
 
             expect(response.status).toBe(HttpStatusCodes.UNPROCESSABLE_ENTITY);
@@ -136,6 +268,9 @@ describe("Satu Sehat Integration", () => {
 
             const response = await app.request(`/api/satu-sehat/ihs-practitioner/${nik}`, {
                 method: "GET",
+                headers: {
+                    Cookie: adminCookie,
+                },
             });
 
             // Could be OK with empty results or NOT_FOUND
@@ -162,6 +297,9 @@ describe("Satu Sehat Integration", () => {
             // First request - should get new token
             const response1 = await app.request(`/api/satu-sehat/ihs-patient/${nik}`, {
                 method: "GET",
+                headers: {
+                    Cookie: adminCookie,
+                },
             });
 
             expect(response1.status).toBe(HttpStatusCodes.OK);
@@ -169,6 +307,9 @@ describe("Satu Sehat Integration", () => {
             // Second request - should use cached token
             const response2 = await app.request(`/api/satu-sehat/ihs-patient/${nik}`, {
                 method: "GET",
+                headers: {
+                    Cookie: adminCookie,
+                },
             });
 
             expect(response2.status).toBe(HttpStatusCodes.OK);

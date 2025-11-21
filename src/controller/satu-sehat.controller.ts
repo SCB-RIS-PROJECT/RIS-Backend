@@ -5,6 +5,8 @@ import { createErrorSchema, createMessageObjectSchema } from "stoker/openapi/sch
 import createRouter from "@/config/create-router";
 import { loggerPino } from "@/config/log";
 import { ihsPatientBundleSchema, ihsPractitionerBundleSchema, nikParamSchema } from "@/interface/satu-sehat.interface";
+import { authMiddleware } from "@/middleware/auth.middleware";
+import { permissionMiddleware } from "@/middleware/role-permission.middleware";
 import { SatuSehatService } from "@/service/satu-sehat.service";
 
 const satuSehatController = createRouter();
@@ -19,6 +21,7 @@ satuSehatController.openapi(
         path: "/api/satu-sehat/ihs-patient/{nik}",
         summary: "Get IHS Patient by NIK",
         description: "Get IHS Patient data from Satu Sehat by NIK",
+        middleware: [authMiddleware, permissionMiddleware("read:satu_sehat")] as const,
         request: {
             params: nikParamSchema,
         },
@@ -27,6 +30,14 @@ satuSehatController.openapi(
             [HttpStatusCodes.NOT_FOUND]: jsonContent(
                 createMessageObjectSchema("Patient not found in IHS"),
                 "Not found"
+            ),
+            [HttpStatusCodes.UNAUTHORIZED]: jsonContent(
+                createMessageObjectSchema("Not authenticated"),
+                "User not authenticated"
+            ),
+            [HttpStatusCodes.FORBIDDEN]: jsonContent(
+                createMessageObjectSchema("Permission denied"),
+                "Insufficient permissions"
             ),
             [HttpStatusCodes.BAD_REQUEST]: jsonContent(createErrorSchema(nikParamSchema), "Invalid NIK format"),
             [HttpStatusCodes.INTERNAL_SERVER_ERROR]: jsonContent(
@@ -61,6 +72,7 @@ satuSehatController.openapi(
         path: "/api/satu-sehat/ihs-practitioner/{nik}",
         summary: "Get IHS Practitioner by NIK",
         description: "Get IHS Practitioner data from Satu Sehat by NIK",
+        middleware: [authMiddleware, permissionMiddleware("read:satu_sehat")] as const,
         request: {
             params: nikParamSchema,
         },
@@ -72,6 +84,14 @@ satuSehatController.openapi(
             [HttpStatusCodes.NOT_FOUND]: jsonContent(
                 createMessageObjectSchema("Practitioner not found in IHS"),
                 "Not found"
+            ),
+            [HttpStatusCodes.UNAUTHORIZED]: jsonContent(
+                createMessageObjectSchema("Not authenticated"),
+                "User not authenticated"
+            ),
+            [HttpStatusCodes.FORBIDDEN]: jsonContent(
+                createMessageObjectSchema("Permission denied"),
+                "Insufficient permissions"
             ),
             [HttpStatusCodes.BAD_REQUEST]: jsonContent(createErrorSchema(nikParamSchema), "Invalid NIK format"),
             [HttpStatusCodes.INTERNAL_SERVER_ERROR]: jsonContent(
