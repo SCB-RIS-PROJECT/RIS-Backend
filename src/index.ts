@@ -4,13 +4,14 @@ import env from "@/config/env";
 import authController from "@/controller/auth.controller";
 import patientController from "@/controller/patient.controller";
 import practitionerController from "@/controller/practitioner.controller";
+import satuSehatController from "@/controller/satu-sehat.controller";
 
 const app = createApp();
 
 configureOpenAPI(app);
 
 // route
-const routes = [authController, patientController, practitionerController] as const;
+const routes = [authController, patientController, practitionerController, satuSehatController] as const;
 
 routes.forEach((route) => {
     app.route("/", route);

@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from "bun:test";
 import { eq } from "drizzle-orm";
+import * as HttpStatusCodes from "stoker/http-status-codes";
 import { TestUtil, UserTest } from "@/__test__/test-util";
 import configureOpenAPI from "@/config/configure-open-api";
 import createApp from "@/config/create-app";
@@ -66,7 +67,7 @@ describe("Practitioner CRUD", () => {
             const body = await response.json();
             loggerPino.debug(body);
 
-            expect(response.status).toBe(201);
+            expect(response.status).toBe(HttpStatusCodes.CREATED);
             expect(body.name).toBe("Dr. John Doe");
             expect(body.nik).toBe("1234567890123456");
             expect(body.role).toBe("DOCTOR");
@@ -100,7 +101,7 @@ describe("Practitioner CRUD", () => {
             const body = await response.json();
             loggerPino.debug(body);
 
-            expect(response.status).toBe(201);
+            expect(response.status).toBe(HttpStatusCodes.CREATED);
             expect(body.name).toBe("Nurse Jane");
             expect(body.role).toBe("NURSE");
 
@@ -128,7 +129,7 @@ describe("Practitioner CRUD", () => {
             const body = await response.json();
             loggerPino.debug(body);
 
-            expect(response.status).toBe(403);
+            expect(response.status).toBe(HttpStatusCodes.FORBIDDEN);
             expect(body.message).toContain("Permission denied");
         });
     });
@@ -145,7 +146,7 @@ describe("Practitioner CRUD", () => {
             const body = await response.json();
             loggerPino.debug(body);
 
-            expect(response.status).toBe(200);
+            expect(response.status).toBe(HttpStatusCodes.OK);
             expect(body.data).toBeInstanceOf(Array);
             expect(body.meta).toBeDefined();
             expect(body.meta.page).toBe(1);
@@ -176,7 +177,7 @@ describe("Practitioner CRUD", () => {
             const body = await response.json();
             loggerPino.debug(body);
 
-            expect(response.status).toBe(200);
+            expect(response.status).toBe(HttpStatusCodes.OK);
             expect(body.data.length).toBeGreaterThan(0);
             expect(body.data[0].name).toContain("Test Practitioner Search");
 
@@ -195,7 +196,7 @@ describe("Practitioner CRUD", () => {
             const body = await response.json();
             loggerPino.debug(body);
 
-            expect(response.status).toBe(200);
+            expect(response.status).toBe(HttpStatusCodes.OK);
             expect(body.data).toBeInstanceOf(Array);
             for (const practitioner of body.data) {
                 expect(practitioner.role).toBe("DOCTOR");
@@ -213,7 +214,7 @@ describe("Practitioner CRUD", () => {
             const body = await response.json();
             loggerPino.debug(body);
 
-            expect(response.status).toBe(200);
+            expect(response.status).toBe(HttpStatusCodes.OK);
             expect(body.data).toBeInstanceOf(Array);
             for (const practitioner of body.data) {
                 expect(practitioner.active).toBe(true);
@@ -231,7 +232,7 @@ describe("Practitioner CRUD", () => {
             const body = await response.json();
             loggerPino.debug(body);
 
-            expect(response.status).toBe(200);
+            expect(response.status).toBe(HttpStatusCodes.OK);
             expect(body.data).toBeInstanceOf(Array);
 
             if (body.data.length > 1) {
@@ -252,7 +253,7 @@ describe("Practitioner CRUD", () => {
             const body = await response.json();
             loggerPino.debug(body);
 
-            expect(response.status).toBe(200);
+            expect(response.status).toBe(HttpStatusCodes.OK);
             expect(body.data).toBeInstanceOf(Array);
         });
 
@@ -265,7 +266,7 @@ describe("Practitioner CRUD", () => {
             const body = await response.json();
             loggerPino.debug(body);
 
-            expect(response.status).toBe(401);
+            expect(response.status).toBe(HttpStatusCodes.UNAUTHORIZED);
             expect(body.message).toBe("Not authenticated");
         });
     });
@@ -295,7 +296,7 @@ describe("Practitioner CRUD", () => {
             const body = await response.json();
             loggerPino.debug(body.name, body);
 
-            expect(response.status).toBe(200);
+            expect(response.status).toBe(HttpStatusCodes.OK);
             expect(body.id).toBe(testPractitioner.id);
             expect(body.name).toBe("Test Practitioner 3");
 
@@ -314,7 +315,7 @@ describe("Practitioner CRUD", () => {
             const body = await response.json();
             loggerPino.debug(body);
 
-            expect(response.status).toBe(404);
+            expect(response.status).toBe(HttpStatusCodes.NOT_FOUND);
             expect(body.message).toBe("Practitioner not found");
         });
     });
@@ -349,7 +350,7 @@ describe("Practitioner CRUD", () => {
             const body = await response.json();
             loggerPino.debug(body.name, body);
 
-            expect(response.status).toBe(200);
+            expect(response.status).toBe(HttpStatusCodes.OK);
             expect(body.name).toBe("Updated Name");
             expect(body.phone).toBe("081999999999");
 
@@ -385,7 +386,7 @@ describe("Practitioner CRUD", () => {
             const body = await response.json();
             loggerPino.debug(body.name, body);
 
-            expect(response.status).toBe(200);
+            expect(response.status).toBe(HttpStatusCodes.OK);
             expect(body.email).toBe("updated@example.com");
 
             // Cleanup
@@ -420,7 +421,7 @@ describe("Practitioner CRUD", () => {
             const body = await response.json();
             loggerPino.debug(body);
 
-            expect(response.status).toBe(403);
+            expect(response.status).toBe(HttpStatusCodes.FORBIDDEN);
             expect(body.message).toContain("Permission denied");
 
             // Cleanup
@@ -442,7 +443,7 @@ describe("Practitioner CRUD", () => {
             const body = await response.json();
             loggerPino.debug(body);
 
-            expect(response.status).toBe(404);
+            expect(response.status).toBe(HttpStatusCodes.NOT_FOUND);
             expect(body.message).toBe("Practitioner not found");
         });
     });
@@ -472,7 +473,7 @@ describe("Practitioner CRUD", () => {
             const body = await response.json();
             loggerPino.debug(body);
 
-            expect(response.status).toBe(200);
+            expect(response.status).toBe(HttpStatusCodes.OK);
             expect(body.message).toBe("Practitioner deleted successfully");
         });
 
@@ -500,7 +501,7 @@ describe("Practitioner CRUD", () => {
             const body = await response.json();
             loggerPino.debug(body);
 
-            expect(response.status).toBe(200);
+            expect(response.status).toBe(HttpStatusCodes.OK);
             expect(body.message).toBe("Practitioner deleted successfully");
         });
 
@@ -528,7 +529,7 @@ describe("Practitioner CRUD", () => {
             const body = await response.json();
             loggerPino.debug(body);
 
-            expect(response.status).toBe(403);
+            expect(response.status).toBe(HttpStatusCodes.FORBIDDEN);
             expect(body.message).toContain("Permission denied");
 
             // Cleanup
@@ -546,7 +547,7 @@ describe("Practitioner CRUD", () => {
             const body = await response.json();
             loggerPino.debug(body);
 
-            expect(response.status).toBe(404);
+            expect(response.status).toBe(HttpStatusCodes.NOT_FOUND);
             expect(body.message).toBe("Practitioner not found");
         });
     });

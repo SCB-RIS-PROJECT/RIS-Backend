@@ -1,5 +1,6 @@
 import { z } from "@hono/zod-openapi";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
+import { PRACTITIONER_ROLES } from "@/database/schemas/constants";
 import { practitionerTable } from "@/database/schemas/schema-practitioner";
 import { toZodV4SchemaTyped } from "@/lib/zod-util";
 
@@ -16,17 +17,7 @@ export const createPractitionerSchema = toZodV4SchemaTyped(
         ihs_number: (field) => field.max(12).optional(),
         birth_date: z.string().datetime(),
         ihs_last_sync: z.string().datetime().optional(),
-        role: z.enum([
-            "DOCTOR",
-            "NURSE",
-            "MIDWIFE",
-            "PHARMACIST",
-            "LAB_TECHNICIAN",
-            "RADIOLOGIST",
-            "THERAPIST",
-            "DENTIST",
-            "ADMINISTRATIVE_STAFF",
-        ]),
+        role: z.enum(PRACTITIONER_ROLES),
         gender: z.enum(["MALE", "FEMALE"]),
         active: z.boolean().default(true),
     }).omit({
@@ -46,19 +37,7 @@ export const updatePractitionerSchema = toZodV4SchemaTyped(
         ihs_number: (field) => field.max(12).optional(),
         birth_date: z.string().datetime().optional(),
         ihs_last_sync: z.string().datetime().optional(),
-        role: z
-            .enum([
-                "DOCTOR",
-                "NURSE",
-                "MIDWIFE",
-                "PHARMACIST",
-                "LAB_TECHNICIAN",
-                "RADIOLOGIST",
-                "THERAPIST",
-                "DENTIST",
-                "ADMINISTRATIVE_STAFF",
-            ])
-            .optional(),
+        role: z.enum(PRACTITIONER_ROLES).optional(),
         gender: z.enum(["MALE", "FEMALE"]).optional(),
         active: z.boolean().optional(),
     })
@@ -76,17 +55,7 @@ export const practitionerResponseSchema = z.object({
     ihs_number: z.string().nullable(),
     ihs_last_sync: z.string().datetime().nullable(),
     ihs_response_status: z.string().nullable(),
-    role: z.enum([
-        "DOCTOR",
-        "NURSE",
-        "MIDWIFE",
-        "PHARMACIST",
-        "LAB_TECHNICIAN",
-        "RADIOLOGIST",
-        "THERAPIST",
-        "DENTIST",
-        "ADMINISTRATIVE_STAFF",
-    ]),
+    role: z.enum(PRACTITIONER_ROLES),
     nik: z.string(),
     name: z.string(),
     gender: z.enum(["MALE", "FEMALE"]),
@@ -115,19 +84,7 @@ export const practitionerQuerySchema = z.object({
     page: z.coerce.number().int().positive().default(1),
     per_page: z.coerce.number().int().positive().max(100).default(10),
     search: z.string().optional(),
-    role: z
-        .enum([
-            "DOCTOR",
-            "NURSE",
-            "MIDWIFE",
-            "PHARMACIST",
-            "LAB_TECHNICIAN",
-            "RADIOLOGIST",
-            "THERAPIST",
-            "DENTIST",
-            "ADMINISTRATIVE_STAFF",
-        ])
-        .optional(),
+    role: z.enum(PRACTITIONER_ROLES).optional(),
     active: z.coerce.boolean().optional(),
     sort: z.enum(["name", "role", "nik", "created_at"]).default("created_at"),
     dir: z.enum(["asc", "desc"]).default("desc"),
