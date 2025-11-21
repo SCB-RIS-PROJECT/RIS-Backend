@@ -7,6 +7,7 @@ export default function configureOpenAPI(app: AppOpenAPI) {
 
     app.doc("/documentation", {
         openapi: "3.0.0",
+        security: [{ cookieAuth: [] }],
         info: {
             title: title,
             version: packageJSON.version,
@@ -34,6 +35,12 @@ export default function configureOpenAPI(app: AppOpenAPI) {
             defaultHttpClient: {
                 targetKey: "js",
                 clientKey: "axios",
+            },
+            fetch: (input, init) => {
+                return fetch(input, {
+                    ...init,
+                    credentials: "include",
+                });
             },
         })
     );

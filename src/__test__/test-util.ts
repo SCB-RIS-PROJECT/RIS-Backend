@@ -13,7 +13,8 @@ import {
 } from "@/database/schemas/schema-role-permission";
 import { userTable } from "@/database/schemas/schema-user";
 
-const app = createApp();
+// Skip rate limiting for auth tests to avoid false failures
+const app = createApp({ skipRateLimit: true });
 configureOpenAPI(app);
 app.route("/", authController);
 
@@ -51,7 +52,8 @@ export class UserTest {
         });
 
         if (response.status !== 200) {
-            throw new Error("Login failed");
+            const body = await response.text();
+            throw new Error(`Login failed: ${body}`);
         }
 
         const setCookieHeader = response.headers.get("Set-Cookie");
@@ -105,50 +107,6 @@ export class UserTest {
     }
 
     /**
-     * Create user with specific permissions
-     */
-    static async createWithPermission(email: string, permissionNames: string[]) {
-        const password = await Bun.password.hash("password", {
-            algorithm: "bcrypt",
-            cost: 10,
-        });
-
-        // Create user
-        const [user] = await db
-            .insert(userTable)
-            .values({
-                name: email.split("@")[0],
-                email,
-                password,
-            })
-            .returning();
-
-        // Get permission IDs by name
-        const permissions = await db.select().from(permissionTable).where(eq(permissionTable.name, permissionNames[0]));
-
-        if (permissionNames.length > 1) {
-            const otherPermissions = await Promise.all(
-                permissionNames
-                    .slice(1)
-                    .map((permName) => db.select().from(permissionTable).where(eq(permissionTable.name, permName)))
-            );
-            permissions.push(...otherPermissions.flat());
-        }
-
-        // Assign permissions to user
-        if (permissions.length > 0) {
-            await db.insert(userPermissionTable).values(
-                permissions.map((permission) => ({
-                    id_user: user.id,
-                    id_permission: permission.id,
-                }))
-            );
-        }
-
-        return user;
-    }
-
-    /**
      * Login as specific user and get session cookie
      */
     static async loginAs(email: string, password: string = "password"): Promise<string> {
@@ -188,6 +146,21 @@ export class UserTest {
     static async getByEmail(email: string) {
         const [user] = await db.select().from(userTable).where(eq(userTable.email, email)).limit(1);
         return user;
+    }
+
+    /**
+     * Ensure permissions exist in the database
+     */
+    static async ensurePermissions(permissions: string[]) {
+        for (const name of permissions) {
+            await db
+                .insert(permissionTable)
+                .values({
+                    name,
+                    description: `Permission ${name}`,
+                })
+                .onConflictDoNothing();
+        }
     }
 }
 

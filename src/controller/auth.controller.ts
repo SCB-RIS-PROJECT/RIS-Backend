@@ -32,6 +32,10 @@ authController.openapi(
                 createErrorSchema(loginPayloadSchema),
                 "Validation error(s)"
             ),
+            [HttpStatusCodes.TOO_MANY_REQUESTS]: jsonContent(
+                createMessageObjectSchema("Too many requests"),
+                "Too many requests"
+            ),
         },
     }),
     async (c) => {
@@ -66,11 +70,17 @@ authController.openapi(
         path: "/api/auth/logout",
         summary: "Logout",
         description: "Destroy the current user session and clear the HTTP-only cookie.",
+        security: [{ cookieAuth: [] }],
+        middleware: [authMiddleware],
         responses: {
             [HttpStatusCodes.OK]: jsonContent(createMessageObjectSchema("Logout successful"), "Logout successful"),
             [HttpStatusCodes.UNAUTHORIZED]: jsonContent(
                 createMessageObjectSchema("No active session found"),
                 "No session to logout"
+            ),
+            [HttpStatusCodes.TOO_MANY_REQUESTS]: jsonContent(
+                createMessageObjectSchema("Too many requests"),
+                "Too many requests"
             ),
         },
     }),
@@ -102,13 +112,19 @@ authController.openapi(
         method: "get",
         path: "/api/auth/current",
         summary: "Get Current User",
-        description: "Get the currently authenticated user with roles and permissions.",
+        description:
+            "Get the currently authenticated user with roles and permissions. Requires authentication via session cookie.",
+        security: [{ cookieAuth: [] }],
         middleware: [authMiddleware],
         responses: {
             [HttpStatusCodes.OK]: jsonContent(currentUserResponseSchema, "Current user retrieved successfully"),
             [HttpStatusCodes.UNAUTHORIZED]: jsonContent(
                 createMessageObjectSchema("Not authenticated"),
                 "User not authenticated"
+            ),
+            [HttpStatusCodes.TOO_MANY_REQUESTS]: jsonContent(
+                createMessageObjectSchema("Too many requests"),
+                "Too many requests"
             ),
         },
     }),

@@ -66,8 +66,8 @@ export const seedRolePermission = async () => {
         ]);
 
         const satuSehatPermissions = await Promise.all([
-            createPermission({ name: "satu_sehat.read", description: "can read satu sehat data" }),
-            createPermission({ name: "satu_sehat.write", description: "can write satu sehat data" }),
+            createPermission({ name: "read:satu_sehat", description: "can read satu sehat data" }),
+            createPermission({ name: "create:satu_sehat", description: "can create satu sehat data" }),
         ]);
 
         // assign permissions to admin role

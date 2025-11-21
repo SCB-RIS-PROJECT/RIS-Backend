@@ -1,0 +1,1 @@
+ALTER TABLE "tb_patient" ALTER COLUMN "mrn" SET DATA TYPE varchar(6);

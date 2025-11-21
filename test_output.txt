@@ -1,0 +1,3283 @@
+bun test v1.2.21 (7c45ed97)
+
+src/__test__/patient.test.ts:
+[04:46:26.978] INFO (19635): Executing query
+    query: "delete from \"tb_patient\""
+    params: []
+[04:46:27.487] INFO (19635): Executing query
+    query: "insert into \"tb_user\" (\"id\", \"name\", \"email\", \"password\", \"avatar\", \"email_verified_at\", \"created_at\", \"updated_at\") values (default, $1, $2, $3, default, default, default, default)"
+    params: [
+      "Test User",
+      "test@test.com",
+      "$2b$10$Le2KKLOFe6mSnodIX8q1HuJ/.uuSuIp6mObYhd/CH0Ym7NJ9wGA/S"
+    ]
+[04:46:27.554] INFO (19635): Executing query
+    query: "select \"id\", \"name\", \"email\", \"password\", \"avatar\", \"email_verified_at\", \"created_at\", \"updated_at\" from \"tb_user\" where \"tb_user\".\"email\" = $1 limit $2"
+    params: [
+      "test@test.com",
+      1
+    ]
+[04:46:27.663] INFO (19635): Executing query
+    query: "select \"tb_role\".\"name\" from \"tb_user_role\" inner join \"tb_role\" on \"tb_user_role\".\"id_role\" = \"tb_role\".\"id\" where \"tb_user_role\".\"id_user\" = $1"
+    params: [
+      "446ab778-e972-4f02-9f6f-55848ec16b95"
+    ]
+[04:46:27.723] INFO (19635): Executing query
+    query: "select \"id_role\" from \"tb_user_role\" where \"tb_user_role\".\"id_user\" = $1"
+    params: [
+      "446ab778-e972-4f02-9f6f-55848ec16b95"
+    ]
+[04:46:27.787] INFO (19635): Executing query
+    query: "select \"tb_permission\".\"name\" from \"tb_user_permission\" inner join \"tb_permission\" on \"tb_user_permission\".\"id_permission\" = \"tb_permission\".\"id\" where \"tb_user_permission\".\"id_user\" = $1"
+    params: [
+      "446ab778-e972-4f02-9f6f-55848ec16b95"
+    ]
+[04:46:27.847] INFO (19635): Executing query
+    query: "insert into \"tb_session\" (\"id\", \"id_user\", \"expires_at\", \"ip\", \"user_agent\", \"created_at\", \"updated_at\") values (default, $1, $2, $3, $4, default, default) returning \"id\", \"id_user\", \"expires_at\", \"ip\", \"user_agent\", \"created_at\", \"updated_at\""
+    params: [
+      "446ab778-e972-4f02-9f6f-55848ec16b95",
+      "2025-11-28T04:46:27.846Z",
+      null,
+      null
+    ]
+[04:46:27.912] INFO (19635): Request completed
+    req: {
+      "url": "/api/auth/login",
+      "method": "POST",
+      "headers": {
+        "content-type": "application/json"
+      }
+    }
+    res: {
+      "status": 200,
+      "headers": {
+        "access-control-allow-credentials": "true",
+        "content-type": "application/json",
+        "set-cookie": [
+          "session_id=cKtF7ezq13BYfWIisJZ8jKwAWKsPzUVfEoTz9Uh2uGeCkahsgRit1OStD13qDtggd15QaqZlIXpzmTeO3qSPkA; Max-Age=604800; Path=/; Expires=Fri, 28 Nov 2025 04:46:27 GMT; HttpOnly; SameSite=None"
+        ],
+        "x-request-id": "e8baf93f-2b8c-4f8d-b385-aecd6cbf2e9b"
+      }
+    }
+    reqId: 1
+    responseTime: 359
+[04:46:27.963] INFO (19635): Request completed
+    req: {
+      "url": "/api/patients",
+      "method": "GET",
+      "headers": {}
+    }
+    res: {
+      "status": 401,
+      "headers": {
+        "access-control-allow-credentials": "true",
+        "content-type": "application/json",
+        "x-request-id": "5143cb5e-0ca1-4a52-8106-deecd6aeeb72"
+      }
+    }
+    reqId: 2
+    responseTime: 0
+(pass) GET /api/patients > should not be able to get patients without authentication [0.99ms]
+[04:46:27.964] DEBUG (19635):
+    message: "Not authenticated"
+[04:46:27.964] INFO (19635): Executing query
+    query: "delete from \"tb_patient\""
+    params: []
+[04:46:28.023] INFO (19635): Executing query
+    query: "delete from \"tb_user\" where \"tb_user\".\"email\" = $1"
+    params: [
+      "test@test.com"
+    ]
+[04:46:28.135] INFO (19635): Executing query
+    query: "delete from \"tb_patient\""
+    params: []
+[04:46:28.242] INFO (19635): Executing query
+    query: "insert into \"tb_user\" (\"id\", \"name\", \"email\", \"password\", \"avatar\", \"email_verified_at\", \"created_at\", \"updated_at\") values (default, $1, $2, $3, default, default, default, default)"
+    params: [
+      "Test User",
+      "test@test.com",
+      "$2b$10$27rFJ5jvfZ57TyWSbnO6wOzRflhC0aqrWDa8VbLjJwSqylLO2S6h."
+    ]
+[04:46:28.303] INFO (19635): Executing query
+    query: "select \"id\", \"name\", \"email\", \"password\", \"avatar\", \"email_verified_at\", \"created_at\", \"updated_at\" from \"tb_user\" where \"tb_user\".\"email\" = $1 limit $2"
+    params: [
+      "test@test.com",
+      1
+    ]
+[04:46:28.411] INFO (19635): Executing query
+    query: "select \"tb_role\".\"name\" from \"tb_user_role\" inner join \"tb_role\" on \"tb_user_role\".\"id_role\" = \"tb_role\".\"id\" where \"tb_user_role\".\"id_user\" = $1"
+    params: [
+      "dd0522c6-9305-47a0-b4ef-6cc61c6e0235"
+    ]
+[04:46:28.475] INFO (19635): Executing query
+    query: "select \"id_role\" from \"tb_user_role\" where \"tb_user_role\".\"id_user\" = $1"
+    params: [
+      "dd0522c6-9305-47a0-b4ef-6cc61c6e0235"
+    ]
+[04:46:28.543] INFO (19635): Executing query
+    query: "select \"tb_permission\".\"name\" from \"tb_user_permission\" inner join \"tb_permission\" on \"tb_user_permission\".\"id_permission\" = \"tb_permission\".\"id\" where \"tb_user_permission\".\"id_user\" = $1"
+    params: [
+      "dd0522c6-9305-47a0-b4ef-6cc61c6e0235"
+    ]
+[04:46:28.607] INFO (19635): Executing query
+    query: "insert into \"tb_session\" (\"id\", \"id_user\", \"expires_at\", \"ip\", \"user_agent\", \"created_at\", \"updated_at\") values (default, $1, $2, $3, $4, default, default) returning \"id\", \"id_user\", \"expires_at\", \"ip\", \"user_agent\", \"created_at\", \"updated_at\""
+    params: [
+      "dd0522c6-9305-47a0-b4ef-6cc61c6e0235",
+      "2025-11-28T04:46:28.607Z",
+      null,
+      null
+    ]
+[04:46:28.673] INFO (19635): Request completed
+    req: {
+      "url": "/api/auth/login",
+      "method": "POST",
+      "headers": {
+        "content-type": "application/json"
+      }
+    }
+    res: {
+      "status": 200,
+      "headers": {
+        "access-control-allow-credentials": "true",
+        "content-type": "application/json",
+        "set-cookie": [
+          "session_id=3Ml73togQsCmrl9He8FhIAcybFxYyKCxUCafedP2wVzKl1i1okiibRdgeI2KLpZeCvMpAEvMcrlCivNoCr1fBA; Max-Age=604800; Path=/; Expires=Fri, 28 Nov 2025 04:46:28 GMT; HttpOnly; SameSite=None"
+        ],
+        "x-request-id": "05828f80-3c20-46d6-8cd2-aa378355d72f"
+      }
+    }
+    reqId: 3
+    responseTime: 370
+[04:46:28.724] INFO (19635): Executing query
+    query: "insert into \"tb_patient\" (\"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\") values (default, $1, default, default, default, $2, $3, $4, $5, $6, $7, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default) returning \"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\""
+    params: [
+      "M-000001",
+      "1234567890120000",
+      "Test Patient 1",
+      "MALE",
+      "1990-01-01T00:00:00.000Z",
+      "081234567890",
+      "patient1@test.com"
+    ]
+[04:46:28.787] INFO (19635): Executing query
+    query: "insert into \"tb_patient\" (\"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\") values (default, $1, default, default, default, $2, $3, $4, $5, $6, $7, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default) returning \"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\""
+    params: [
+      "F-000002",
+      "1234567890120001",
+      "Test Patient 2",
+      "FEMALE",
+      "1990-01-01T00:00:00.000Z",
+      "081234567890",
+      "patient2@test.com"
+    ]
+[04:46:28.849] INFO (19635): Executing query
+    query: "insert into \"tb_patient\" (\"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\") values (default, $1, default, default, default, $2, $3, $4, $5, $6, $7, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default) returning \"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\""
+    params: [
+      "M-000003",
+      "1234567890120002",
+      "Test Patient 3",
+      "MALE",
+      "1990-01-01T00:00:00.000Z",
+      "081234567890",
+      "patient3@test.com"
+    ]
+[04:46:28.911] INFO (19635): Executing query
+    query: "insert into \"tb_patient\" (\"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\") values (default, $1, default, default, default, $2, $3, $4, $5, $6, $7, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default) returning \"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\""
+    params: [
+      "F-000004",
+      "1234567890120003",
+      "Test Patient 4",
+      "FEMALE",
+      "1990-01-01T00:00:00.000Z",
+      "081234567890",
+      "patient4@test.com"
+    ]
+[04:46:28.973] INFO (19635): Executing query
+    query: "insert into \"tb_patient\" (\"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\") values (default, $1, default, default, default, $2, $3, $4, $5, $6, $7, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default) returning \"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\""
+    params: [
+      "M-000005",
+      "1234567890120004",
+      "Test Patient 5",
+      "MALE",
+      "1990-01-01T00:00:00.000Z",
+      "081234567890",
+      "patient5@test.com"
+    ]
+[04:46:29.035] INFO (19635): Executing query
+    query: "select \"id\", \"id_user\", \"expires_at\", \"ip\", \"user_agent\", \"created_at\", \"updated_at\" from \"tb_session\" where \"tb_session\".\"id\" = $1 limit $2"
+    params: [
+      "4312f242-d9a4-4585-a9ed-0821e0f35e7a",
+      1
+    ]
+[04:46:29.099] INFO (19635): Executing query
+    query: "select \"id\", \"name\", \"email\", \"password\", \"avatar\", \"email_verified_at\", \"created_at\", \"updated_at\" from \"tb_user\" where \"tb_user\".\"id\" = $1 limit $2"
+    params: [
+      "dd0522c6-9305-47a0-b4ef-6cc61c6e0235",
+      1
+    ]
+[04:46:29.160] INFO (19635): Executing query
+    query: "select \"tb_role\".\"name\" from \"tb_user_role\" inner join \"tb_role\" on \"tb_user_role\".\"id_role\" = \"tb_role\".\"id\" where \"tb_user_role\".\"id_user\" = $1"
+    params: [
+      "dd0522c6-9305-47a0-b4ef-6cc61c6e0235"
+    ]
+[04:46:29.223] INFO (19635): Executing query
+    query: "select \"id_role\" from \"tb_user_role\" where \"tb_user_role\".\"id_user\" = $1"
+    params: [
+      "dd0522c6-9305-47a0-b4ef-6cc61c6e0235"
+    ]
+[04:46:29.282] INFO (19635): Executing query
+    query: "select \"tb_permission\".\"name\" from \"tb_user_permission\" inner join \"tb_permission\" on \"tb_user_permission\".\"id_permission\" = \"tb_permission\".\"id\" where \"tb_user_permission\".\"id_user\" = $1"
+    params: [
+      "dd0522c6-9305-47a0-b4ef-6cc61c6e0235"
+    ]
+[04:46:29.343] INFO (19635): Executing query
+    query: "select count(*) from \"tb_patient\""
+    params: []
+[04:46:29.407] INFO (19635): Executing query
+    query: "select \"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\" from \"tb_patient\" order by \"tb_patient\".\"created_at\" desc limit $1"
+    params: [
+      10
+    ]
+[04:46:29.469] INFO (19635): Request completed
+    req: {
+      "url": "/api/patients",
+      "method": "GET",
+      "headers": {
+        "cookie": "session_id=3Ml73togQsCmrl9He8FhIAcybFxYyKCxUCafedP2wVzKl1i1okiibRdgeI2KLpZeCvMpAEvMcrlCivNoCr1fBA; Max-Age=604800; Path=/; Expires=Fri, 28 Nov 2025 04:46:28 GMT; HttpOnly; SameSite=None"
+      }
+    }
+    res: {
+      "status": 200,
+      "headers": {
+        "access-control-allow-credentials": "true",
+        "content-type": "application/json",
+        "x-request-id": "0ba212eb-e142-462c-9938-954eacf84615"
+      }
+    }
+    reqId: 4
+    responseTime: 434
+(pass) GET /api/patients > should be able to get patients with authentication [745.50ms]
+[04:46:29.469] DEBUG (19635):
+    data: [
+      {
+        "id": "67fb8ef6-506a-476f-b02a-77a52eeff09b",
+        "mrn": "M-000005",
+        "ihs_number": null,
+        "ihs_last_sync": null,
+        "ihs_response_status": null,
+        "nik": "1234567890120004",
+        "name": "Test Patient 5",
+        "gender": "MALE",
+        "birth_date": "1990-01-01T00:00:00.000Z",
+        "phone": "081234567890",
+        "email": "patient5@test.com",
+        "address": null,
+        "id_province": null,
+        "province": null,
+        "id_city": null,
+        "city": null,
+        "id_district": null,
+        "district": null,
+        "id_sub_district": null,
+        "sub_district": null,
+        "rt": null,
+        "rw": null,
+        "postal_code": null,
+        "emergency_contact_name": null,
+        "emergency_contact_phone": null,
+        "created_at": "2025-11-21T04:46:29.276Z",
+        "updated_at": null
+      },
+      {
+        "id": "15c9b19a-2fe7-4557-9599-f13811c53a07",
+        "mrn": "F-000004",
+        "ihs_number": null,
+        "ihs_last_sync": null,
+        "ihs_response_status": null,
+        "nik": "1234567890120003",
+        "name": "Test Patient 4",
+        "gender": "FEMALE",
+        "birth_date": "1990-01-01T00:00:00.000Z",
+        "phone": "081234567890",
+        "email": "patient4@test.com",
+        "address": null,
+        "id_province": null,
+        "province": null,
+        "id_city": null,
+        "city": null,
+        "id_district": null,
+        "district": null,
+        "id_sub_district": null,
+        "sub_district": null,
+        "rt": null,
+        "rw": null,
+        "postal_code": null,
+        "emergency_contact_name": null,
+        "emergency_contact_phone": null,
+        "created_at": "2025-11-21T04:46:29.214Z",
+        "updated_at": null
+      },
+      {
+        "id": "df82f8e8-469a-4d9a-abca-32e15fcc6328",
+        "mrn": "M-000003",
+        "ihs_number": null,
+        "ihs_last_sync": null,
+        "ihs_response_status": null,
+        "nik": "1234567890120002",
+        "name": "Test Patient 3",
+        "gender": "MALE",
+        "birth_date": "1990-01-01T00:00:00.000Z",
+        "phone": "081234567890",
+        "email": "patient3@test.com",
+        "address": null,
+        "id_province": null,
+        "province": null,
+        "id_city": null,
+        "city": null,
+        "id_district": null,
+        "district": null,
+        "id_sub_district": null,
+        "sub_district": null,
+        "rt": null,
+        "rw": null,
+        "postal_code": null,
+        "emergency_contact_name": null,
+        "emergency_contact_phone": null,
+        "created_at": "2025-11-21T04:46:29.153Z",
+        "updated_at": null
+      },
+      {
+        "id": "a0d8d9e5-2711-4ead-b0b4-f0b4f6ff477b",
+        "mrn": "F-000002",
+        "ihs_number": null,
+        "ihs_last_sync": null,
+        "ihs_response_status": null,
+        "nik": "1234567890120001",
+        "name": "Test Patient 2",
+        "gender": "FEMALE",
+        "birth_date": "1990-01-01T00:00:00.000Z",
+        "phone": "081234567890",
+        "email": "patient2@test.com",
+        "address": null,
+        "id_province": null,
+        "province": null,
+        "id_city": null,
+        "city": null,
+        "id_district": null,
+        "district": null,
+        "id_sub_district": null,
+        "sub_district": null,
+        "rt": null,
+        "rw": null,
+        "postal_code": null,
+        "emergency_contact_name": null,
+        "emergency_contact_phone": null,
+        "created_at": "2025-11-21T04:46:29.090Z",
+        "updated_at": null
+      },
+      {
+        "id": "efddc533-b826-4894-97ed-bce33d7aed52",
+        "mrn": "M-000001",
+        "ihs_number": null,
+        "ihs_last_sync": null,
+        "ihs_response_status": null,
+        "nik": "1234567890120000",
+        "name": "Test Patient 1",
+        "gender": "MALE",
+        "birth_date": "1990-01-01T00:00:00.000Z",
+        "phone": "081234567890",
+        "email": "patient1@test.com",
+        "address": null,
+        "id_province": null,
+        "province": null,
+        "id_city": null,
+        "city": null,
+        "id_district": null,
+        "district": null,
+        "id_sub_district": null,
+        "sub_district": null,
+        "rt": null,
+        "rw": null,
+        "postal_code": null,
+        "emergency_contact_name": null,
+        "emergency_contact_phone": null,
+        "created_at": "2025-11-21T04:46:29.028Z",
+        "updated_at": null
+      }
+    ]
+    meta: {
+      "total": 5,
+      "page": 1,
+      "per_page": 10,
+      "total_pages": 1
+    }
+[04:46:29.469] INFO (19635): Executing query
+    query: "delete from \"tb_patient\""
+    params: []
+[04:46:29.529] INFO (19635): Executing query
+    query: "delete from \"tb_user\" where \"tb_user\".\"email\" = $1"
+    params: [
+      "test@test.com"
+    ]
+[04:46:29.641] INFO (19635): Executing query
+    query: "delete from \"tb_patient\""
+    params: []
+[04:46:29.747] INFO (19635): Executing query
+    query: "insert into \"tb_user\" (\"id\", \"name\", \"email\", \"password\", \"avatar\", \"email_verified_at\", \"created_at\", \"updated_at\") values (default, $1, $2, $3, default, default, default, default)"
+    params: [
+      "Test User",
+      "test@test.com",
+      "$2b$10$Zk4xpnD4YsztmGG9vdfBSebszIl5e7a07PBJSeVLVWDg721VUM6ra"
+    ]
+[04:46:29.811] INFO (19635): Executing query
+    query: "select \"id\", \"name\", \"email\", \"password\", \"avatar\", \"email_verified_at\", \"created_at\", \"updated_at\" from \"tb_user\" where \"tb_user\".\"email\" = $1 limit $2"
+    params: [
+      "test@test.com",
+      1
+    ]
+[04:46:29.918] INFO (19635): Executing query
+    query: "select \"tb_role\".\"name\" from \"tb_user_role\" inner join \"tb_role\" on \"tb_user_role\".\"id_role\" = \"tb_role\".\"id\" where \"tb_user_role\".\"id_user\" = $1"
+    params: [
+      "36329fb4-7ee9-485e-805a-1772f04e561e"
+    ]
+[04:46:29.979] INFO (19635): Executing query
+    query: "select \"id_role\" from \"tb_user_role\" where \"tb_user_role\".\"id_user\" = $1"
+    params: [
+      "36329fb4-7ee9-485e-805a-1772f04e561e"
+    ]
+[04:46:30.039] INFO (19635): Executing query
+    query: "select \"tb_permission\".\"name\" from \"tb_user_permission\" inner join \"tb_permission\" on \"tb_user_permission\".\"id_permission\" = \"tb_permission\".\"id\" where \"tb_user_permission\".\"id_user\" = $1"
+    params: [
+      "36329fb4-7ee9-485e-805a-1772f04e561e"
+    ]
+[04:46:30.100] INFO (19635): Executing query
+    query: "insert into \"tb_session\" (\"id\", \"id_user\", \"expires_at\", \"ip\", \"user_agent\", \"created_at\", \"updated_at\") values (default, $1, $2, $3, $4, default, default) returning \"id\", \"id_user\", \"expires_at\", \"ip\", \"user_agent\", \"created_at\", \"updated_at\""
+    params: [
+      "36329fb4-7ee9-485e-805a-1772f04e561e",
+      "2025-11-28T04:46:30.100Z",
+      null,
+      null
+    ]
+[04:46:30.162] INFO (19635): Request completed
+    req: {
+      "url": "/api/auth/login",
+      "method": "POST",
+      "headers": {
+        "content-type": "application/json"
+      }
+    }
+    res: {
+      "status": 200,
+      "headers": {
+        "access-control-allow-credentials": "true",
+        "content-type": "application/json",
+        "set-cookie": [
+          "session_id=YZuKLeUCfITYkyW95TpN9Fce6oudfH5DXFMYan3dE7HLqzvr_YLT3DGgMXsB9fi6A7zRe6pRR9V15m-YcBSvJw; Max-Age=604800; Path=/; Expires=Fri, 28 Nov 2025 04:46:30 GMT; HttpOnly; SameSite=None"
+        ],
+        "x-request-id": "1f3342dd-b9ee-48cd-8c9d-12257342af3a"
+      }
+    }
+    reqId: 5
+    responseTime: 352
+[04:46:30.213] INFO (19635): Executing query
+    query: "insert into \"tb_patient\" (\"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\") values (default, $1, default, default, default, $2, $3, $4, $5, $6, $7, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default) returning \"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\""
+    params: [
+      "M-000001",
+      "1234567890120000",
+      "Test Patient 1",
+      "MALE",
+      "1990-01-01T00:00:00.000Z",
+      "081234567890",
+      "patient1@test.com"
+    ]
+[04:46:30.275] INFO (19635): Executing query
+    query: "insert into \"tb_patient\" (\"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\") values (default, $1, default, default, default, $2, $3, $4, $5, $6, $7, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default) returning \"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\""
+    params: [
+      "F-000002",
+      "1234567890120001",
+      "Test Patient 2",
+      "FEMALE",
+      "1990-01-01T00:00:00.000Z",
+      "081234567890",
+      "patient2@test.com"
+    ]
+[04:46:30.339] INFO (19635): Executing query
+    query: "insert into \"tb_patient\" (\"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\") values (default, $1, default, default, default, $2, $3, $4, $5, $6, $7, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default) returning \"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\""
+    params: [
+      "M-000003",
+      "1234567890120002",
+      "Test Patient 3",
+      "MALE",
+      "1990-01-01T00:00:00.000Z",
+      "081234567890",
+      "patient3@test.com"
+    ]
+[04:46:30.401] INFO (19635): Executing query
+    query: "insert into \"tb_patient\" (\"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\") values (default, $1, default, default, default, $2, $3, $4, $5, $6, $7, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default) returning \"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\""
+    params: [
+      "F-000004",
+      "1234567890120003",
+      "Test Patient 4",
+      "FEMALE",
+      "1990-01-01T00:00:00.000Z",
+      "081234567890",
+      "patient4@test.com"
+    ]
+[04:46:30.463] INFO (19635): Executing query
+    query: "insert into \"tb_patient\" (\"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\") values (default, $1, default, default, default, $2, $3, $4, $5, $6, $7, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default) returning \"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\""
+    params: [
+      "M-000005",
+      "1234567890120004",
+      "Test Patient 5",
+      "MALE",
+      "1990-01-01T00:00:00.000Z",
+      "081234567890",
+      "patient5@test.com"
+    ]
+[04:46:30.525] INFO (19635): Executing query
+    query: "insert into \"tb_patient\" (\"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\") values (default, $1, default, default, default, $2, $3, $4, $5, $6, $7, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default) returning \"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\""
+    params: [
+      "F-000006",
+      "1234567890120005",
+      "Test Patient 6",
+      "FEMALE",
+      "1990-01-01T00:00:00.000Z",
+      "081234567890",
+      "patient6@test.com"
+    ]
+[04:46:30.587] INFO (19635): Executing query
+    query: "insert into \"tb_patient\" (\"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\") values (default, $1, default, default, default, $2, $3, $4, $5, $6, $7, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default) returning \"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\""
+    params: [
+      "M-000007",
+      "1234567890120006",
+      "Test Patient 7",
+      "MALE",
+      "1990-01-01T00:00:00.000Z",
+      "081234567890",
+      "patient7@test.com"
+    ]
+[04:46:30.651] INFO (19635): Executing query
+    query: "insert into \"tb_patient\" (\"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\") values (default, $1, default, default, default, $2, $3, $4, $5, $6, $7, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default) returning \"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\""
+    params: [
+      "F-000008",
+      "1234567890120007",
+      "Test Patient 8",
+      "FEMALE",
+      "1990-01-01T00:00:00.000Z",
+      "081234567890",
+      "patient8@test.com"
+    ]
+[04:46:30.713] INFO (19635): Executing query
+    query: "insert into \"tb_patient\" (\"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\") values (default, $1, default, default, default, $2, $3, $4, $5, $6, $7, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default) returning \"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\""
+    params: [
+      "M-000009",
+      "1234567890120008",
+      "Test Patient 9",
+      "MALE",
+      "1990-01-01T00:00:00.000Z",
+      "081234567890",
+      "patient9@test.com"
+    ]
+[04:46:30.775] INFO (19635): Executing query
+    query: "insert into \"tb_patient\" (\"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\") values (default, $1, default, default, default, $2, $3, $4, $5, $6, $7, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default) returning \"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\""
+    params: [
+      "F-000010",
+      "1234567890120009",
+      "Test Patient 10",
+      "FEMALE",
+      "1990-01-01T00:00:00.000Z",
+      "081234567890",
+      "patient10@test.com"
+    ]
+[04:46:30.838] INFO (19635): Executing query
+    query: "insert into \"tb_patient\" (\"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\") values (default, $1, default, default, default, $2, $3, $4, $5, $6, $7, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default) returning \"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\""
+    params: [
+      "M-000011",
+      "1234567890120010",
+      "Test Patient 11",
+      "MALE",
+      "1990-01-01T00:00:00.000Z",
+      "081234567890",
+      "patient11@test.com"
+    ]
+[04:46:30.899] INFO (19635): Executing query
+    query: "insert into \"tb_patient\" (\"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\") values (default, $1, default, default, default, $2, $3, $4, $5, $6, $7, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default) returning \"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\""
+    params: [
+      "F-000012",
+      "1234567890120011",
+      "Test Patient 12",
+      "FEMALE",
+      "1990-01-01T00:00:00.000Z",
+      "081234567890",
+      "patient12@test.com"
+    ]
+[04:46:30.961] INFO (19635): Executing query
+    query: "insert into \"tb_patient\" (\"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\") values (default, $1, default, default, default, $2, $3, $4, $5, $6, $7, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default) returning \"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\""
+    params: [
+      "M-000013",
+      "1234567890120012",
+      "Test Patient 13",
+      "MALE",
+      "1990-01-01T00:00:00.000Z",
+      "081234567890",
+      "patient13@test.com"
+    ]
+[04:46:31.023] INFO (19635): Executing query
+    query: "insert into \"tb_patient\" (\"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\") values (default, $1, default, default, default, $2, $3, $4, $5, $6, $7, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default) returning \"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\""
+    params: [
+      "F-000014",
+      "1234567890120013",
+      "Test Patient 14",
+      "FEMALE",
+      "1990-01-01T00:00:00.000Z",
+      "081234567890",
+      "patient14@test.com"
+    ]
+[04:46:31.086] INFO (19635): Executing query
+    query: "insert into \"tb_patient\" (\"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\") values (default, $1, default, default, default, $2, $3, $4, $5, $6, $7, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default) returning \"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\""
+    params: [
+      "M-000015",
+      "1234567890120014",
+      "Test Patient 15",
+      "MALE",
+      "1990-01-01T00:00:00.000Z",
+      "081234567890",
+      "patient15@test.com"
+    ]
+[04:46:31.147] INFO (19635): Executing query
+    query: "select \"id\", \"id_user\", \"expires_at\", \"ip\", \"user_agent\", \"created_at\", \"updated_at\" from \"tb_session\" where \"tb_session\".\"id\" = $1 limit $2"
+    params: [
+      "afccc710-13e9-4346-b09d-f472bdb04696",
+      1
+    ]
+[04:46:31.207] INFO (19635): Executing query
+    query: "select \"id\", \"name\", \"email\", \"password\", \"avatar\", \"email_verified_at\", \"created_at\", \"updated_at\" from \"tb_user\" where \"tb_user\".\"id\" = $1 limit $2"
+    params: [
+      "36329fb4-7ee9-485e-805a-1772f04e561e",
+      1
+    ]
+[04:46:31.268] INFO (19635): Executing query
+    query: "select \"tb_role\".\"name\" from \"tb_user_role\" inner join \"tb_role\" on \"tb_user_role\".\"id_role\" = \"tb_role\".\"id\" where \"tb_user_role\".\"id_user\" = $1"
+    params: [
+      "36329fb4-7ee9-485e-805a-1772f04e561e"
+    ]
+[04:46:31.330] INFO (19635): Executing query
+    query: "select \"id_role\" from \"tb_user_role\" where \"tb_user_role\".\"id_user\" = $1"
+    params: [
+      "36329fb4-7ee9-485e-805a-1772f04e561e"
+    ]
+[04:46:31.391] INFO (19635): Executing query
+    query: "select \"tb_permission\".\"name\" from \"tb_user_permission\" inner join \"tb_permission\" on \"tb_user_permission\".\"id_permission\" = \"tb_permission\".\"id\" where \"tb_user_permission\".\"id_user\" = $1"
+    params: [
+      "36329fb4-7ee9-485e-805a-1772f04e561e"
+    ]
+[04:46:31.455] INFO (19635): Executing query
+    query: "select count(*) from \"tb_patient\""
+    params: []
+[04:46:31.515] INFO (19635): Executing query
+    query: "select \"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\" from \"tb_patient\" order by \"tb_patient\".\"created_at\" desc limit $1"
+    params: [
+      10
+    ]
+[04:46:31.583] INFO (19635): Request completed
+    req: {
+      "url": "/api/patients",
+      "method": "GET",
+      "headers": {
+        "cookie": "session_id=YZuKLeUCfITYkyW95TpN9Fce6oudfH5DXFMYan3dE7HLqzvr_YLT3DGgMXsB9fi6A7zRe6pRR9V15m-YcBSvJw; Max-Age=604800; Path=/; Expires=Fri, 28 Nov 2025 04:46:30 GMT; HttpOnly; SameSite=None"
+      }
+    }
+    res: {
+      "status": 200,
+      "headers": {
+        "access-control-allow-credentials": "true",
+        "content-type": "application/json",
+        "x-request-id": "7d5cbb5f-2a7f-47fc-a093-e781cce40a9c"
+      }
+    }
+    reqId: 6
+    responseTime: 436
+(pass) GET /api/patients > should return paginated results [1370.64ms]
+[04:46:31.583] DEBUG (19635):
+    data: [
+      {
+        "id": "0588fa96-4a96-4395-a268-ce61b6540b4c",
+        "mrn": "M-000015",
+        "ihs_number": null,
+        "ihs_last_sync": null,
+        "ihs_response_status": null,
+        "nik": "1234567890120014",
+        "name": "Test Patient 15",
+        "gender": "MALE",
+        "birth_date": "1990-01-01T00:00:00.000Z",
+        "phone": "081234567890",
+        "email": "patient15@test.com",
+        "address": null,
+        "id_province": null,
+        "province": null,
+        "id_city": null,
+        "city": null,
+        "id_district": null,
+        "district": null,
+        "id_sub_district": null,
+        "sub_district": null,
+        "rt": null,
+        "rw": null,
+        "postal_code": null,
+        "emergency_contact_name": null,
+        "emergency_contact_phone": null,
+        "created_at": "2025-11-21T04:46:31.390Z",
+        "updated_at": null
+      },
+      {
+        "id": "9551bc12-122f-4fd1-8bca-dd819476efa3",
+        "mrn": "F-000014",
+        "ihs_number": null,
+        "ihs_last_sync": null,
+        "ihs_response_status": null,
+        "nik": "1234567890120013",
+        "name": "Test Patient 14",
+        "gender": "FEMALE",
+        "birth_date": "1990-01-01T00:00:00.000Z",
+        "phone": "081234567890",
+        "email": "patient14@test.com",
+        "address": null,
+        "id_province": null,
+        "province": null,
+        "id_city": null,
+        "city": null,
+        "id_district": null,
+        "district": null,
+        "id_sub_district": null,
+        "sub_district": null,
+        "rt": null,
+        "rw": null,
+        "postal_code": null,
+        "emergency_contact_name": null,
+        "emergency_contact_phone": null,
+        "created_at": "2025-11-21T04:46:31.326Z",
+        "updated_at": null
+      },
+      {
+        "id": "0f942aca-7c4a-41f5-9b75-0f10dcf8e9c7",
+        "mrn": "M-000013",
+        "ihs_number": null,
+        "ihs_last_sync": null,
+        "ihs_response_status": null,
+        "nik": "1234567890120012",
+        "name": "Test Patient 13",
+        "gender": "MALE",
+        "birth_date": "1990-01-01T00:00:00.000Z",
+        "phone": "081234567890",
+        "email": "patient13@test.com",
+        "address": null,
+        "id_province": null,
+        "province": null,
+        "id_city": null,
+        "city": null,
+        "id_district": null,
+        "district": null,
+        "id_sub_district": null,
+        "sub_district": null,
+        "rt": null,
+        "rw": null,
+        "postal_code": null,
+        "emergency_contact_name": null,
+        "emergency_contact_phone": null,
+        "created_at": "2025-11-21T04:46:31.265Z",
+        "updated_at": null
+      },
+      {
+        "id": "df78a676-6217-469b-837c-f19e9ffa24a6",
+        "mrn": "F-000012",
+        "ihs_number": null,
+        "ihs_last_sync": null,
+        "ihs_response_status": null,
+        "nik": "1234567890120011",
+        "name": "Test Patient 12",
+        "gender": "FEMALE",
+        "birth_date": "1990-01-01T00:00:00.000Z",
+        "phone": "081234567890",
+        "email": "patient12@test.com",
+        "address": null,
+        "id_province": null,
+        "province": null,
+        "id_city": null,
+        "city": null,
+        "id_district": null,
+        "district": null,
+        "id_sub_district": null,
+        "sub_district": null,
+        "rt": null,
+        "rw": null,
+        "postal_code": null,
+        "emergency_contact_name": null,
+        "emergency_contact_phone": null,
+        "created_at": "2025-11-21T04:46:31.203Z",
+        "updated_at": null
+      },
+      {
+        "id": "90128d5d-39cb-4c80-8db6-3fdeac2e802b",
+        "mrn": "M-000011",
+        "ihs_number": null,
+        "ihs_last_sync": null,
+        "ihs_response_status": null,
+        "nik": "1234567890120010",
+        "name": "Test Patient 11",
+        "gender": "MALE",
+        "birth_date": "1990-01-01T00:00:00.000Z",
+        "phone": "081234567890",
+        "email": "patient11@test.com",
+        "address": null,
+        "id_province": null,
+        "province": null,
+        "id_city": null,
+        "city": null,
+        "id_district": null,
+        "district": null,
+        "id_sub_district": null,
+        "sub_district": null,
+        "rt": null,
+        "rw": null,
+        "postal_code": null,
+        "emergency_contact_name": null,
+        "emergency_contact_phone": null,
+        "created_at": "2025-11-21T04:46:31.142Z",
+        "updated_at": null
+      },
+      {
+        "id": "c231b5a3-f49f-4da9-805e-6e1e090388e4",
+        "mrn": "F-000010",
+        "ihs_number": null,
+        "ihs_last_sync": null,
+        "ihs_response_status": null,
+        "nik": "1234567890120009",
+        "name": "Test Patient 10",
+        "gender": "FEMALE",
+        "birth_date": "1990-01-01T00:00:00.000Z",
+        "phone": "081234567890",
+        "email": "patient10@test.com",
+        "address": null,
+        "id_province": null,
+        "province": null,
+        "id_city": null,
+        "city": null,
+        "id_district": null,
+        "district": null,
+        "id_sub_district": null,
+        "sub_district": null,
+        "rt": null,
+        "rw": null,
+        "postal_code": null,
+        "emergency_contact_name": null,
+        "emergency_contact_phone": null,
+        "created_at": "2025-11-21T04:46:31.079Z",
+        "updated_at": null
+      },
+      {
+        "id": "280258c5-676b-40be-9323-5b873e3dd0c3",
+        "mrn": "M-000009",
+        "ihs_number": null,
+        "ihs_last_sync": null,
+        "ihs_response_status": null,
+        "nik": "1234567890120008",
+        "name": "Test Patient 9",
+        "gender": "MALE",
+        "birth_date": "1990-01-01T00:00:00.000Z",
+        "phone": "081234567890",
+        "email": "patient9@test.com",
+        "address": null,
+        "id_province": null,
+        "province": null,
+        "id_city": null,
+        "city": null,
+        "id_district": null,
+        "district": null,
+        "id_sub_district": null,
+        "sub_district": null,
+        "rt": null,
+        "rw": null,
+        "postal_code": null,
+        "emergency_contact_name": null,
+        "emergency_contact_phone": null,
+        "created_at": "2025-11-21T04:46:31.016Z",
+        "updated_at": null
+      },
+      {
+        "id": "fe429aed-74a8-45a8-88d5-89ea4dfb8f6e",
+        "mrn": "F-000008",
+        "ihs_number": null,
+        "ihs_last_sync": null,
+        "ihs_response_status": null,
+        "nik": "1234567890120007",
+        "name": "Test Patient 8",
+        "gender": "FEMALE",
+        "birth_date": "1990-01-01T00:00:00.000Z",
+        "phone": "081234567890",
+        "email": "patient8@test.com",
+        "address": null,
+        "id_province": null,
+        "province": null,
+        "id_city": null,
+        "city": null,
+        "id_district": null,
+        "district": null,
+        "id_sub_district": null,
+        "sub_district": null,
+        "rt": null,
+        "rw": null,
+        "postal_code": null,
+        "emergency_contact_name": null,
+        "emergency_contact_phone": null,
+        "created_at": "2025-11-21T04:46:30.954Z",
+        "updated_at": null
+      },
+      {
+        "id": "1a0171a4-7a3e-4f3e-89d3-caf89592e555",
+        "mrn": "M-000007",
+        "ihs_number": null,
+        "ihs_last_sync": null,
+        "ihs_response_status": null,
+        "nik": "1234567890120006",
+        "name": "Test Patient 7",
+        "gender": "MALE",
+        "birth_date": "1990-01-01T00:00:00.000Z",
+        "phone": "081234567890",
+        "email": "patient7@test.com",
+        "address": null,
+        "id_province": null,
+        "province": null,
+        "id_city": null,
+        "city": null,
+        "id_district": null,
+        "district": null,
+        "id_sub_district": null,
+        "sub_district": null,
+        "rt": null,
+        "rw": null,
+        "postal_code": null,
+        "emergency_contact_name": null,
+        "emergency_contact_phone": null,
+        "created_at": "2025-11-21T04:46:30.891Z",
+        "updated_at": null
+      },
+      {
+        "id": "b5de6d95-be37-4fb5-a52f-c226819ea695",
+        "mrn": "F-000006",
+        "ihs_number": null,
+        "ihs_last_sync": null,
+        "ihs_response_status": null,
+        "nik": "1234567890120005",
+        "name": "Test Patient 6",
+        "gender": "FEMALE",
+        "birth_date": "1990-01-01T00:00:00.000Z",
+        "phone": "081234567890",
+        "email": "patient6@test.com",
+        "address": null,
+        "id_province": null,
+        "province": null,
+        "id_city": null,
+        "city": null,
+        "id_district": null,
+        "district": null,
+        "id_sub_district": null,
+        "sub_district": null,
+        "rt": null,
+        "rw": null,
+        "postal_code": null,
+        "emergency_contact_name": null,
+        "emergency_contact_phone": null,
+        "created_at": "2025-11-21T04:46:30.829Z",
+        "updated_at": null
+      }
+    ]
+    meta: {
+      "total": 15,
+      "page": 1,
+      "per_page": 10,
+      "total_pages": 2
+    }
+[04:46:31.583] INFO (19635): Executing query
+    query: "delete from \"tb_patient\""
+    params: []
+[04:46:31.647] INFO (19635): Executing query
+    query: "delete from \"tb_user\" where \"tb_user\".\"email\" = $1"
+    params: [
+      "test@test.com"
+    ]
+[04:46:31.759] INFO (19635): Executing query
+    query: "delete from \"tb_patient\""
+    params: []
+[04:46:31.865] INFO (19635): Executing query
+    query: "insert into \"tb_user\" (\"id\", \"name\", \"email\", \"password\", \"avatar\", \"email_verified_at\", \"created_at\", \"updated_at\") values (default, $1, $2, $3, default, default, default, default)"
+    params: [
+      "Test User",
+      "test@test.com",
+      "$2b$10$71lQXUluM9zeTKZkWSx4lO1rEFSvxb3Q81FonnCTJaVagXmJC1hJm"
+    ]
+[04:46:31.925] INFO (19635): Executing query
+    query: "select \"id\", \"name\", \"email\", \"password\", \"avatar\", \"email_verified_at\", \"created_at\", \"updated_at\" from \"tb_user\" where \"tb_user\".\"email\" = $1 limit $2"
+    params: [
+      "test@test.com",
+      1
+    ]
+[04:46:32.033] INFO (19635): Executing query
+    query: "select \"tb_role\".\"name\" from \"tb_user_role\" inner join \"tb_role\" on \"tb_user_role\".\"id_role\" = \"tb_role\".\"id\" where \"tb_user_role\".\"id_user\" = $1"
+    params: [
+      "5102dab4-06df-4922-b649-0ac494062d97"
+    ]
+[04:46:32.093] INFO (19635): Executing query
+    query: "select \"id_role\" from \"tb_user_role\" where \"tb_user_role\".\"id_user\" = $1"
+    params: [
+      "5102dab4-06df-4922-b649-0ac494062d97"
+    ]
+[04:46:32.153] INFO (19635): Executing query
+    query: "select \"tb_permission\".\"name\" from \"tb_user_permission\" inner join \"tb_permission\" on \"tb_user_permission\".\"id_permission\" = \"tb_permission\".\"id\" where \"tb_user_permission\".\"id_user\" = $1"
+    params: [
+      "5102dab4-06df-4922-b649-0ac494062d97"
+    ]
+[04:46:32.213] INFO (19635): Executing query
+    query: "insert into \"tb_session\" (\"id\", \"id_user\", \"expires_at\", \"ip\", \"user_agent\", \"created_at\", \"updated_at\") values (default, $1, $2, $3, $4, default, default) returning \"id\", \"id_user\", \"expires_at\", \"ip\", \"user_agent\", \"created_at\", \"updated_at\""
+    params: [
+      "5102dab4-06df-4922-b649-0ac494062d97",
+      "2025-11-28T04:46:32.213Z",
+      null,
+      null
+    ]
+[04:46:32.275] INFO (19635): Request completed
+    req: {
+      "url": "/api/auth/login",
+      "method": "POST",
+      "headers": {
+        "content-type": "application/json"
+      }
+    }
+    res: {
+      "status": 200,
+      "headers": {
+        "access-control-allow-credentials": "true",
+        "content-type": "application/json",
+        "set-cookie": [
+          "session_id=f5DiCmgHxOA9rfa6Yrb4rz889NzYtYfoorQfm14_Ci20o80QchUkCshGzl6PJ5FmJ0OR7kNuvmIvLNZzbiMT2g; Max-Age=604800; Path=/; Expires=Fri, 28 Nov 2025 04:46:32 GMT; HttpOnly; SameSite=None"
+        ],
+        "x-request-id": "e269d31d-231b-455b-93ca-6f1bf70eeeec"
+      }
+    }
+    reqId: 7
+    responseTime: 350
+[04:46:32.326] INFO (19635): Executing query
+    query: "insert into \"tb_patient\" (\"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\") values (default, $1, default, default, default, $2, $3, $4, $5, $6, $7, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default) returning \"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\""
+    params: [
+      "M-000001",
+      "1234567890123456",
+      "John Doe",
+      "MALE",
+      "1990-01-01T00:00:00.000Z",
+      "081234567890",
+      "patient@test.com"
+    ]
+[04:46:32.387] INFO (19635): Executing query
+    query: "insert into \"tb_patient\" (\"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\") values (default, $1, default, default, default, $2, $3, $4, $5, $6, $7, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default) returning \"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\""
+    params: [
+      "M-000001",
+      "1234567890123457",
+      "Jane Smith",
+      "MALE",
+      "1990-01-01T00:00:00.000Z",
+      "081234567890",
+      "patient@test.com"
+    ]
+36 |   async queryWithCache(queryString, params, query) {
+37 |     if (this.cache === void 0 || is(this.cache, NoopCache) || this.queryMetadata === void 0) {
+38 |       try {
+39 |         return await query();
+40 |       } catch (e) {
+41 |         throw new DrizzleQueryError(queryString, params, e);
+                   ^
+error: Failed query: insert into "tb_patient" ("id", "mrn", "ihs_number", "ihs_last_sync", "ihs_response_status", "nik", "name", "gender", "birth_date", "phone", "email", "address", "id_province", "province", "id_city", "city", "id_district", "district", "id_sub_district", "sub_district", "rt", "rw", "postal_code", "emergency_contact_name", "emergency_contact_phone", "created_at", "updated_at") values (default, $1, default, default, default, $2, $3, $4, $5, $6, $7, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default) returning "id", "mrn", "ihs_number", "ihs_last_sync", "ihs_response_status", "nik", "name", "gender", "birth_date", "phone", "email", "address", "id_province", "province", "id_city", "city", "id_district", "district", "id_sub_district", "sub_district", "rt", "rw", "postal_code", "emergency_contact_name", "emergency_contact_phone", "created_at", "updated_at"
+params: M-000001,1234567890123457,Jane Smith,MALE,1990-01-01T00:00:00.000Z,081234567890,patient@test.com
+  query: "insert into \"tb_patient\" (\"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\") values (default, $1, default, default, default, $2, $3, $4, $5, $6, $7, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default) returning \"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\"",
+ params: [
+  "M-000001", "1234567890123457", "Jane Smith", "MALE", "1990-01-01T00:00:00.000Z", "081234567890",
+  "patient@test.com"
+],
+
+      at queryWithCache (/Users/kidzeroll/Learning/ris-api/node_modules/drizzle-orm/pg-core/session.js:41:15)
+
+40 |     res = resolve
+41 |     rej = reject
+42 |   }).catch((err) => {
+43 |     // replace the stack trace that leads to `TCP.onStreamRead` with one that leads back to the
+44 |     // application that created the query
+45 |     Error.captureStackTrace(err)
+               ^
+error: duplicate key value violates unique constraint "tb_patient_mrn_unique"
+     length: 215,
+   severity: "ERROR",
+     detail: "Key (mrn)=(M-000001) already exists.",
+       hint: undefined,
+   position: undefined,
+ internalPosition: undefined,
+ internalQuery: undefined,
+      where: undefined,
+     schema: "public",
+      table: "tb_patient",
+   dataType: undefined,
+ constraint: "tb_patient_mrn_unique",
+       file: "nbtinsert.c",
+    routine: "_bt_check_unique",
+       code: "23505"
+
+      at <anonymous> (/Users/kidzeroll/Learning/ris-api/node_modules/pg-pool/index.js:45:11)
+(fail) GET /api/patients > should support search by name [122.81ms]
+[04:46:32.448] INFO (19635): Executing query
+    query: "delete from \"tb_patient\""
+    params: []
+[04:46:32.865] INFO (19635): Executing query
+    query: "delete from \"tb_user\" where \"tb_user\".\"email\" = $1"
+    params: [
+      "test@test.com"
+    ]
+[04:46:32.977] INFO (19635): Executing query
+    query: "delete from \"tb_patient\""
+    params: []
+[04:46:33.085] INFO (19635): Executing query
+    query: "insert into \"tb_user\" (\"id\", \"name\", \"email\", \"password\", \"avatar\", \"email_verified_at\", \"created_at\", \"updated_at\") values (default, $1, $2, $3, default, default, default, default)"
+    params: [
+      "Test User",
+      "test@test.com",
+      "$2b$10$ke/yjjd22jCJBPQX.HfNq.04SDLkVQvX2Bd9rl2AMK/EKmQltVob."
+    ]
+[04:46:33.143] INFO (19635): Executing query
+    query: "select \"id\", \"name\", \"email\", \"password\", \"avatar\", \"email_verified_at\", \"created_at\", \"updated_at\" from \"tb_user\" where \"tb_user\".\"email\" = $1 limit $2"
+    params: [
+      "test@test.com",
+      1
+    ]
+[04:46:33.249] INFO (19635): Executing query
+    query: "select \"tb_role\".\"name\" from \"tb_user_role\" inner join \"tb_role\" on \"tb_user_role\".\"id_role\" = \"tb_role\".\"id\" where \"tb_user_role\".\"id_user\" = $1"
+    params: [
+      "45dc5687-8922-4808-a5d7-0dbeb137c41f"
+    ]
+[04:46:33.311] INFO (19635): Executing query
+    query: "select \"id_role\" from \"tb_user_role\" where \"tb_user_role\".\"id_user\" = $1"
+    params: [
+      "45dc5687-8922-4808-a5d7-0dbeb137c41f"
+    ]
+[04:46:33.371] INFO (19635): Executing query
+    query: "select \"tb_permission\".\"name\" from \"tb_user_permission\" inner join \"tb_permission\" on \"tb_user_permission\".\"id_permission\" = \"tb_permission\".\"id\" where \"tb_user_permission\".\"id_user\" = $1"
+    params: [
+      "45dc5687-8922-4808-a5d7-0dbeb137c41f"
+    ]
+[04:46:33.431] INFO (19635): Executing query
+    query: "insert into \"tb_session\" (\"id\", \"id_user\", \"expires_at\", \"ip\", \"user_agent\", \"created_at\", \"updated_at\") values (default, $1, $2, $3, $4, default, default) returning \"id\", \"id_user\", \"expires_at\", \"ip\", \"user_agent\", \"created_at\", \"updated_at\""
+    params: [
+      "45dc5687-8922-4808-a5d7-0dbeb137c41f",
+      "2025-11-28T04:46:33.431Z",
+      null,
+      null
+    ]
+[04:46:33.491] INFO (19635): Request completed
+    req: {
+      "url": "/api/auth/login",
+      "method": "POST",
+      "headers": {
+        "content-type": "application/json"
+      }
+    }
+    res: {
+      "status": 200,
+      "headers": {
+        "access-control-allow-credentials": "true",
+        "content-type": "application/json",
+        "set-cookie": [
+          "session_id=PEf9Vln75tD0tDN2UmSx78ZFzWpucZQr9FgHJCyZtU-oWMlxN1jX7XtP6hXBfvqZvfP5fI-Bv7_muO2vSCbkEg; Max-Age=604800; Path=/; Expires=Fri, 28 Nov 2025 04:46:33 GMT; HttpOnly; SameSite=None"
+        ],
+        "x-request-id": "5848743a-702d-42e7-9da1-10dd1f255122"
+      }
+    }
+    reqId: 8
+    responseTime: 348
+[04:46:33.541] INFO (19635): Executing query
+    query: "insert into \"tb_patient\" (\"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\") values (default, $1, default, default, default, $2, $3, $4, $5, $6, $7, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default) returning \"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\""
+    params: [
+      "M-000001",
+      "1234567890123456",
+      "Zoe",
+      "MALE",
+      "1990-01-01T00:00:00.000Z",
+      "081234567890",
+      "patient@test.com"
+    ]
+[04:46:33.601] INFO (19635): Executing query
+    query: "insert into \"tb_patient\" (\"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\") values (default, $1, default, default, default, $2, $3, $4, $5, $6, $7, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default) returning \"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\""
+    params: [
+      "M-000001",
+      "1234567890123457",
+      "Alice",
+      "MALE",
+      "1990-01-01T00:00:00.000Z",
+      "081234567890",
+      "patient@test.com"
+    ]
+36 |   async queryWithCache(queryString, params, query) {
+37 |     if (this.cache === void 0 || is(this.cache, NoopCache) || this.queryMetadata === void 0) {
+38 |       try {
+39 |         return await query();
+40 |       } catch (e) {
+41 |         throw new DrizzleQueryError(queryString, params, e);
+                   ^
+error: Failed query: insert into "tb_patient" ("id", "mrn", "ihs_number", "ihs_last_sync", "ihs_response_status", "nik", "name", "gender", "birth_date", "phone", "email", "address", "id_province", "province", "id_city", "city", "id_district", "district", "id_sub_district", "sub_district", "rt", "rw", "postal_code", "emergency_contact_name", "emergency_contact_phone", "created_at", "updated_at") values (default, $1, default, default, default, $2, $3, $4, $5, $6, $7, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default) returning "id", "mrn", "ihs_number", "ihs_last_sync", "ihs_response_status", "nik", "name", "gender", "birth_date", "phone", "email", "address", "id_province", "province", "id_city", "city", "id_district", "district", "id_sub_district", "sub_district", "rt", "rw", "postal_code", "emergency_contact_name", "emergency_contact_phone", "created_at", "updated_at"
+params: M-000001,1234567890123457,Alice,MALE,1990-01-01T00:00:00.000Z,081234567890,patient@test.com
+  query: "insert into \"tb_patient\" (\"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\") values (default, $1, default, default, default, $2, $3, $4, $5, $6, $7, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default) returning \"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\"",
+ params: [
+  "M-000001", "1234567890123457", "Alice", "MALE", "1990-01-01T00:00:00.000Z", "081234567890",
+  "patient@test.com"
+],
+
+      at queryWithCache (/Users/kidzeroll/Learning/ris-api/node_modules/drizzle-orm/pg-core/session.js:41:15)
+
+40 |     res = resolve
+41 |     rej = reject
+42 |   }).catch((err) => {
+43 |     // replace the stack trace that leads to `TCP.onStreamRead` with one that leads back to the
+44 |     // application that created the query
+45 |     Error.captureStackTrace(err)
+               ^
+error: duplicate key value violates unique constraint "tb_patient_mrn_unique"
+     length: 215,
+   severity: "ERROR",
+     detail: "Key (mrn)=(M-000001) already exists.",
+       hint: undefined,
+   position: undefined,
+ internalPosition: undefined,
+ internalQuery: undefined,
+      where: undefined,
+     schema: "public",
+      table: "tb_patient",
+   dataType: undefined,
+ constraint: "tb_patient_mrn_unique",
+       file: "nbtinsert.c",
+    routine: "_bt_check_unique",
+       code: "23505"
+
+      at <anonymous> (/Users/kidzeroll/Learning/ris-api/node_modules/pg-pool/index.js:45:11)
+(fail) GET /api/patients > should support sorting by name ascending [121.44ms]
+[04:46:33.663] INFO (19635): Executing query
+    query: "delete from \"tb_patient\""
+    params: []
+[04:46:34.078] INFO (19635): Executing query
+    query: "delete from \"tb_user\" where \"tb_user\".\"email\" = $1"
+    params: [
+      "test@test.com"
+    ]
+[04:46:34.188] INFO (19635): Executing query
+    query: "delete from \"tb_patient\""
+    params: []
+[04:46:34.293] INFO (19635): Executing query
+    query: "insert into \"tb_user\" (\"id\", \"name\", \"email\", \"password\", \"avatar\", \"email_verified_at\", \"created_at\", \"updated_at\") values (default, $1, $2, $3, default, default, default, default)"
+    params: [
+      "Test User",
+      "test@test.com",
+      "$2b$10$dVkpOCWF8yvG3UtIw0huyeRdDigk.U5xc4kF7ebYu/RuQ/IiRIVim"
+    ]
+[04:46:34.355] INFO (19635): Executing query
+    query: "select \"id\", \"name\", \"email\", \"password\", \"avatar\", \"email_verified_at\", \"created_at\", \"updated_at\" from \"tb_user\" where \"tb_user\".\"email\" = $1 limit $2"
+    params: [
+      "test@test.com",
+      1
+    ]
+[04:46:34.461] INFO (19635): Executing query
+    query: "select \"tb_role\".\"name\" from \"tb_user_role\" inner join \"tb_role\" on \"tb_user_role\".\"id_role\" = \"tb_role\".\"id\" where \"tb_user_role\".\"id_user\" = $1"
+    params: [
+      "673df563-ec5d-4089-9e45-2d89bd04cf53"
+    ]
+[04:46:34.518] INFO (19635): Executing query
+    query: "select \"id_role\" from \"tb_user_role\" where \"tb_user_role\".\"id_user\" = $1"
+    params: [
+      "673df563-ec5d-4089-9e45-2d89bd04cf53"
+    ]
+[04:46:34.576] INFO (19635): Executing query
+    query: "select \"tb_permission\".\"name\" from \"tb_user_permission\" inner join \"tb_permission\" on \"tb_user_permission\".\"id_permission\" = \"tb_permission\".\"id\" where \"tb_user_permission\".\"id_user\" = $1"
+    params: [
+      "673df563-ec5d-4089-9e45-2d89bd04cf53"
+    ]
+[04:46:34.635] INFO (19635): Executing query
+    query: "insert into \"tb_session\" (\"id\", \"id_user\", \"expires_at\", \"ip\", \"user_agent\", \"created_at\", \"updated_at\") values (default, $1, $2, $3, $4, default, default) returning \"id\", \"id_user\", \"expires_at\", \"ip\", \"user_agent\", \"created_at\", \"updated_at\""
+    params: [
+      "673df563-ec5d-4089-9e45-2d89bd04cf53",
+      "2025-11-28T04:46:34.634Z",
+      null,
+      null
+    ]
+[04:46:34.695] INFO (19635): Request completed
+    req: {
+      "url": "/api/auth/login",
+      "method": "POST",
+      "headers": {
+        "content-type": "application/json"
+      }
+    }
+    res: {
+      "status": 200,
+      "headers": {
+        "access-control-allow-credentials": "true",
+        "content-type": "application/json",
+        "set-cookie": [
+          "session_id=A1NVIkieEJGHraLUhrgP0gD5OxqIZpTvWdnYmPMk5sLqu6qY81_PwXv-YfmzFXum9FonfK_p_AaHoPrbZUwUfQ; Max-Age=604800; Path=/; Expires=Fri, 28 Nov 2025 04:46:34 GMT; HttpOnly; SameSite=None"
+        ],
+        "x-request-id": "c3ea1c01-f32f-47bb-9672-7ab7653d2b06"
+      }
+    }
+    reqId: 9
+    responseTime: 340
+[04:46:34.745] INFO (19635): Executing query
+    query: "insert into \"tb_patient\" (\"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\") values (default, $1, default, default, default, $2, $3, $4, $5, $6, $7, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default) returning \"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\""
+    params: [
+      "M-000001",
+      "1234567890123456",
+      "Zoe",
+      "MALE",
+      "1990-01-01T00:00:00.000Z",
+      "081234567890",
+      "patient@test.com"
+    ]
+[04:46:34.805] INFO (19635): Executing query
+    query: "insert into \"tb_patient\" (\"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\") values (default, $1, default, default, default, $2, $3, $4, $5, $6, $7, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default) returning \"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\""
+    params: [
+      "M-000001",
+      "1234567890123457",
+      "Alice",
+      "MALE",
+      "1990-01-01T00:00:00.000Z",
+      "081234567890",
+      "patient@test.com"
+    ]
+36 |   async queryWithCache(queryString, params, query) {
+37 |     if (this.cache === void 0 || is(this.cache, NoopCache) || this.queryMetadata === void 0) {
+38 |       try {
+39 |         return await query();
+40 |       } catch (e) {
+41 |         throw new DrizzleQueryError(queryString, params, e);
+                   ^
+error: Failed query: insert into "tb_patient" ("id", "mrn", "ihs_number", "ihs_last_sync", "ihs_response_status", "nik", "name", "gender", "birth_date", "phone", "email", "address", "id_province", "province", "id_city", "city", "id_district", "district", "id_sub_district", "sub_district", "rt", "rw", "postal_code", "emergency_contact_name", "emergency_contact_phone", "created_at", "updated_at") values (default, $1, default, default, default, $2, $3, $4, $5, $6, $7, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default) returning "id", "mrn", "ihs_number", "ihs_last_sync", "ihs_response_status", "nik", "name", "gender", "birth_date", "phone", "email", "address", "id_province", "province", "id_city", "city", "id_district", "district", "id_sub_district", "sub_district", "rt", "rw", "postal_code", "emergency_contact_name", "emergency_contact_phone", "created_at", "updated_at"
+params: M-000001,1234567890123457,Alice,MALE,1990-01-01T00:00:00.000Z,081234567890,patient@test.com
+  query: "insert into \"tb_patient\" (\"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\") values (default, $1, default, default, default, $2, $3, $4, $5, $6, $7, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default) returning \"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\"",
+ params: [
+  "M-000001", "1234567890123457", "Alice", "MALE", "1990-01-01T00:00:00.000Z", "081234567890",
+  "patient@test.com"
+],
+
+      at queryWithCache (/Users/kidzeroll/Learning/ris-api/node_modules/drizzle-orm/pg-core/session.js:41:15)
+
+40 |     res = resolve
+41 |     rej = reject
+42 |   }).catch((err) => {
+43 |     // replace the stack trace that leads to `TCP.onStreamRead` with one that leads back to the
+44 |     // application that created the query
+45 |     Error.captureStackTrace(err)
+               ^
+error: duplicate key value violates unique constraint "tb_patient_mrn_unique"
+     length: 215,
+   severity: "ERROR",
+     detail: "Key (mrn)=(M-000001) already exists.",
+       hint: undefined,
+   position: undefined,
+ internalPosition: undefined,
+ internalQuery: undefined,
+      where: undefined,
+     schema: "public",
+      table: "tb_patient",
+   dataType: undefined,
+ constraint: "tb_patient_mrn_unique",
+       file: "nbtinsert.c",
+    routine: "_bt_check_unique",
+       code: "23505"
+
+      at <anonymous> (/Users/kidzeroll/Learning/ris-api/node_modules/pg-pool/index.js:45:11)
+(fail) GET /api/patients > should support sorting by name descending [121.56ms]
+[04:46:34.867] INFO (19635): Executing query
+    query: "delete from \"tb_patient\""
+    params: []
+[04:46:35.291] INFO (19635): Executing query
+    query: "delete from \"tb_user\" where \"tb_user\".\"email\" = $1"
+    params: [
+      "test@test.com"
+    ]
+[04:46:35.405] INFO (19635): Executing query
+    query: "delete from \"tb_patient\""
+    params: []
+[04:46:35.513] INFO (19635): Executing query
+    query: "insert into \"tb_user\" (\"id\", \"name\", \"email\", \"password\", \"avatar\", \"email_verified_at\", \"created_at\", \"updated_at\") values (default, $1, $2, $3, default, default, default, default)"
+    params: [
+      "Test User",
+      "test@test.com",
+      "$2b$10$RSiputFQkWqliIJ7HAaqeeL5aVSq0.9JNKbilFr.gjaa7HNG2DqBq"
+    ]
+[04:46:35.575] INFO (19635): Executing query
+    query: "select \"id\", \"name\", \"email\", \"password\", \"avatar\", \"email_verified_at\", \"created_at\", \"updated_at\" from \"tb_user\" where \"tb_user\".\"email\" = $1 limit $2"
+    params: [
+      "test@test.com",
+      1
+    ]
+[04:46:35.685] INFO (19635): Executing query
+    query: "select \"tb_role\".\"name\" from \"tb_user_role\" inner join \"tb_role\" on \"tb_user_role\".\"id_role\" = \"tb_role\".\"id\" where \"tb_user_role\".\"id_user\" = $1"
+    params: [
+      "6e185533-d1fe-4661-97c6-85367b2d648b"
+    ]
+[04:46:35.747] INFO (19635): Executing query
+    query: "select \"id_role\" from \"tb_user_role\" where \"tb_user_role\".\"id_user\" = $1"
+    params: [
+      "6e185533-d1fe-4661-97c6-85367b2d648b"
+    ]
+[04:46:35.806] INFO (19635): Executing query
+    query: "select \"tb_permission\".\"name\" from \"tb_user_permission\" inner join \"tb_permission\" on \"tb_user_permission\".\"id_permission\" = \"tb_permission\".\"id\" where \"tb_user_permission\".\"id_user\" = $1"
+    params: [
+      "6e185533-d1fe-4661-97c6-85367b2d648b"
+    ]
+[04:46:35.867] INFO (19635): Executing query
+    query: "insert into \"tb_session\" (\"id\", \"id_user\", \"expires_at\", \"ip\", \"user_agent\", \"created_at\", \"updated_at\") values (default, $1, $2, $3, $4, default, default) returning \"id\", \"id_user\", \"expires_at\", \"ip\", \"user_agent\", \"created_at\", \"updated_at\""
+    params: [
+      "6e185533-d1fe-4661-97c6-85367b2d648b",
+      "2025-11-28T04:46:35.867Z",
+      null,
+      null
+    ]
+[04:46:35.927] INFO (19635): Request completed
+    req: {
+      "url": "/api/auth/login",
+      "method": "POST",
+      "headers": {
+        "content-type": "application/json"
+      }
+    }
+    res: {
+      "status": 200,
+      "headers": {
+        "access-control-allow-credentials": "true",
+        "content-type": "application/json",
+        "set-cookie": [
+          "session_id=HTmfJJ70LNKIER_MNioskzKx3OMMO-7VeSKqgIoSUCwkKEugiggj4J1hyK9cJZoFplVpWKPpgzyCk5vYSuXlCg; Max-Age=604800; Path=/; Expires=Fri, 28 Nov 2025 04:46:35 GMT; HttpOnly; SameSite=None"
+        ],
+        "x-request-id": "4b861bf3-b1dd-43cd-ac20-3e6833cf884c"
+      }
+    }
+    reqId: 10
+    responseTime: 352
+[04:46:35.927] INFO (19635): Executing query
+    query: "insert into \"tb_patient\" (\"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\") values (default, $1, default, default, default, $2, $3, $4, $5, $6, $7, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default) returning \"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\""
+    params: [
+      "M-000001",
+      "1234567890123456",
+      "Test Patient",
+      "MALE",
+      "1990-01-01T00:00:00.000Z",
+      "081234567890",
+      "patient@test.com"
+    ]
+[04:46:36.039] INFO (19635): Request completed
+    req: {
+      "url": "/api/patients/17a2f144-0815-421c-87d4-bfa7949bf6ad",
+      "method": "GET",
+      "headers": {}
+    }
+    res: {
+      "status": 401,
+      "headers": {
+        "access-control-allow-credentials": "true",
+        "content-type": "application/json",
+        "x-request-id": "c7ede1d9-f4a3-4620-96a5-bead29e2116e"
+      }
+    }
+    reqId: 11
+    responseTime: 0
+(pass) GET /api/patients/:id > should not be able to get patient without authentication [0.45ms]
+[04:46:36.039] DEBUG (19635):
+    message: "Not authenticated"
+[04:46:36.040] INFO (19635): Executing query
+    query: "delete from \"tb_patient\""
+    params: []
+[04:46:36.103] INFO (19635): Executing query
+    query: "delete from \"tb_user\" where \"tb_user\".\"email\" = $1"
+    params: [
+      "test@test.com"
+    ]
+[04:46:36.217] INFO (19635): Executing query
+    query: "delete from \"tb_patient\""
+    params: []
+[04:46:36.325] INFO (19635): Executing query
+    query: "insert into \"tb_user\" (\"id\", \"name\", \"email\", \"password\", \"avatar\", \"email_verified_at\", \"created_at\", \"updated_at\") values (default, $1, $2, $3, default, default, default, default)"
+    params: [
+      "Test User",
+      "test@test.com",
+      "$2b$10$mXPCmcK8TyVWvHxkPqOBaerq5zg6GKnwuwP1XG0.dl8x8XV3lMf5m"
+    ]
+[04:46:36.387] INFO (19635): Executing query
+    query: "select \"id\", \"name\", \"email\", \"password\", \"avatar\", \"email_verified_at\", \"created_at\", \"updated_at\" from \"tb_user\" where \"tb_user\".\"email\" = $1 limit $2"
+    params: [
+      "test@test.com",
+      1
+    ]
+[04:46:36.493] INFO (19635): Executing query
+    query: "select \"tb_role\".\"name\" from \"tb_user_role\" inner join \"tb_role\" on \"tb_user_role\".\"id_role\" = \"tb_role\".\"id\" where \"tb_user_role\".\"id_user\" = $1"
+    params: [
+      "d245db9f-5432-46c5-89e7-41d9e7b44aa6"
+    ]
+[04:46:36.554] INFO (19635): Executing query
+    query: "select \"id_role\" from \"tb_user_role\" where \"tb_user_role\".\"id_user\" = $1"
+    params: [
+      "d245db9f-5432-46c5-89e7-41d9e7b44aa6"
+    ]
+[04:46:36.615] INFO (19635): Executing query
+    query: "select \"tb_permission\".\"name\" from \"tb_user_permission\" inner join \"tb_permission\" on \"tb_user_permission\".\"id_permission\" = \"tb_permission\".\"id\" where \"tb_user_permission\".\"id_user\" = $1"
+    params: [
+      "d245db9f-5432-46c5-89e7-41d9e7b44aa6"
+    ]
+[04:46:36.674] INFO (19635): Executing query
+    query: "insert into \"tb_session\" (\"id\", \"id_user\", \"expires_at\", \"ip\", \"user_agent\", \"created_at\", \"updated_at\") values (default, $1, $2, $3, $4, default, default) returning \"id\", \"id_user\", \"expires_at\", \"ip\", \"user_agent\", \"created_at\", \"updated_at\""
+    params: [
+      "d245db9f-5432-46c5-89e7-41d9e7b44aa6",
+      "2025-11-28T04:46:36.674Z",
+      null,
+      null
+    ]
+[04:46:36.735] INFO (19635): Request completed
+    req: {
+      "url": "/api/auth/login",
+      "method": "POST",
+      "headers": {
+        "content-type": "application/json"
+      }
+    }
+    res: {
+      "status": 200,
+      "headers": {
+        "access-control-allow-credentials": "true",
+        "content-type": "application/json",
+        "set-cookie": [
+          "session_id=KYAFCCWs2j7pzRQe-E-NbUU_LLRYkWXPORm1RHe3w8U5Ccm10akZIxglRVocWN9yX61kSbkj4uuaNFFMfFUzzQ; Max-Age=604800; Path=/; Expires=Fri, 28 Nov 2025 04:46:36 GMT; HttpOnly; SameSite=None"
+        ],
+        "x-request-id": "eea26849-5527-43ce-9088-5b6453779aa2"
+      }
+    }
+    reqId: 12
+    responseTime: 348
+[04:46:36.735] INFO (19635): Executing query
+    query: "insert into \"tb_patient\" (\"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\") values (default, $1, default, default, default, $2, $3, $4, $5, $6, $7, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default) returning \"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\""
+    params: [
+      "M-000001",
+      "1234567890123456",
+      "Test Patient",
+      "MALE",
+      "1990-01-01T00:00:00.000Z",
+      "081234567890",
+      "patient@test.com"
+    ]
+[04:46:36.848] INFO (19635): Executing query
+    query: "select \"id\", \"id_user\", \"expires_at\", \"ip\", \"user_agent\", \"created_at\", \"updated_at\" from \"tb_session\" where \"tb_session\".\"id\" = $1 limit $2"
+    params: [
+      "e98aab44-d998-4e6a-a65e-1b71ea5f24a7",
+      1
+    ]
+[04:46:36.911] INFO (19635): Executing query
+    query: "select \"id\", \"name\", \"email\", \"password\", \"avatar\", \"email_verified_at\", \"created_at\", \"updated_at\" from \"tb_user\" where \"tb_user\".\"id\" = $1 limit $2"
+    params: [
+      "d245db9f-5432-46c5-89e7-41d9e7b44aa6",
+      1
+    ]
+[04:46:36.971] INFO (19635): Executing query
+    query: "select \"tb_role\".\"name\" from \"tb_user_role\" inner join \"tb_role\" on \"tb_user_role\".\"id_role\" = \"tb_role\".\"id\" where \"tb_user_role\".\"id_user\" = $1"
+    params: [
+      "d245db9f-5432-46c5-89e7-41d9e7b44aa6"
+    ]
+[04:46:37.031] INFO (19635): Executing query
+    query: "select \"id_role\" from \"tb_user_role\" where \"tb_user_role\".\"id_user\" = $1"
+    params: [
+      "d245db9f-5432-46c5-89e7-41d9e7b44aa6"
+    ]
+[04:46:37.092] INFO (19635): Executing query
+    query: "select \"tb_permission\".\"name\" from \"tb_user_permission\" inner join \"tb_permission\" on \"tb_user_permission\".\"id_permission\" = \"tb_permission\".\"id\" where \"tb_user_permission\".\"id_user\" = $1"
+    params: [
+      "d245db9f-5432-46c5-89e7-41d9e7b44aa6"
+    ]
+[04:46:37.152] INFO (19635): Executing query
+    query: "select \"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\" from \"tb_patient\" where \"tb_patient\".\"id\" = $1 limit $2"
+    params: [
+      "ce5f5a22-1cf0-4930-90c7-a58d07a0437a",
+      1
+    ]
+[04:46:37.212] INFO (19635): Request completed
+    req: {
+      "url": "/api/patients/ce5f5a22-1cf0-4930-90c7-a58d07a0437a",
+      "method": "GET",
+      "headers": {
+        "cookie": "session_id=KYAFCCWs2j7pzRQe-E-NbUU_LLRYkWXPORm1RHe3w8U5Ccm10akZIxglRVocWN9yX61kSbkj4uuaNFFMfFUzzQ; Max-Age=604800; Path=/; Expires=Fri, 28 Nov 2025 04:46:36 GMT; HttpOnly; SameSite=None"
+      }
+    }
+    res: {
+      "status": 200,
+      "headers": {
+        "access-control-allow-credentials": "true",
+        "content-type": "application/json",
+        "x-request-id": "4907b742-0ba9-40ee-a60d-fdb018cf74ea"
+      }
+    }
+    reqId: 13
+    responseTime: 364
+(pass) GET /api/patients/:id > should be able to get patient with valid id [364.75ms]
+[04:46:37.212] DEBUG (Test Patient/19635):
+    id: "ce5f5a22-1cf0-4930-90c7-a58d07a0437a"
+    mrn: "M-000001"
+    ihs_number: null
+    ihs_last_sync: null
+    ihs_response_status: null
+    nik: "1234567890123456"
+    gender: "MALE"
+    birth_date: "1990-01-01T00:00:00.000Z"
+    phone: "081234567890"
+    email: "patient@test.com"
+    address: null
+    id_province: null
+    province: null
+    id_city: null
+    city: null
+    id_district: null
+    district: null
+    id_sub_district: null
+    sub_district: null
+    rt: null
+    rw: null
+    postal_code: null
+    emergency_contact_name: null
+    emergency_contact_phone: null
+    created_at: "2025-11-21T04:46:37.039Z"
+    updated_at: null
+[04:46:37.213] INFO (19635): Executing query
+    query: "delete from \"tb_patient\""
+    params: []
+[04:46:37.275] INFO (19635): Executing query
+    query: "delete from \"tb_user\" where \"tb_user\".\"email\" = $1"
+    params: [
+      "test@test.com"
+    ]
+[04:46:37.388] INFO (19635): Executing query
+    query: "delete from \"tb_patient\""
+    params: []
+[04:46:37.493] INFO (19635): Executing query
+    query: "insert into \"tb_user\" (\"id\", \"name\", \"email\", \"password\", \"avatar\", \"email_verified_at\", \"created_at\", \"updated_at\") values (default, $1, $2, $3, default, default, default, default)"
+    params: [
+      "Test User",
+      "test@test.com",
+      "$2b$10$A6Ssn5yv4y0loOvqhHcBz.65MgIUK5/fTuzWHUbxrssxdl0dLpHz."
+    ]
+[04:46:37.555] INFO (19635): Executing query
+    query: "select \"id\", \"name\", \"email\", \"password\", \"avatar\", \"email_verified_at\", \"created_at\", \"updated_at\" from \"tb_user\" where \"tb_user\".\"email\" = $1 limit $2"
+    params: [
+      "test@test.com",
+      1
+    ]
+[04:46:37.661] INFO (19635): Executing query
+    query: "select \"tb_role\".\"name\" from \"tb_user_role\" inner join \"tb_role\" on \"tb_user_role\".\"id_role\" = \"tb_role\".\"id\" where \"tb_user_role\".\"id_user\" = $1"
+    params: [
+      "21e1663d-39aa-4857-b53d-8f647a676210"
+    ]
+[04:46:37.723] INFO (19635): Executing query
+    query: "select \"id_role\" from \"tb_user_role\" where \"tb_user_role\".\"id_user\" = $1"
+    params: [
+      "21e1663d-39aa-4857-b53d-8f647a676210"
+    ]
+[04:46:37.783] INFO (19635): Executing query
+    query: "select \"tb_permission\".\"name\" from \"tb_user_permission\" inner join \"tb_permission\" on \"tb_user_permission\".\"id_permission\" = \"tb_permission\".\"id\" where \"tb_user_permission\".\"id_user\" = $1"
+    params: [
+      "21e1663d-39aa-4857-b53d-8f647a676210"
+    ]
+[04:46:37.842] INFO (19635): Executing query
+    query: "insert into \"tb_session\" (\"id\", \"id_user\", \"expires_at\", \"ip\", \"user_agent\", \"created_at\", \"updated_at\") values (default, $1, $2, $3, $4, default, default) returning \"id\", \"id_user\", \"expires_at\", \"ip\", \"user_agent\", \"created_at\", \"updated_at\""
+    params: [
+      "21e1663d-39aa-4857-b53d-8f647a676210",
+      "2025-11-28T04:46:37.842Z",
+      null,
+      null
+    ]
+[04:46:37.902] INFO (19635): Request completed
+    req: {
+      "url": "/api/auth/login",
+      "method": "POST",
+      "headers": {
+        "content-type": "application/json"
+      }
+    }
+    res: {
+      "status": 200,
+      "headers": {
+        "access-control-allow-credentials": "true",
+        "content-type": "application/json",
+        "set-cookie": [
+          "session_id=skB5uWCHRd8hKxBeBSel1qNN4xyqfDefdG4d1jVwoFkppAy96edbWAGKIw9zIjfzH0-gndS-zPY8ynhz3THEDA; Max-Age=604800; Path=/; Expires=Fri, 28 Nov 2025 04:46:37 GMT; HttpOnly; SameSite=None"
+        ],
+        "x-request-id": "f2138a48-36a0-4afe-adca-5d5759445872"
+      }
+    }
+    reqId: 14
+    responseTime: 347
+[04:46:37.902] INFO (19635): Executing query
+    query: "insert into \"tb_patient\" (\"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\") values (default, $1, default, default, default, $2, $3, $4, $5, $6, $7, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default) returning \"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\""
+    params: [
+      "M-000001",
+      "1234567890123456",
+      "Test Patient",
+      "MALE",
+      "1990-01-01T00:00:00.000Z",
+      "081234567890",
+      "patient@test.com"
+    ]
+[04:46:38.014] INFO (19635): Executing query
+    query: "select \"id\", \"id_user\", \"expires_at\", \"ip\", \"user_agent\", \"created_at\", \"updated_at\" from \"tb_session\" where \"tb_session\".\"id\" = $1 limit $2"
+    params: [
+      "208cdfa4-615b-40e2-8f11-1defd84625af",
+      1
+    ]
+[04:46:38.075] INFO (19635): Executing query
+    query: "select \"id\", \"name\", \"email\", \"password\", \"avatar\", \"email_verified_at\", \"created_at\", \"updated_at\" from \"tb_user\" where \"tb_user\".\"id\" = $1 limit $2"
+    params: [
+      "21e1663d-39aa-4857-b53d-8f647a676210",
+      1
+    ]
+[04:46:38.134] INFO (19635): Executing query
+    query: "select \"tb_role\".\"name\" from \"tb_user_role\" inner join \"tb_role\" on \"tb_user_role\".\"id_role\" = \"tb_role\".\"id\" where \"tb_user_role\".\"id_user\" = $1"
+    params: [
+      "21e1663d-39aa-4857-b53d-8f647a676210"
+    ]
+[04:46:38.194] INFO (19635): Executing query
+    query: "select \"id_role\" from \"tb_user_role\" where \"tb_user_role\".\"id_user\" = $1"
+    params: [
+      "21e1663d-39aa-4857-b53d-8f647a676210"
+    ]
+[04:46:38.255] INFO (19635): Executing query
+    query: "select \"tb_permission\".\"name\" from \"tb_user_permission\" inner join \"tb_permission\" on \"tb_user_permission\".\"id_permission\" = \"tb_permission\".\"id\" where \"tb_user_permission\".\"id_user\" = $1"
+    params: [
+      "21e1663d-39aa-4857-b53d-8f647a676210"
+    ]
+[04:46:38.315] INFO (19635): Executing query
+    query: "select \"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\" from \"tb_patient\" where \"tb_patient\".\"id\" = $1 limit $2"
+    params: [
+      "00000000-0000-0000-0000-000000000000",
+      1
+    ]
+[04:46:38.375] INFO (19635): Request completed
+    req: {
+      "url": "/api/patients/00000000-0000-0000-0000-000000000000",
+      "method": "GET",
+      "headers": {
+        "cookie": "session_id=skB5uWCHRd8hKxBeBSel1qNN4xyqfDefdG4d1jVwoFkppAy96edbWAGKIw9zIjfzH0-gndS-zPY8ynhz3THEDA; Max-Age=604800; Path=/; Expires=Fri, 28 Nov 2025 04:46:37 GMT; HttpOnly; SameSite=None"
+      }
+    }
+    res: {
+      "status": 404,
+      "headers": {
+        "access-control-allow-credentials": "true",
+        "content-type": "application/json",
+        "x-request-id": "598cd039-a21f-4d99-9426-b1b1156eadb8"
+      }
+    }
+    reqId: 15
+    responseTime: 361
+(pass) GET /api/patients/:id > should return 404 for non-existent patient [361.59ms]
+[04:46:38.375] DEBUG (19635):
+    message: "Patient not found"
+[04:46:38.375] INFO (19635): Executing query
+    query: "delete from \"tb_patient\""
+    params: []
+[04:46:38.439] INFO (19635): Executing query
+    query: "delete from \"tb_user\" where \"tb_user\".\"email\" = $1"
+    params: [
+      "test@test.com"
+    ]
+[04:46:38.549] INFO (19635): Executing query
+    query: "delete from \"tb_patient\""
+    params: []
+[04:46:38.657] INFO (19635): Executing query
+    query: "insert into \"tb_user\" (\"id\", \"name\", \"email\", \"password\", \"avatar\", \"email_verified_at\", \"created_at\", \"updated_at\") values (default, $1, $2, $3, default, default, default, default)"
+    params: [
+      "Test User",
+      "test@test.com",
+      "$2b$10$lAZ03DgD4vu.wtau60MEt.rvSAMCa35XFbPvwJLmefICiVJ4T/W26"
+    ]
+[04:46:38.719] INFO (19635): Executing query
+    query: "select \"id\", \"name\", \"email\", \"password\", \"avatar\", \"email_verified_at\", \"created_at\", \"updated_at\" from \"tb_user\" where \"tb_user\".\"email\" = $1 limit $2"
+    params: [
+      "test@test.com",
+      1
+    ]
+[04:46:38.825] INFO (19635): Executing query
+    query: "select \"tb_role\".\"name\" from \"tb_user_role\" inner join \"tb_role\" on \"tb_user_role\".\"id_role\" = \"tb_role\".\"id\" where \"tb_user_role\".\"id_user\" = $1"
+    params: [
+      "d44c3b55-f717-48c7-b8bd-c4f27fbc522f"
+    ]
+[04:46:38.885] INFO (19635): Executing query
+    query: "select \"id_role\" from \"tb_user_role\" where \"tb_user_role\".\"id_user\" = $1"
+    params: [
+      "d44c3b55-f717-48c7-b8bd-c4f27fbc522f"
+    ]
+[04:46:38.947] INFO (19635): Executing query
+    query: "select \"tb_permission\".\"name\" from \"tb_user_permission\" inner join \"tb_permission\" on \"tb_user_permission\".\"id_permission\" = \"tb_permission\".\"id\" where \"tb_user_permission\".\"id_user\" = $1"
+    params: [
+      "d44c3b55-f717-48c7-b8bd-c4f27fbc522f"
+    ]
+[04:46:39.007] INFO (19635): Executing query
+    query: "insert into \"tb_session\" (\"id\", \"id_user\", \"expires_at\", \"ip\", \"user_agent\", \"created_at\", \"updated_at\") values (default, $1, $2, $3, $4, default, default) returning \"id\", \"id_user\", \"expires_at\", \"ip\", \"user_agent\", \"created_at\", \"updated_at\""
+    params: [
+      "d44c3b55-f717-48c7-b8bd-c4f27fbc522f",
+      "2025-11-28T04:46:39.007Z",
+      null,
+      null
+    ]
+[04:46:39.071] INFO (19635): Request completed
+    req: {
+      "url": "/api/auth/login",
+      "method": "POST",
+      "headers": {
+        "content-type": "application/json"
+      }
+    }
+    res: {
+      "status": 200,
+      "headers": {
+        "access-control-allow-credentials": "true",
+        "content-type": "application/json",
+        "set-cookie": [
+          "session_id=sMPAFpebuR5LoA0q1Y0vhZ3sDLjBcgX9eoPgZ4_-8PxYV-jS_rgDjDUo3ax0MU2LmTdmmxv4G1fGcIS6yV6O7g; Max-Age=604800; Path=/; Expires=Fri, 28 Nov 2025 04:46:39 GMT; HttpOnly; SameSite=None"
+        ],
+        "x-request-id": "6d00b11c-81f7-458d-9163-d6bb6c136f00"
+      }
+    }
+    reqId: 16
+    responseTime: 352
+[04:46:39.121] INFO (19635): Request completed
+    req: {
+      "url": "/api/patients",
+      "method": "POST",
+      "headers": {
+        "content-type": "application/json"
+      }
+    }
+    res: {
+      "status": 401,
+      "headers": {
+        "access-control-allow-credentials": "true",
+        "content-type": "application/json",
+        "x-request-id": "51b4c071-96a7-4a41-a3a3-58b72985703b"
+      }
+    }
+    reqId: 17
+    responseTime: 0
+(pass) POST /api/patients > should not be able to create patient without authentication [0.45ms]
+[04:46:39.121] DEBUG (19635):
+    message: "Not authenticated"
+[04:46:39.121] INFO (19635): Executing query
+    query: "delete from \"tb_patient\""
+    params: []
+[04:46:39.180] INFO (19635): Executing query
+    query: "delete from \"tb_user\" where \"tb_user\".\"email\" = $1"
+    params: [
+      "test@test.com"
+    ]
+[04:46:39.290] INFO (19635): Executing query
+    query: "delete from \"tb_patient\""
+    params: []
+[04:46:39.397] INFO (19635): Executing query
+    query: "insert into \"tb_user\" (\"id\", \"name\", \"email\", \"password\", \"avatar\", \"email_verified_at\", \"created_at\", \"updated_at\") values (default, $1, $2, $3, default, default, default, default)"
+    params: [
+      "Test User",
+      "test@test.com",
+      "$2b$10$Mm1znQG2KWVErsYf47XEu.CsEqc.wfDbQah5zF3DXSM7fDY9eWk1W"
+    ]
+[04:46:39.459] INFO (19635): Executing query
+    query: "select \"id\", \"name\", \"email\", \"password\", \"avatar\", \"email_verified_at\", \"created_at\", \"updated_at\" from \"tb_user\" where \"tb_user\".\"email\" = $1 limit $2"
+    params: [
+      "test@test.com",
+      1
+    ]
+[04:46:39.566] INFO (19635): Executing query
+    query: "select \"tb_role\".\"name\" from \"tb_user_role\" inner join \"tb_role\" on \"tb_user_role\".\"id_role\" = \"tb_role\".\"id\" where \"tb_user_role\".\"id_user\" = $1"
+    params: [
+      "23d39f67-600f-454f-8d2d-28caefb11158"
+    ]
+[04:46:39.627] INFO (19635): Executing query
+    query: "select \"id_role\" from \"tb_user_role\" where \"tb_user_role\".\"id_user\" = $1"
+    params: [
+      "23d39f67-600f-454f-8d2d-28caefb11158"
+    ]
+[04:46:39.686] INFO (19635): Executing query
+    query: "select \"tb_permission\".\"name\" from \"tb_user_permission\" inner join \"tb_permission\" on \"tb_user_permission\".\"id_permission\" = \"tb_permission\".\"id\" where \"tb_user_permission\".\"id_user\" = $1"
+    params: [
+      "23d39f67-600f-454f-8d2d-28caefb11158"
+    ]
+[04:46:39.748] INFO (19635): Executing query
+    query: "insert into \"tb_session\" (\"id\", \"id_user\", \"expires_at\", \"ip\", \"user_agent\", \"created_at\", \"updated_at\") values (default, $1, $2, $3, $4, default, default) returning \"id\", \"id_user\", \"expires_at\", \"ip\", \"user_agent\", \"created_at\", \"updated_at\""
+    params: [
+      "23d39f67-600f-454f-8d2d-28caefb11158",
+      "2025-11-28T04:46:39.748Z",
+      null,
+      null
+    ]
+[04:46:39.811] INFO (19635): Request completed
+    req: {
+      "url": "/api/auth/login",
+      "method": "POST",
+      "headers": {
+        "content-type": "application/json"
+      }
+    }
+    res: {
+      "status": 200,
+      "headers": {
+        "access-control-allow-credentials": "true",
+        "content-type": "application/json",
+        "set-cookie": [
+          "session_id=PzXOSt_5Ya2WkeKampEGCf3MyNNiSZLIFsGqwCAAT79TCIi5rgTBhwJY0C7QaZO_MC_q3_nY0pFCaeHBfWZxSg; Max-Age=604800; Path=/; Expires=Fri, 28 Nov 2025 04:46:39 GMT; HttpOnly; SameSite=None"
+        ],
+        "x-request-id": "c069a9c1-ff4e-4eb7-8739-b6e05bb0441b"
+      }
+    }
+    reqId: 18
+    responseTime: 352
+[04:46:39.863] INFO (19635): Executing query
+    query: "select \"id\", \"id_user\", \"expires_at\", \"ip\", \"user_agent\", \"created_at\", \"updated_at\" from \"tb_session\" where \"tb_session\".\"id\" = $1 limit $2"
+    params: [
+      "2acbb760-0abb-4729-9d01-5d180531d8b6",
+      1
+    ]
+[04:46:39.923] INFO (19635): Executing query
+    query: "select \"id\", \"name\", \"email\", \"password\", \"avatar\", \"email_verified_at\", \"created_at\", \"updated_at\" from \"tb_user\" where \"tb_user\".\"id\" = $1 limit $2"
+    params: [
+      "23d39f67-600f-454f-8d2d-28caefb11158",
+      1
+    ]
+[04:46:39.983] INFO (19635): Executing query
+    query: "select \"tb_role\".\"name\" from \"tb_user_role\" inner join \"tb_role\" on \"tb_user_role\".\"id_role\" = \"tb_role\".\"id\" where \"tb_user_role\".\"id_user\" = $1"
+    params: [
+      "23d39f67-600f-454f-8d2d-28caefb11158"
+    ]
+[04:46:40.042] INFO (19635): Executing query
+    query: "select \"id_role\" from \"tb_user_role\" where \"tb_user_role\".\"id_user\" = $1"
+    params: [
+      "23d39f67-600f-454f-8d2d-28caefb11158"
+    ]
+[04:46:40.103] INFO (19635): Executing query
+    query: "select \"tb_permission\".\"name\" from \"tb_user_permission\" inner join \"tb_permission\" on \"tb_user_permission\".\"id_permission\" = \"tb_permission\".\"id\" where \"tb_user_permission\".\"id_user\" = $1"
+    params: [
+      "23d39f67-600f-454f-8d2d-28caefb11158"
+    ]
+[04:46:40.163] INFO (19635): Executing query
+    query: "select \"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\" from \"tb_patient\" where \"tb_patient\".\"mrn\" ilike $1 order by \"tb_patient\".\"mrn\" desc limit $2"
+    params: [
+      "M-%",
+      1
+    ]
+[04:46:40.223] INFO (19635): Executing query
+    query: "insert into \"tb_patient\" (\"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\") values (default, $1, default, default, default, $2, $3, $4, $5, $6, $7, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default) returning \"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\""
+    params: [
+      "M-000001",
+      "1234567890123456",
+      "New Patient",
+      "MALE",
+      "1990-01-01T00:00:00.000Z",
+      "081234567890",
+      "newpatient@test.com"
+    ]
+[04:46:40.283] INFO (19635): Request completed
+    req: {
+      "url": "/api/patients",
+      "method": "POST",
+      "headers": {
+        "content-type": "application/json",
+        "cookie": "session_id=PzXOSt_5Ya2WkeKampEGCf3MyNNiSZLIFsGqwCAAT79TCIi5rgTBhwJY0C7QaZO_MC_q3_nY0pFCaeHBfWZxSg; Max-Age=604800; Path=/; Expires=Fri, 28 Nov 2025 04:46:39 GMT; HttpOnly; SameSite=None"
+      }
+    }
+    res: {
+      "status": 201,
+      "headers": {
+        "access-control-allow-credentials": "true",
+        "content-type": "application/json",
+        "x-request-id": "509131f3-0afc-482c-9fc9-3dcafa0e57cd"
+      }
+    }
+    reqId: 19
+    responseTime: 420
+(pass) POST /api/patients > should be able to create patient with valid data [420.60ms]
+[04:46:40.283] DEBUG (New Patient/19635):
+    id: "49cc82f7-3282-4d42-9387-3ca11707b29e"
+    mrn: "M-000001"
+    ihs_number: null
+    ihs_last_sync: null
+    ihs_response_status: null
+    nik: "1234567890123456"
+    gender: "MALE"
+    birth_date: "1990-01-01T00:00:00.000Z"
+    phone: "081234567890"
+    email: "newpatient@test.com"
+    address: null
+    id_province: null
+    province: null
+    id_city: null
+    city: null
+    id_district: null
+    district: null
+    id_sub_district: null
+    sub_district: null
+    rt: null
+    rw: null
+    postal_code: null
+    emergency_contact_name: null
+    emergency_contact_phone: null
+    created_at: "2025-11-21T04:46:40.526Z"
+    updated_at: null
+[04:46:40.283] INFO (19635): Executing query
+    query: "delete from \"tb_patient\""
+    params: []
+[04:46:40.344] INFO (19635): Executing query
+    query: "delete from \"tb_user\" where \"tb_user\".\"email\" = $1"
+    params: [
+      "test@test.com"
+    ]
+[04:46:40.454] INFO (19635): Executing query
+    query: "delete from \"tb_patient\""
+    params: []
+[04:46:40.560] INFO (19635): Executing query
+    query: "insert into \"tb_user\" (\"id\", \"name\", \"email\", \"password\", \"avatar\", \"email_verified_at\", \"created_at\", \"updated_at\") values (default, $1, $2, $3, default, default, default, default)"
+    params: [
+      "Test User",
+      "test@test.com",
+      "$2b$10$gH9k9uLHQE0K1aCB44y8k.bDD8p6GV.e9zz8/nOM7G5ZYNTpFAEyy"
+    ]
+[04:46:40.620] INFO (19635): Executing query
+    query: "select \"id\", \"name\", \"email\", \"password\", \"avatar\", \"email_verified_at\", \"created_at\", \"updated_at\" from \"tb_user\" where \"tb_user\".\"email\" = $1 limit $2"
+    params: [
+      "test@test.com",
+      1
+    ]
+[04:46:40.727] INFO (19635): Executing query
+    query: "select \"tb_role\".\"name\" from \"tb_user_role\" inner join \"tb_role\" on \"tb_user_role\".\"id_role\" = \"tb_role\".\"id\" where \"tb_user_role\".\"id_user\" = $1"
+    params: [
+      "09d116d7-dba6-4cff-8573-5acc027005e6"
+    ]
+[04:46:40.787] INFO (19635): Executing query
+    query: "select \"id_role\" from \"tb_user_role\" where \"tb_user_role\".\"id_user\" = $1"
+    params: [
+      "09d116d7-dba6-4cff-8573-5acc027005e6"
+    ]
+[04:46:40.846] INFO (19635): Executing query
+    query: "select \"tb_permission\".\"name\" from \"tb_user_permission\" inner join \"tb_permission\" on \"tb_user_permission\".\"id_permission\" = \"tb_permission\".\"id\" where \"tb_user_permission\".\"id_user\" = $1"
+    params: [
+      "09d116d7-dba6-4cff-8573-5acc027005e6"
+    ]
+[04:46:40.906] INFO (19635): Executing query
+    query: "insert into \"tb_session\" (\"id\", \"id_user\", \"expires_at\", \"ip\", \"user_agent\", \"created_at\", \"updated_at\") values (default, $1, $2, $3, $4, default, default) returning \"id\", \"id_user\", \"expires_at\", \"ip\", \"user_agent\", \"created_at\", \"updated_at\""
+    params: [
+      "09d116d7-dba6-4cff-8573-5acc027005e6",
+      "2025-11-28T04:46:40.906Z",
+      null,
+      null
+    ]
+[04:46:40.966] INFO (19635): Request completed
+    req: {
+      "url": "/api/auth/login",
+      "method": "POST",
+      "headers": {
+        "content-type": "application/json"
+      }
+    }
+    res: {
+      "status": 200,
+      "headers": {
+        "access-control-allow-credentials": "true",
+        "content-type": "application/json",
+        "set-cookie": [
+          "session_id=w5XOcgC1DvNWwG5PakjyIgqa82h-4uzgYJKmiIjWSLo2fRkp0HlVjhnro83JqUiNikiNGel89g8Ey0pNyJZVpg; Max-Age=604800; Path=/; Expires=Fri, 28 Nov 2025 04:46:40 GMT; HttpOnly; SameSite=None"
+        ],
+        "x-request-id": "406ef8d0-02f5-4941-8a83-fad4f3be5879"
+      }
+    }
+    reqId: 20
+    responseTime: 346
+[04:46:41.018] INFO (19635): Executing query
+    query: "select \"id\", \"id_user\", \"expires_at\", \"ip\", \"user_agent\", \"created_at\", \"updated_at\" from \"tb_session\" where \"tb_session\".\"id\" = $1 limit $2"
+    params: [
+      "a4add942-2690-454a-a27f-0bc76a470faa",
+      1
+    ]
+[04:46:41.076] INFO (19635): Executing query
+    query: "select \"id\", \"name\", \"email\", \"password\", \"avatar\", \"email_verified_at\", \"created_at\", \"updated_at\" from \"tb_user\" where \"tb_user\".\"id\" = $1 limit $2"
+    params: [
+      "09d116d7-dba6-4cff-8573-5acc027005e6",
+      1
+    ]
+[04:46:41.135] INFO (19635): Executing query
+    query: "select \"tb_role\".\"name\" from \"tb_user_role\" inner join \"tb_role\" on \"tb_user_role\".\"id_role\" = \"tb_role\".\"id\" where \"tb_user_role\".\"id_user\" = $1"
+    params: [
+      "09d116d7-dba6-4cff-8573-5acc027005e6"
+    ]
+[04:46:41.199] INFO (19635): Executing query
+    query: "select \"id_role\" from \"tb_user_role\" where \"tb_user_role\".\"id_user\" = $1"
+    params: [
+      "09d116d7-dba6-4cff-8573-5acc027005e6"
+    ]
+[04:46:41.259] INFO (19635): Executing query
+    query: "select \"tb_permission\".\"name\" from \"tb_user_permission\" inner join \"tb_permission\" on \"tb_user_permission\".\"id_permission\" = \"tb_permission\".\"id\" where \"tb_user_permission\".\"id_user\" = $1"
+    params: [
+      "09d116d7-dba6-4cff-8573-5acc027005e6"
+    ]
+[04:46:41.327] INFO (19635): Executing query
+    query: "select \"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\" from \"tb_patient\" where \"tb_patient\".\"mrn\" ilike $1 order by \"tb_patient\".\"mrn\" desc limit $2"
+    params: [
+      "F-%",
+      1
+    ]
+[04:46:41.387] INFO (19635): Executing query
+    query: "insert into \"tb_patient\" (\"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\") values (default, $1, default, default, default, $2, $3, $4, $5, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default) returning \"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\""
+    params: [
+      "F-000001",
+      "1234567890123456",
+      "Female Patient",
+      "FEMALE",
+      "1990-01-01T00:00:00.000Z"
+    ]
+[04:46:41.451] INFO (19635): Request completed
+    req: {
+      "url": "/api/patients",
+      "method": "POST",
+      "headers": {
+        "content-type": "application/json",
+        "cookie": "session_id=w5XOcgC1DvNWwG5PakjyIgqa82h-4uzgYJKmiIjWSLo2fRkp0HlVjhnro83JqUiNikiNGel89g8Ey0pNyJZVpg; Max-Age=604800; Path=/; Expires=Fri, 28 Nov 2025 04:46:40 GMT; HttpOnly; SameSite=None"
+      }
+    }
+    res: {
+      "status": 201,
+      "headers": {
+        "access-control-allow-credentials": "true",
+        "content-type": "application/json",
+        "x-request-id": "b749a4b3-3bcc-4dce-9647-c7ee129c4cd8"
+      }
+    }
+    reqId: 21
+    responseTime: 433
+(pass) POST /api/patients > should generate female MRN for female patients [433.26ms]
+[04:46:41.451] DEBUG (Female Patient/19635):
+    id: "6db32285-dbac-405a-8c46-63b60a73d7ef"
+    mrn: "F-000001"
+    ihs_number: null
+    ihs_last_sync: null
+    ihs_response_status: null
+    nik: "1234567890123456"
+    gender: "FEMALE"
+    birth_date: "1990-01-01T00:00:00.000Z"
+    phone: null
+    email: null
+    address: null
+    id_province: null
+    province: null
+    id_city: null
+    city: null
+    id_district: null
+    district: null
+    id_sub_district: null
+    sub_district: null
+    rt: null
+    rw: null
+    postal_code: null
+    emergency_contact_name: null
+    emergency_contact_phone: null
+    created_at: "2025-11-21T04:46:41.690Z"
+    updated_at: null
+[04:46:41.451] INFO (19635): Executing query
+    query: "delete from \"tb_patient\""
+    params: []
+[04:46:41.510] INFO (19635): Executing query
+    query: "delete from \"tb_user\" where \"tb_user\".\"email\" = $1"
+    params: [
+      "test@test.com"
+    ]
+[04:46:41.620] INFO (19635): Executing query
+    query: "delete from \"tb_patient\""
+    params: []
+[04:46:41.726] INFO (19635): Executing query
+    query: "insert into \"tb_user\" (\"id\", \"name\", \"email\", \"password\", \"avatar\", \"email_verified_at\", \"created_at\", \"updated_at\") values (default, $1, $2, $3, default, default, default, default)"
+    params: [
+      "Test User",
+      "test@test.com",
+      "$2b$10$ma5bJ.tgtpxaBSVbLxd5S.4nitHwUivQ51uqzimmGMZ1/NJA3PzgO"
+    ]
+[04:46:41.787] INFO (19635): Executing query
+    query: "select \"id\", \"name\", \"email\", \"password\", \"avatar\", \"email_verified_at\", \"created_at\", \"updated_at\" from \"tb_user\" where \"tb_user\".\"email\" = $1 limit $2"
+    params: [
+      "test@test.com",
+      1
+    ]
+[04:46:41.894] INFO (19635): Executing query
+    query: "select \"tb_role\".\"name\" from \"tb_user_role\" inner join \"tb_role\" on \"tb_user_role\".\"id_role\" = \"tb_role\".\"id\" where \"tb_user_role\".\"id_user\" = $1"
+    params: [
+      "a4fa2b4c-2b97-42d9-9535-990239fe0aa8"
+    ]
+[04:46:41.955] INFO (19635): Executing query
+    query: "select \"id_role\" from \"tb_user_role\" where \"tb_user_role\".\"id_user\" = $1"
+    params: [
+      "a4fa2b4c-2b97-42d9-9535-990239fe0aa8"
+    ]
+[04:46:42.015] INFO (19635): Executing query
+    query: "select \"tb_permission\".\"name\" from \"tb_user_permission\" inner join \"tb_permission\" on \"tb_user_permission\".\"id_permission\" = \"tb_permission\".\"id\" where \"tb_user_permission\".\"id_user\" = $1"
+    params: [
+      "a4fa2b4c-2b97-42d9-9535-990239fe0aa8"
+    ]
+[04:46:42.075] INFO (19635): Executing query
+    query: "insert into \"tb_session\" (\"id\", \"id_user\", \"expires_at\", \"ip\", \"user_agent\", \"created_at\", \"updated_at\") values (default, $1, $2, $3, $4, default, default) returning \"id\", \"id_user\", \"expires_at\", \"ip\", \"user_agent\", \"created_at\", \"updated_at\""
+    params: [
+      "a4fa2b4c-2b97-42d9-9535-990239fe0aa8",
+      "2025-11-28T04:46:42.074Z",
+      null,
+      null
+    ]
+[04:46:42.135] INFO (19635): Request completed
+    req: {
+      "url": "/api/auth/login",
+      "method": "POST",
+      "headers": {
+        "content-type": "application/json"
+      }
+    }
+    res: {
+      "status": 200,
+      "headers": {
+        "access-control-allow-credentials": "true",
+        "content-type": "application/json",
+        "set-cookie": [
+          "session_id=vfAM9q-Cr336k_nHJS9WzGQB2vzF4ZBMez5DwCKolkEXdP-uXxvDdnAzmFXTBXU9jWHc13GZ-u9UgTpR3DbHDQ; Max-Age=604800; Path=/; Expires=Fri, 28 Nov 2025 04:46:42 GMT; HttpOnly; SameSite=None"
+        ],
+        "x-request-id": "d7bcd392-507e-45c1-b36b-4df7e1907358"
+      }
+    }
+    reqId: 22
+    responseTime: 348
+[04:46:42.186] INFO (19635): Executing query
+    query: "select \"id\", \"id_user\", \"expires_at\", \"ip\", \"user_agent\", \"created_at\", \"updated_at\" from \"tb_session\" where \"tb_session\".\"id\" = $1 limit $2"
+    params: [
+      "213a4ea4-72ee-48a4-9411-afe0de1abccc",
+      1
+    ]
+[04:46:42.246] INFO (19635): Executing query
+    query: "select \"id\", \"name\", \"email\", \"password\", \"avatar\", \"email_verified_at\", \"created_at\", \"updated_at\" from \"tb_user\" where \"tb_user\".\"id\" = $1 limit $2"
+    params: [
+      "a4fa2b4c-2b97-42d9-9535-990239fe0aa8",
+      1
+    ]
+[04:46:42.305] INFO (19635): Executing query
+    query: "select \"tb_role\".\"name\" from \"tb_user_role\" inner join \"tb_role\" on \"tb_user_role\".\"id_role\" = \"tb_role\".\"id\" where \"tb_user_role\".\"id_user\" = $1"
+    params: [
+      "a4fa2b4c-2b97-42d9-9535-990239fe0aa8"
+    ]
+[04:46:42.364] INFO (19635): Executing query
+    query: "select \"id_role\" from \"tb_user_role\" where \"tb_user_role\".\"id_user\" = $1"
+    params: [
+      "a4fa2b4c-2b97-42d9-9535-990239fe0aa8"
+    ]
+[04:46:42.426] INFO (19635): Executing query
+    query: "select \"tb_permission\".\"name\" from \"tb_user_permission\" inner join \"tb_permission\" on \"tb_user_permission\".\"id_permission\" = \"tb_permission\".\"id\" where \"tb_user_permission\".\"id_user\" = $1"
+    params: [
+      "a4fa2b4c-2b97-42d9-9535-990239fe0aa8"
+    ]
+[04:46:42.487] INFO (19635): Request completed
+    req: {
+      "url": "/api/patients",
+      "method": "POST",
+      "headers": {
+        "content-type": "application/json",
+        "cookie": "session_id=vfAM9q-Cr336k_nHJS9WzGQB2vzF4ZBMez5DwCKolkEXdP-uXxvDdnAzmFXTBXU9jWHc13GZ-u9UgTpR3DbHDQ; Max-Age=604800; Path=/; Expires=Fri, 28 Nov 2025 04:46:42 GMT; HttpOnly; SameSite=None"
+      }
+    }
+    res: {
+      "status": 422,
+      "headers": {
+        "access-control-allow-credentials": "true",
+        "content-type": "application/json",
+        "x-request-id": "e5d829b5-4752-4e2d-afaa-e152f5132e35"
+      }
+    }
+    reqId: 23
+    responseTime: 301
+(pass) POST /api/patients > should return 422 for missing required fields [301.67ms]
+[04:46:42.487] DEBUG (19635):
+    success: false
+    error: {
+      "name": "ZodError",
+      "issues": [
+        {
+          "expected": "string",
+          "code": "invalid_type",
+          "path": [
+            "nik"
+          ],
+          "message": "Invalid input: expected string, received undefined"
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "MALE",
+            "FEMALE"
+          ],
+          "path": [
+            "gender"
+          ],
+          "message": "Invalid option: expected one of \"MALE\"|\"FEMALE\""
+        },
+        {
+          "expected": "date",
+          "code": "invalid_type",
+          "received": "Invalid Date",
+          "path": [
+            "birth_date"
+          ],
+          "message": "Invalid input: expected date, received Date"
+        }
+      ]
+    }
+[04:46:42.487] INFO (19635): Executing query
+    query: "delete from \"tb_patient\""
+    params: []
+[04:46:42.546] INFO (19635): Executing query
+    query: "delete from \"tb_user\" where \"tb_user\".\"email\" = $1"
+    params: [
+      "test@test.com"
+    ]
+[04:46:42.657] INFO (19635): Executing query
+    query: "delete from \"tb_patient\""
+    params: []
+[04:46:42.766] INFO (19635): Executing query
+    query: "insert into \"tb_user\" (\"id\", \"name\", \"email\", \"password\", \"avatar\", \"email_verified_at\", \"created_at\", \"updated_at\") values (default, $1, $2, $3, default, default, default, default)"
+    params: [
+      "Test User",
+      "test@test.com",
+      "$2b$10$iWTTU8RYsZSABnkhFRzsKuNGdUvo5FOwASxgXMlEM8dyhcIMOW.gC"
+    ]
+[04:46:42.827] INFO (19635): Executing query
+    query: "select \"id\", \"name\", \"email\", \"password\", \"avatar\", \"email_verified_at\", \"created_at\", \"updated_at\" from \"tb_user\" where \"tb_user\".\"email\" = $1 limit $2"
+    params: [
+      "test@test.com",
+      1
+    ]
+[04:46:42.934] INFO (19635): Executing query
+    query: "select \"tb_role\".\"name\" from \"tb_user_role\" inner join \"tb_role\" on \"tb_user_role\".\"id_role\" = \"tb_role\".\"id\" where \"tb_user_role\".\"id_user\" = $1"
+    params: [
+      "eb59809f-b1dd-4919-b3f3-cf6e7a31f9fc"
+    ]
+[04:46:42.992] INFO (19635): Executing query
+    query: "select \"id_role\" from \"tb_user_role\" where \"tb_user_role\".\"id_user\" = $1"
+    params: [
+      "eb59809f-b1dd-4919-b3f3-cf6e7a31f9fc"
+    ]
+[04:46:43.052] INFO (19635): Executing query
+    query: "select \"tb_permission\".\"name\" from \"tb_user_permission\" inner join \"tb_permission\" on \"tb_user_permission\".\"id_permission\" = \"tb_permission\".\"id\" where \"tb_user_permission\".\"id_user\" = $1"
+    params: [
+      "eb59809f-b1dd-4919-b3f3-cf6e7a31f9fc"
+    ]
+[04:46:43.115] INFO (19635): Executing query
+    query: "insert into \"tb_session\" (\"id\", \"id_user\", \"expires_at\", \"ip\", \"user_agent\", \"created_at\", \"updated_at\") values (default, $1, $2, $3, $4, default, default) returning \"id\", \"id_user\", \"expires_at\", \"ip\", \"user_agent\", \"created_at\", \"updated_at\""
+    params: [
+      "eb59809f-b1dd-4919-b3f3-cf6e7a31f9fc",
+      "2025-11-28T04:46:43.114Z",
+      null,
+      null
+    ]
+[04:46:43.177] INFO (19635): Request completed
+    req: {
+      "url": "/api/auth/login",
+      "method": "POST",
+      "headers": {
+        "content-type": "application/json"
+      }
+    }
+    res: {
+      "status": 200,
+      "headers": {
+        "access-control-allow-credentials": "true",
+        "content-type": "application/json",
+        "set-cookie": [
+          "session_id=pjyh9wHMXGZQIkkYdGC_1tgWypRYODSWNtoBDkZDMImdOWqVReh-3G_8GgXdzD_m6qRnooNEsx5HV7TCIRZg9w; Max-Age=604800; Path=/; Expires=Fri, 28 Nov 2025 04:46:43 GMT; HttpOnly; SameSite=None"
+        ],
+        "x-request-id": "6cd38fd1-a4a6-4943-81dc-3e1469198f77"
+      }
+    }
+    reqId: 24
+    responseTime: 351
+[04:46:43.228] INFO (19635): Executing query
+    query: "insert into \"tb_patient\" (\"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\") values (default, $1, default, default, default, $2, $3, $4, $5, $6, $7, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default) returning \"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\""
+    params: [
+      "M-000001",
+      "1234567890123456",
+      "Test Patient",
+      "MALE",
+      "1990-01-01T00:00:00.000Z",
+      "081234567890",
+      "patient@test.com"
+    ]
+[04:46:43.291] INFO (19635): Executing query
+    query: "select \"id\", \"id_user\", \"expires_at\", \"ip\", \"user_agent\", \"created_at\", \"updated_at\" from \"tb_session\" where \"tb_session\".\"id\" = $1 limit $2"
+    params: [
+      "787e35d1-f1a5-48e8-90ac-21573acc110d",
+      1
+    ]
+[04:46:43.352] INFO (19635): Executing query
+    query: "select \"id\", \"name\", \"email\", \"password\", \"avatar\", \"email_verified_at\", \"created_at\", \"updated_at\" from \"tb_user\" where \"tb_user\".\"id\" = $1 limit $2"
+    params: [
+      "eb59809f-b1dd-4919-b3f3-cf6e7a31f9fc",
+      1
+    ]
+[04:46:43.415] INFO (19635): Executing query
+    query: "select \"tb_role\".\"name\" from \"tb_user_role\" inner join \"tb_role\" on \"tb_user_role\".\"id_role\" = \"tb_role\".\"id\" where \"tb_user_role\".\"id_user\" = $1"
+    params: [
+      "eb59809f-b1dd-4919-b3f3-cf6e7a31f9fc"
+    ]
+[04:46:43.474] INFO (19635): Executing query
+    query: "select \"id_role\" from \"tb_user_role\" where \"tb_user_role\".\"id_user\" = $1"
+    params: [
+      "eb59809f-b1dd-4919-b3f3-cf6e7a31f9fc"
+    ]
+[04:46:43.534] INFO (19635): Executing query
+    query: "select \"tb_permission\".\"name\" from \"tb_user_permission\" inner join \"tb_permission\" on \"tb_user_permission\".\"id_permission\" = \"tb_permission\".\"id\" where \"tb_user_permission\".\"id_user\" = $1"
+    params: [
+      "eb59809f-b1dd-4919-b3f3-cf6e7a31f9fc"
+    ]
+[04:46:43.594] INFO (19635): Executing query
+    query: "select \"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\" from \"tb_patient\" where \"tb_patient\".\"mrn\" ilike $1 order by \"tb_patient\".\"mrn\" desc limit $2"
+    params: [
+      "M-%",
+      1
+    ]
+[04:46:43.655] INFO (19635): Executing query
+    query: "insert into \"tb_patient\" (\"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\") values (default, $1, default, default, default, $2, $3, $4, $5, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default) returning \"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\""
+    params: [
+      "M-000002",
+      "1234567890123456",
+      "Duplicate Patient",
+      "MALE",
+      "1990-01-01T00:00:00.000Z"
+    ]
+[04:46:43.716] ERROR (19635): Failed query: insert into "tb_patient" ("id", "mrn", "ihs_number", "ihs_last_sync", "ihs_response_status", "nik", "name", "gender", "birth_date", "phone", "email", "address", "id_province", "province", "id_city", "city", "id_district", "district", "id_sub_district", "sub_district", "rt", "rw", "postal_code", "emergency_contact_name", "emergency_contact_phone", "created_at", "updated_at") values (default, $1, default, default, default, $2, $3, $4, $5, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default) returning "id", "mrn", "ihs_number", "ihs_last_sync", "ihs_response_status", "nik", "name", "gender", "birth_date", "phone", "email", "address", "id_province", "province", "id_city", "city", "id_district", "district", "id_sub_district", "sub_district", "rt", "rw", "postal_code", "emergency_contact_name", "emergency_contact_phone", "created_at", "updated_at"
+params: M-000002,1234567890123456,Duplicate Patient,MALE,1990-01-01T00:00:00.000Z
+    req: {
+      "url": "/api/patients",
+      "method": "POST",
+      "headers": {
+        "content-type": "application/json",
+        "cookie": "session_id=pjyh9wHMXGZQIkkYdGC_1tgWypRYODSWNtoBDkZDMImdOWqVReh-3G_8GgXdzD_m6qRnooNEsx5HV7TCIRZg9w; Max-Age=604800; Path=/; Expires=Fri, 28 Nov 2025 04:46:43 GMT; HttpOnly; SameSite=None"
+      }
+    }
+    res: {
+      "status": 500,
+      "headers": {
+        "access-control-allow-credentials": "true",
+        "content-type": "application/json",
+        "x-request-id": "d735cf0f-ea40-4539-a632-6f9dbb4162a7"
+      }
+    }
+    reqId: 25
+    responseTime: 425
+358 |         });
+359 | 
+360 |         const body = await response.json();
+361 |         loggerPino.debug(body);
+362 | 
+363 |         expect(response.status).toBe(HttpStatusCodes.CONFLICT);
+                                      ^
+error: expect(received).toBe(expected)
+
+Expected: 409
+Received: 500
+
+      at <anonymous> (/Users/kidzeroll/Learning/ris-api/src/__test__/patient.test.ts:363:33)
+(fail) POST /api/patients > should return 409 for duplicate NIK [488.40ms]
+[04:46:43.716] DEBUG (19635):
+    message: "Failed query: insert into \"tb_patient\" (\"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\") values (default, $1, default, default, default, $2, $3, $4, $5, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default) returning \"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\"\nparams: M-000002,1234567890123456,Duplicate Patient,MALE,1990-01-01T00:00:00.000Z"
+    stack: "Error: Failed query: insert into \"tb_patient\" (\"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\") values (default, $1, default, default, default, $2, $3, $4, $5, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default) returning \"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\"\nparams: M-000002,1234567890123456,Duplicate Patient,MALE,1990-01-01T00:00:00.000Z\n    at queryWithCache (/Users/kidzeroll/Learning/ris-api/node_modules/drizzle-orm/pg-core/session.js:41:19)\n    at processTicksAndRejections (native:7:39)"
+[04:46:43.716] INFO (19635): Executing query
+    query: "delete from \"tb_patient\""
+    params: []
+[04:46:44.129] INFO (19635): Executing query
+    query: "delete from \"tb_user\" where \"tb_user\".\"email\" = $1"
+    params: [
+      "test@test.com"
+    ]
+[04:46:44.239] INFO (19635): Executing query
+    query: "delete from \"tb_patient\""
+    params: []
+[04:46:44.343] INFO (19635): Executing query
+    query: "insert into \"tb_user\" (\"id\", \"name\", \"email\", \"password\", \"avatar\", \"email_verified_at\", \"created_at\", \"updated_at\") values (default, $1, $2, $3, default, default, default, default)"
+    params: [
+      "Test User",
+      "test@test.com",
+      "$2b$10$MDF/5bTW0Pw7Xd3Fya75r.oGowGqapjjvFCnv.qmRxv0yQth.xo0W"
+    ]
+[04:46:44.403] INFO (19635): Executing query
+    query: "select \"id\", \"name\", \"email\", \"password\", \"avatar\", \"email_verified_at\", \"created_at\", \"updated_at\" from \"tb_user\" where \"tb_user\".\"email\" = $1 limit $2"
+    params: [
+      "test@test.com",
+      1
+    ]
+[04:46:44.510] INFO (19635): Executing query
+    query: "select \"tb_role\".\"name\" from \"tb_user_role\" inner join \"tb_role\" on \"tb_user_role\".\"id_role\" = \"tb_role\".\"id\" where \"tb_user_role\".\"id_user\" = $1"
+    params: [
+      "59ebf5b0-74de-4ef7-baf4-7d60151fbd2a"
+    ]
+[04:46:44.567] INFO (19635): Executing query
+    query: "select \"id_role\" from \"tb_user_role\" where \"tb_user_role\".\"id_user\" = $1"
+    params: [
+      "59ebf5b0-74de-4ef7-baf4-7d60151fbd2a"
+    ]
+[04:46:44.627] INFO (19635): Executing query
+    query: "select \"tb_permission\".\"name\" from \"tb_user_permission\" inner join \"tb_permission\" on \"tb_user_permission\".\"id_permission\" = \"tb_permission\".\"id\" where \"tb_user_permission\".\"id_user\" = $1"
+    params: [
+      "59ebf5b0-74de-4ef7-baf4-7d60151fbd2a"
+    ]
+[04:46:44.686] INFO (19635): Executing query
+    query: "insert into \"tb_session\" (\"id\", \"id_user\", \"expires_at\", \"ip\", \"user_agent\", \"created_at\", \"updated_at\") values (default, $1, $2, $3, $4, default, default) returning \"id\", \"id_user\", \"expires_at\", \"ip\", \"user_agent\", \"created_at\", \"updated_at\""
+    params: [
+      "59ebf5b0-74de-4ef7-baf4-7d60151fbd2a",
+      "2025-11-28T04:46:44.686Z",
+      null,
+      null
+    ]
+[04:46:44.746] INFO (19635): Request completed
+    req: {
+      "url": "/api/auth/login",
+      "method": "POST",
+      "headers": {
+        "content-type": "application/json"
+      }
+    }
+    res: {
+      "status": 200,
+      "headers": {
+        "access-control-allow-credentials": "true",
+        "content-type": "application/json",
+        "set-cookie": [
+          "session_id=AmYdE_RYmOT7_IanW6Pd8KVO4LuT3wiTZfKZvZ2Dkd4-rt7mKGLSC0QUhwQUycMqWhSOJ45S5T-HaJ6fTt0n7w; Max-Age=604800; Path=/; Expires=Fri, 28 Nov 2025 04:46:44 GMT; HttpOnly; SameSite=None"
+        ],
+        "x-request-id": "73aef4a6-1633-47b4-a1d1-f581444edf74"
+      }
+    }
+    reqId: 26
+    responseTime: 343
+[04:46:44.746] INFO (19635): Executing query
+    query: "insert into \"tb_patient\" (\"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\") values (default, $1, default, default, default, $2, $3, $4, $5, $6, $7, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default) returning \"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\""
+    params: [
+      "M-000001",
+      "1234567890123456",
+      "Test Patient",
+      "MALE",
+      "1990-01-01T00:00:00.000Z",
+      "081234567890",
+      "patient@test.com"
+    ]
+[04:46:44.858] INFO (19635): Request completed
+    req: {
+      "url": "/api/patients/8b1c19ca-8513-4eb1-81d9-1ee4385d740a",
+      "method": "PUT",
+      "headers": {
+        "content-type": "application/json"
+      }
+    }
+    res: {
+      "status": 401,
+      "headers": {
+        "access-control-allow-credentials": "true",
+        "content-type": "application/json",
+        "x-request-id": "f5e049a1-adf6-44ef-9f03-295c1a117e05"
+      }
+    }
+    reqId: 27
+    responseTime: 0
+(pass) PUT /api/patients/:id > should not be able to update patient without authentication [0.58ms]
+[04:46:44.858] DEBUG (19635):
+    message: "Not authenticated"
+[04:46:44.858] INFO (19635): Executing query
+    query: "delete from \"tb_patient\""
+    params: []
+[04:46:44.916] INFO (19635): Executing query
+    query: "delete from \"tb_user\" where \"tb_user\".\"email\" = $1"
+    params: [
+      "test@test.com"
+    ]
+[04:46:45.029] INFO (19635): Executing query
+    query: "delete from \"tb_patient\""
+    params: []
+[04:46:45.133] INFO (19635): Executing query
+    query: "insert into \"tb_user\" (\"id\", \"name\", \"email\", \"password\", \"avatar\", \"email_verified_at\", \"created_at\", \"updated_at\") values (default, $1, $2, $3, default, default, default, default)"
+    params: [
+      "Test User",
+      "test@test.com",
+      "$2b$10$ZzYUnkuS.823PrhGoJTG8.f5vPsQxtQ1Gy264tBnCW0/fCNdHQ1TS"
+    ]
+[04:46:45.195] INFO (19635): Executing query
+    query: "select \"id\", \"name\", \"email\", \"password\", \"avatar\", \"email_verified_at\", \"created_at\", \"updated_at\" from \"tb_user\" where \"tb_user\".\"email\" = $1 limit $2"
+    params: [
+      "test@test.com",
+      1
+    ]
+[04:46:45.301] INFO (19635): Executing query
+    query: "select \"tb_role\".\"name\" from \"tb_user_role\" inner join \"tb_role\" on \"tb_user_role\".\"id_role\" = \"tb_role\".\"id\" where \"tb_user_role\".\"id_user\" = $1"
+    params: [
+      "62ac59c0-70bd-4456-ba70-87c243858e41"
+    ]
+[04:46:45.362] INFO (19635): Executing query
+    query: "select \"id_role\" from \"tb_user_role\" where \"tb_user_role\".\"id_user\" = $1"
+    params: [
+      "62ac59c0-70bd-4456-ba70-87c243858e41"
+    ]
+[04:46:45.422] INFO (19635): Executing query
+    query: "select \"tb_permission\".\"name\" from \"tb_user_permission\" inner join \"tb_permission\" on \"tb_user_permission\".\"id_permission\" = \"tb_permission\".\"id\" where \"tb_user_permission\".\"id_user\" = $1"
+    params: [
+      "62ac59c0-70bd-4456-ba70-87c243858e41"
+    ]
+[04:46:45.482] INFO (19635): Executing query
+    query: "insert into \"tb_session\" (\"id\", \"id_user\", \"expires_at\", \"ip\", \"user_agent\", \"created_at\", \"updated_at\") values (default, $1, $2, $3, $4, default, default) returning \"id\", \"id_user\", \"expires_at\", \"ip\", \"user_agent\", \"created_at\", \"updated_at\""
+    params: [
+      "62ac59c0-70bd-4456-ba70-87c243858e41",
+      "2025-11-28T04:46:45.482Z",
+      null,
+      null
+    ]
+[04:46:45.542] INFO (19635): Request completed
+    req: {
+      "url": "/api/auth/login",
+      "method": "POST",
+      "headers": {
+        "content-type": "application/json"
+      }
+    }
+    res: {
+      "status": 200,
+      "headers": {
+        "access-control-allow-credentials": "true",
+        "content-type": "application/json",
+        "set-cookie": [
+          "session_id=vYnOch6wz4tZHr-okMzo0ltd4W5XlxcLNClPd3HqKeJrR2NJtvzu5PeBPqF7dRoPgtKkrl9SL55zDboz6u4oqw; Max-Age=604800; Path=/; Expires=Fri, 28 Nov 2025 04:46:45 GMT; HttpOnly; SameSite=None"
+        ],
+        "x-request-id": "fd9ce5b4-fbc2-40a0-9874-b2766bbfd3ca"
+      }
+    }
+    reqId: 28
+    responseTime: 348
+[04:46:45.543] INFO (19635): Executing query
+    query: "insert into \"tb_patient\" (\"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\") values (default, $1, default, default, default, $2, $3, $4, $5, $6, $7, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default) returning \"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\""
+    params: [
+      "M-000001",
+      "1234567890123456",
+      "Test Patient",
+      "MALE",
+      "1990-01-01T00:00:00.000Z",
+      "081234567890",
+      "patient@test.com"
+    ]
+[04:46:45.654] INFO (19635): Executing query
+    query: "select \"id\", \"id_user\", \"expires_at\", \"ip\", \"user_agent\", \"created_at\", \"updated_at\" from \"tb_session\" where \"tb_session\".\"id\" = $1 limit $2"
+    params: [
+      "8f3efd2c-4efd-497f-ae01-ce60f1e43a5b",
+      1
+    ]
+[04:46:45.715] INFO (19635): Executing query
+    query: "select \"id\", \"name\", \"email\", \"password\", \"avatar\", \"email_verified_at\", \"created_at\", \"updated_at\" from \"tb_user\" where \"tb_user\".\"id\" = $1 limit $2"
+    params: [
+      "62ac59c0-70bd-4456-ba70-87c243858e41",
+      1
+    ]
+[04:46:45.775] INFO (19635): Executing query
+    query: "select \"tb_role\".\"name\" from \"tb_user_role\" inner join \"tb_role\" on \"tb_user_role\".\"id_role\" = \"tb_role\".\"id\" where \"tb_user_role\".\"id_user\" = $1"
+    params: [
+      "62ac59c0-70bd-4456-ba70-87c243858e41"
+    ]
+[04:46:45.834] INFO (19635): Executing query
+    query: "select \"id_role\" from \"tb_user_role\" where \"tb_user_role\".\"id_user\" = $1"
+    params: [
+      "62ac59c0-70bd-4456-ba70-87c243858e41"
+    ]
+[04:46:45.894] INFO (19635): Executing query
+    query: "select \"tb_permission\".\"name\" from \"tb_user_permission\" inner join \"tb_permission\" on \"tb_user_permission\".\"id_permission\" = \"tb_permission\".\"id\" where \"tb_user_permission\".\"id_user\" = $1"
+    params: [
+      "62ac59c0-70bd-4456-ba70-87c243858e41"
+    ]
+[04:46:45.955] INFO (19635): Executing query
+    query: "select \"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\" from \"tb_patient\" where \"tb_patient\".\"id\" = $1 limit $2"
+    params: [
+      "666ea722-2ec1-4826-ac6a-5cccc9a9b457",
+      1
+    ]
+[04:46:46.014] INFO (19635): Executing query
+    query: "update \"tb_patient\" set \"name\" = $1, \"phone\" = $2, \"updated_at\" = $3 where \"tb_patient\".\"id\" = $4 returning \"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\""
+    params: [
+      "Updated Patient",
+      "089876543210",
+      "2025-11-21T04:46:46.014Z",
+      "666ea722-2ec1-4826-ac6a-5cccc9a9b457"
+    ]
+[04:46:46.074] INFO (19635): Request completed
+    req: {
+      "url": "/api/patients/666ea722-2ec1-4826-ac6a-5cccc9a9b457",
+      "method": "PUT",
+      "headers": {
+        "content-type": "application/json",
+        "cookie": "session_id=vYnOch6wz4tZHr-okMzo0ltd4W5XlxcLNClPd3HqKeJrR2NJtvzu5PeBPqF7dRoPgtKkrl9SL55zDboz6u4oqw; Max-Age=604800; Path=/; Expires=Fri, 28 Nov 2025 04:46:45 GMT; HttpOnly; SameSite=None"
+      }
+    }
+    res: {
+      "status": 200,
+      "headers": {
+        "access-control-allow-credentials": "true",
+        "content-type": "application/json",
+        "x-request-id": "293bf92a-e421-4114-ac57-0a0472246ed2"
+      }
+    }
+    reqId: 29
+    responseTime: 421
+(pass) PUT /api/patients/:id > should be able to update patient with valid data [421.22ms]
+[04:46:46.075] DEBUG (Updated Patient/19635):
+    id: "666ea722-2ec1-4826-ac6a-5cccc9a9b457"
+    mrn: "M-000001"
+    ihs_number: null
+    ihs_last_sync: null
+    ihs_response_status: null
+    nik: "1234567890123456"
+    gender: "MALE"
+    birth_date: "1990-01-01T00:00:00.000Z"
+    phone: "089876543210"
+    email: "patient@test.com"
+    address: null
+    id_province: null
+    province: null
+    id_city: null
+    city: null
+    id_district: null
+    district: null
+    id_sub_district: null
+    sub_district: null
+    rt: null
+    rw: null
+    postal_code: null
+    emergency_contact_name: null
+    emergency_contact_phone: null
+    created_at: "2025-11-21T04:46:45.845Z"
+    updated_at: "2025-11-21T04:46:46.014Z"
+[04:46:46.075] INFO (19635): Executing query
+    query: "delete from \"tb_patient\""
+    params: []
+[04:46:46.135] INFO (19635): Executing query
+    query: "delete from \"tb_user\" where \"tb_user\".\"email\" = $1"
+    params: [
+      "test@test.com"
+    ]
+[04:46:46.245] INFO (19635): Executing query
+    query: "delete from \"tb_patient\""
+    params: []
+[04:46:46.351] INFO (19635): Executing query
+    query: "insert into \"tb_user\" (\"id\", \"name\", \"email\", \"password\", \"avatar\", \"email_verified_at\", \"created_at\", \"updated_at\") values (default, $1, $2, $3, default, default, default, default)"
+    params: [
+      "Test User",
+      "test@test.com",
+      "$2b$10$MjzyOGB1wvyQ6ARwWBruSu.7TipWTBvUN8EVT9nJpOExMNiSVukkm"
+    ]
+[04:46:46.411] INFO (19635): Executing query
+    query: "select \"id\", \"name\", \"email\", \"password\", \"avatar\", \"email_verified_at\", \"created_at\", \"updated_at\" from \"tb_user\" where \"tb_user\".\"email\" = $1 limit $2"
+    params: [
+      "test@test.com",
+      1
+    ]
+[04:46:46.516] INFO (19635): Executing query
+    query: "select \"tb_role\".\"name\" from \"tb_user_role\" inner join \"tb_role\" on \"tb_user_role\".\"id_role\" = \"tb_role\".\"id\" where \"tb_user_role\".\"id_user\" = $1"
+    params: [
+      "dbc05e37-9fc5-4cd2-a21a-c665701a7f4a"
+    ]
+[04:46:46.575] INFO (19635): Executing query
+    query: "select \"id_role\" from \"tb_user_role\" where \"tb_user_role\".\"id_user\" = $1"
+    params: [
+      "dbc05e37-9fc5-4cd2-a21a-c665701a7f4a"
+    ]
+[04:46:46.634] INFO (19635): Executing query
+    query: "select \"tb_permission\".\"name\" from \"tb_user_permission\" inner join \"tb_permission\" on \"tb_user_permission\".\"id_permission\" = \"tb_permission\".\"id\" where \"tb_user_permission\".\"id_user\" = $1"
+    params: [
+      "dbc05e37-9fc5-4cd2-a21a-c665701a7f4a"
+    ]
+[04:46:46.695] INFO (19635): Executing query
+    query: "insert into \"tb_session\" (\"id\", \"id_user\", \"expires_at\", \"ip\", \"user_agent\", \"created_at\", \"updated_at\") values (default, $1, $2, $3, $4, default, default) returning \"id\", \"id_user\", \"expires_at\", \"ip\", \"user_agent\", \"created_at\", \"updated_at\""
+    params: [
+      "dbc05e37-9fc5-4cd2-a21a-c665701a7f4a",
+      "2025-11-28T04:46:46.694Z",
+      null,
+      null
+    ]
+[04:46:46.756] INFO (19635): Request completed
+    req: {
+      "url": "/api/auth/login",
+      "method": "POST",
+      "headers": {
+        "content-type": "application/json"
+      }
+    }
+    res: {
+      "status": 200,
+      "headers": {
+        "access-control-allow-credentials": "true",
+        "content-type": "application/json",
+        "set-cookie": [
+          "session_id=xXEuo3Ukqpe1Acg47b2pj5E7kSsg2TZauiHdoMmAd6X61SMuCysuWBQFUt281aaKZJqPg6fKz6xdmI3NKTPIag; Max-Age=604800; Path=/; Expires=Fri, 28 Nov 2025 04:46:46 GMT; HttpOnly; SameSite=None"
+        ],
+        "x-request-id": "ce6f2c7a-21a2-4697-8d3d-b08b6996c06e"
+      }
+    }
+    reqId: 30
+    responseTime: 346
+[04:46:46.756] INFO (19635): Executing query
+    query: "insert into \"tb_patient\" (\"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\") values (default, $1, default, default, default, $2, $3, $4, $5, $6, $7, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default) returning \"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\""
+    params: [
+      "M-000001",
+      "1234567890123456",
+      "Test Patient",
+      "MALE",
+      "1990-01-01T00:00:00.000Z",
+      "081234567890",
+      "patient@test.com"
+    ]
+[04:46:46.869] INFO (19635): Executing query
+    query: "select \"id\", \"id_user\", \"expires_at\", \"ip\", \"user_agent\", \"created_at\", \"updated_at\" from \"tb_session\" where \"tb_session\".\"id\" = $1 limit $2"
+    params: [
+      "3801e4fa-8c97-44fd-8e10-922b0035ab39",
+      1
+    ]
+[04:46:46.928] INFO (19635): Executing query
+    query: "select \"id\", \"name\", \"email\", \"password\", \"avatar\", \"email_verified_at\", \"created_at\", \"updated_at\" from \"tb_user\" where \"tb_user\".\"id\" = $1 limit $2"
+    params: [
+      "dbc05e37-9fc5-4cd2-a21a-c665701a7f4a",
+      1
+    ]
+[04:46:46.987] INFO (19635): Executing query
+    query: "select \"tb_role\".\"name\" from \"tb_user_role\" inner join \"tb_role\" on \"tb_user_role\".\"id_role\" = \"tb_role\".\"id\" where \"tb_user_role\".\"id_user\" = $1"
+    params: [
+      "dbc05e37-9fc5-4cd2-a21a-c665701a7f4a"
+    ]
+[04:46:47.046] INFO (19635): Executing query
+    query: "select \"id_role\" from \"tb_user_role\" where \"tb_user_role\".\"id_user\" = $1"
+    params: [
+      "dbc05e37-9fc5-4cd2-a21a-c665701a7f4a"
+    ]
+[04:46:47.107] INFO (19635): Executing query
+    query: "select \"tb_permission\".\"name\" from \"tb_user_permission\" inner join \"tb_permission\" on \"tb_user_permission\".\"id_permission\" = \"tb_permission\".\"id\" where \"tb_user_permission\".\"id_user\" = $1"
+    params: [
+      "dbc05e37-9fc5-4cd2-a21a-c665701a7f4a"
+    ]
+[04:46:47.165] INFO (19635): Executing query
+    query: "select \"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\" from \"tb_patient\" where \"tb_patient\".\"id\" = $1 limit $2"
+    params: [
+      "00000000-0000-0000-0000-000000000000",
+      1
+    ]
+[04:46:47.227] INFO (19635): Request completed
+    req: {
+      "url": "/api/patients/00000000-0000-0000-0000-000000000000",
+      "method": "PUT",
+      "headers": {
+        "content-type": "application/json",
+        "cookie": "session_id=xXEuo3Ukqpe1Acg47b2pj5E7kSsg2TZauiHdoMmAd6X61SMuCysuWBQFUt281aaKZJqPg6fKz6xdmI3NKTPIag; Max-Age=604800; Path=/; Expires=Fri, 28 Nov 2025 04:46:46 GMT; HttpOnly; SameSite=None"
+      }
+    }
+    res: {
+      "status": 404,
+      "headers": {
+        "access-control-allow-credentials": "true",
+        "content-type": "application/json",
+        "x-request-id": "1f1a704b-c26f-44a4-bf77-db58f7f6ccb5"
+      }
+    }
+    reqId: 31
+    responseTime: 357
+(pass) PUT /api/patients/:id > should return 404 for non-existent patient [357.83ms]
+[04:46:47.227] DEBUG (19635):
+    message: "Patient not found"
+[04:46:47.227] INFO (19635): Executing query
+    query: "delete from \"tb_patient\""
+    params: []
+[04:46:47.287] INFO (19635): Executing query
+    query: "delete from \"tb_user\" where \"tb_user\".\"email\" = $1"
+    params: [
+      "test@test.com"
+    ]
+[04:46:47.397] INFO (19635): Executing query
+    query: "delete from \"tb_patient\""
+    params: []
+[04:46:47.501] INFO (19635): Executing query
+    query: "insert into \"tb_user\" (\"id\", \"name\", \"email\", \"password\", \"avatar\", \"email_verified_at\", \"created_at\", \"updated_at\") values (default, $1, $2, $3, default, default, default, default)"
+    params: [
+      "Test User",
+      "test@test.com",
+      "$2b$10$4FDPOApPVN5PH6ebzbrpE.3Jj/Z17TO5sRvizZHW7bXR5./GJlxoG"
+    ]
+[04:46:47.563] INFO (19635): Executing query
+    query: "select \"id\", \"name\", \"email\", \"password\", \"avatar\", \"email_verified_at\", \"created_at\", \"updated_at\" from \"tb_user\" where \"tb_user\".\"email\" = $1 limit $2"
+    params: [
+      "test@test.com",
+      1
+    ]
+[04:46:47.669] INFO (19635): Executing query
+    query: "select \"tb_role\".\"name\" from \"tb_user_role\" inner join \"tb_role\" on \"tb_user_role\".\"id_role\" = \"tb_role\".\"id\" where \"tb_user_role\".\"id_user\" = $1"
+    params: [
+      "0041860b-fac0-45b9-adcf-1705459dded6"
+    ]
+[04:46:47.727] INFO (19635): Executing query
+    query: "select \"id_role\" from \"tb_user_role\" where \"tb_user_role\".\"id_user\" = $1"
+    params: [
+      "0041860b-fac0-45b9-adcf-1705459dded6"
+    ]
+[04:46:47.786] INFO (19635): Executing query
+    query: "select \"tb_permission\".\"name\" from \"tb_user_permission\" inner join \"tb_permission\" on \"tb_user_permission\".\"id_permission\" = \"tb_permission\".\"id\" where \"tb_user_permission\".\"id_user\" = $1"
+    params: [
+      "0041860b-fac0-45b9-adcf-1705459dded6"
+    ]
+[04:46:47.846] INFO (19635): Executing query
+    query: "insert into \"tb_session\" (\"id\", \"id_user\", \"expires_at\", \"ip\", \"user_agent\", \"created_at\", \"updated_at\") values (default, $1, $2, $3, $4, default, default) returning \"id\", \"id_user\", \"expires_at\", \"ip\", \"user_agent\", \"created_at\", \"updated_at\""
+    params: [
+      "0041860b-fac0-45b9-adcf-1705459dded6",
+      "2025-11-28T04:46:47.846Z",
+      null,
+      null
+    ]
+[04:46:47.906] INFO (19635): Request completed
+    req: {
+      "url": "/api/auth/login",
+      "method": "POST",
+      "headers": {
+        "content-type": "application/json"
+      }
+    }
+    res: {
+      "status": 200,
+      "headers": {
+        "access-control-allow-credentials": "true",
+        "content-type": "application/json",
+        "set-cookie": [
+          "session_id=whr1g3nVAl9IsF7l_dyzDM5s2a49Y420CPBGsJmsLJbHQzW3P_RvNLz4WS9B0nBweiVjCW7bUfnChMWimKAOEw; Max-Age=604800; Path=/; Expires=Fri, 28 Nov 2025 04:46:47 GMT; HttpOnly; SameSite=None"
+        ],
+        "x-request-id": "948a3ea0-cdc2-4765-b302-57819ba01842"
+      }
+    }
+    reqId: 32
+    responseTime: 343
+[04:46:47.906] INFO (19635): Executing query
+    query: "insert into \"tb_patient\" (\"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\") values (default, $1, default, default, default, $2, $3, $4, $5, $6, $7, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default) returning \"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\""
+    params: [
+      "M-000001",
+      "1234567890123456",
+      "Test Patient",
+      "MALE",
+      "1990-01-01T00:00:00.000Z",
+      "081234567890",
+      "patient@test.com"
+    ]
+[04:46:48.016] INFO (19635): Request completed
+    req: {
+      "url": "/api/patients/c94eb3b1-569c-4fac-a818-90aee56194ce",
+      "method": "DELETE",
+      "headers": {}
+    }
+    res: {
+      "status": 401,
+      "headers": {
+        "access-control-allow-credentials": "true",
+        "content-type": "application/json",
+        "x-request-id": "3a65df4a-b63f-43cc-b35b-01e068173d67"
+      }
+    }
+    reqId: 33
+    responseTime: 0
+(pass) DELETE /api/patients/:id > should not be able to delete patient without authentication [0.52ms]
+[04:46:48.017] DEBUG (19635):
+    message: "Not authenticated"
+[04:46:48.017] INFO (19635): Executing query
+    query: "delete from \"tb_patient\""
+    params: []
+[04:46:48.078] INFO (19635): Executing query
+    query: "delete from \"tb_user\" where \"tb_user\".\"email\" = $1"
+    params: [
+      "test@test.com"
+    ]
+[04:46:48.189] INFO (19635): Executing query
+    query: "delete from \"tb_patient\""
+    params: []
+[04:46:48.294] INFO (19635): Executing query
+    query: "insert into \"tb_user\" (\"id\", \"name\", \"email\", \"password\", \"avatar\", \"email_verified_at\", \"created_at\", \"updated_at\") values (default, $1, $2, $3, default, default, default, default)"
+    params: [
+      "Test User",
+      "test@test.com",
+      "$2b$10$5ZBjsh9sSOPfY8O/74kU.uGDsnM9H/M5P3RdX3Ii7.GyIdbffHdAO"
+    ]
+[04:46:48.354] INFO (19635): Executing query
+    query: "select \"id\", \"name\", \"email\", \"password\", \"avatar\", \"email_verified_at\", \"created_at\", \"updated_at\" from \"tb_user\" where \"tb_user\".\"email\" = $1 limit $2"
+    params: [
+      "test@test.com",
+      1
+    ]
+[04:46:48.460] INFO (19635): Executing query
+    query: "select \"tb_role\".\"name\" from \"tb_user_role\" inner join \"tb_role\" on \"tb_user_role\".\"id_role\" = \"tb_role\".\"id\" where \"tb_user_role\".\"id_user\" = $1"
+    params: [
+      "44ff4741-6225-4f56-bf06-33790cb98274"
+    ]
+[04:46:48.519] INFO (19635): Executing query
+    query: "select \"id_role\" from \"tb_user_role\" where \"tb_user_role\".\"id_user\" = $1"
+    params: [
+      "44ff4741-6225-4f56-bf06-33790cb98274"
+    ]
+[04:46:48.579] INFO (19635): Executing query
+    query: "select \"tb_permission\".\"name\" from \"tb_user_permission\" inner join \"tb_permission\" on \"tb_user_permission\".\"id_permission\" = \"tb_permission\".\"id\" where \"tb_user_permission\".\"id_user\" = $1"
+    params: [
+      "44ff4741-6225-4f56-bf06-33790cb98274"
+    ]
+[04:46:48.639] INFO (19635): Executing query
+    query: "insert into \"tb_session\" (\"id\", \"id_user\", \"expires_at\", \"ip\", \"user_agent\", \"created_at\", \"updated_at\") values (default, $1, $2, $3, $4, default, default) returning \"id\", \"id_user\", \"expires_at\", \"ip\", \"user_agent\", \"created_at\", \"updated_at\""
+    params: [
+      "44ff4741-6225-4f56-bf06-33790cb98274",
+      "2025-11-28T04:46:48.639Z",
+      null,
+      null
+    ]
+[04:46:48.698] INFO (19635): Request completed
+    req: {
+      "url": "/api/auth/login",
+      "method": "POST",
+      "headers": {
+        "content-type": "application/json"
+      }
+    }
+    res: {
+      "status": 200,
+      "headers": {
+        "access-control-allow-credentials": "true",
+        "content-type": "application/json",
+        "set-cookie": [
+          "session_id=neIT_8ggDqH3Hc980pphWuZhhnfayT8I0I1d6iyMCF6pqDEhz0UMREGpTQruBT2iZxjwSUttBxlKO5fl0qWwsw; Max-Age=604800; Path=/; Expires=Fri, 28 Nov 2025 04:46:48 GMT; HttpOnly; SameSite=None"
+        ],
+        "x-request-id": "ab2e744d-797e-4495-baea-0ba2cf16bb64"
+      }
+    }
+    reqId: 34
+    responseTime: 345
+[04:46:48.699] INFO (19635): Executing query
+    query: "insert into \"tb_patient\" (\"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\") values (default, $1, default, default, default, $2, $3, $4, $5, $6, $7, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default) returning \"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\""
+    params: [
+      "M-000001",
+      "1234567890123456",
+      "Test Patient",
+      "MALE",
+      "1990-01-01T00:00:00.000Z",
+      "081234567890",
+      "patient@test.com"
+    ]
+[04:46:48.809] INFO (19635): Executing query
+    query: "select \"id\", \"id_user\", \"expires_at\", \"ip\", \"user_agent\", \"created_at\", \"updated_at\" from \"tb_session\" where \"tb_session\".\"id\" = $1 limit $2"
+    params: [
+      "d0d85057-a1d6-4de6-b909-27c2f1abe527",
+      1
+    ]
+[04:46:48.868] INFO (19635): Executing query
+    query: "select \"id\", \"name\", \"email\", \"password\", \"avatar\", \"email_verified_at\", \"created_at\", \"updated_at\" from \"tb_user\" where \"tb_user\".\"id\" = $1 limit $2"
+    params: [
+      "44ff4741-6225-4f56-bf06-33790cb98274",
+      1
+    ]
+[04:46:48.927] INFO (19635): Executing query
+    query: "select \"tb_role\".\"name\" from \"tb_user_role\" inner join \"tb_role\" on \"tb_user_role\".\"id_role\" = \"tb_role\".\"id\" where \"tb_user_role\".\"id_user\" = $1"
+    params: [
+      "44ff4741-6225-4f56-bf06-33790cb98274"
+    ]
+[04:46:48.986] INFO (19635): Executing query
+    query: "select \"id_role\" from \"tb_user_role\" where \"tb_user_role\".\"id_user\" = $1"
+    params: [
+      "44ff4741-6225-4f56-bf06-33790cb98274"
+    ]
+[04:46:49.047] INFO (19635): Executing query
+    query: "select \"tb_permission\".\"name\" from \"tb_user_permission\" inner join \"tb_permission\" on \"tb_user_permission\".\"id_permission\" = \"tb_permission\".\"id\" where \"tb_user_permission\".\"id_user\" = $1"
+    params: [
+      "44ff4741-6225-4f56-bf06-33790cb98274"
+    ]
+[04:46:49.107] INFO (19635): Executing query
+    query: "select \"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\" from \"tb_patient\" where \"tb_patient\".\"id\" = $1 limit $2"
+    params: [
+      "eb8ed64e-1341-4d9c-87a7-05629e058509",
+      1
+    ]
+[04:46:49.164] INFO (19635): Executing query
+    query: "delete from \"tb_patient\" where \"tb_patient\".\"id\" = $1"
+    params: [
+      "eb8ed64e-1341-4d9c-87a7-05629e058509"
+    ]
+[04:46:49.226] INFO (19635): Request completed
+    req: {
+      "url": "/api/patients/eb8ed64e-1341-4d9c-87a7-05629e058509",
+      "method": "DELETE",
+      "headers": {
+        "cookie": "session_id=neIT_8ggDqH3Hc980pphWuZhhnfayT8I0I1d6iyMCF6pqDEhz0UMREGpTQruBT2iZxjwSUttBxlKO5fl0qWwsw; Max-Age=604800; Path=/; Expires=Fri, 28 Nov 2025 04:46:48 GMT; HttpOnly; SameSite=None"
+      }
+    }
+    res: {
+      "status": 200,
+      "headers": {
+        "access-control-allow-credentials": "true",
+        "content-type": "application/json",
+        "x-request-id": "dc4118eb-d702-4a0f-aef0-f91d2ddaeb94"
+      }
+    }
+    reqId: 35
+    responseTime: 418
+(pass) DELETE /api/patients/:id > should be able to delete patient with valid id [418.04ms]
+[04:46:49.226] DEBUG (19635):
+    message: "Patient deleted successfully"
+[04:46:49.227] INFO (19635): Executing query
+    query: "delete from \"tb_patient\""
+    params: []
+[04:46:49.287] INFO (19635): Executing query
+    query: "delete from \"tb_user\" where \"tb_user\".\"email\" = $1"
+    params: [
+      "test@test.com"
+    ]
+[04:46:49.397] INFO (19635): Executing query
+    query: "delete from \"tb_patient\""
+    params: []
+[04:46:49.501] INFO (19635): Executing query
+    query: "insert into \"tb_user\" (\"id\", \"name\", \"email\", \"password\", \"avatar\", \"email_verified_at\", \"created_at\", \"updated_at\") values (default, $1, $2, $3, default, default, default, default)"
+    params: [
+      "Test User",
+      "test@test.com",
+      "$2b$10$BK26scTi//OAhRaW1s5FneHgQcc3OcQbMVouwwwKdIburCSgvbcom"
+    ]
+[04:46:49.563] INFO (19635): Executing query
+    query: "select \"id\", \"name\", \"email\", \"password\", \"avatar\", \"email_verified_at\", \"created_at\", \"updated_at\" from \"tb_user\" where \"tb_user\".\"email\" = $1 limit $2"
+    params: [
+      "test@test.com",
+      1
+    ]
+[04:46:49.668] INFO (19635): Executing query
+    query: "select \"tb_role\".\"name\" from \"tb_user_role\" inner join \"tb_role\" on \"tb_user_role\".\"id_role\" = \"tb_role\".\"id\" where \"tb_user_role\".\"id_user\" = $1"
+    params: [
+      "95b8e065-465e-4d11-90f6-67d1586130b4"
+    ]
+[04:46:49.733] INFO (19635): Executing query
+    query: "select \"id_role\" from \"tb_user_role\" where \"tb_user_role\".\"id_user\" = $1"
+    params: [
+      "95b8e065-465e-4d11-90f6-67d1586130b4"
+    ]
+[04:46:49.796] INFO (19635): Executing query
+    query: "select \"tb_permission\".\"name\" from \"tb_user_permission\" inner join \"tb_permission\" on \"tb_user_permission\".\"id_permission\" = \"tb_permission\".\"id\" where \"tb_user_permission\".\"id_user\" = $1"
+    params: [
+      "95b8e065-465e-4d11-90f6-67d1586130b4"
+    ]
+[04:46:49.855] INFO (19635): Executing query
+    query: "insert into \"tb_session\" (\"id\", \"id_user\", \"expires_at\", \"ip\", \"user_agent\", \"created_at\", \"updated_at\") values (default, $1, $2, $3, $4, default, default) returning \"id\", \"id_user\", \"expires_at\", \"ip\", \"user_agent\", \"created_at\", \"updated_at\""
+    params: [
+      "95b8e065-465e-4d11-90f6-67d1586130b4",
+      "2025-11-28T04:46:49.854Z",
+      null,
+      null
+    ]
+[04:46:49.915] INFO (19635): Request completed
+    req: {
+      "url": "/api/auth/login",
+      "method": "POST",
+      "headers": {
+        "content-type": "application/json"
+      }
+    }
+    res: {
+      "status": 200,
+      "headers": {
+        "access-control-allow-credentials": "true",
+        "content-type": "application/json",
+        "set-cookie": [
+          "session_id=_CzWDLpgdhAIRlkjLAMpo4DCzwnUVEiUD6T1ml698pFMfjQco6YItwhsvMcUdc3Soh6FYH7zg5_AaZrkXOC0ug; Max-Age=604800; Path=/; Expires=Fri, 28 Nov 2025 04:46:49 GMT; HttpOnly; SameSite=None"
+        ],
+        "x-request-id": "d2d729aa-65ee-4343-8794-fc8bdbbe8989"
+      }
+    }
+    reqId: 36
+    responseTime: 352
+[04:46:49.915] INFO (19635): Executing query
+    query: "insert into \"tb_patient\" (\"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\") values (default, $1, default, default, default, $2, $3, $4, $5, $6, $7, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default) returning \"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\""
+    params: [
+      "M-000001",
+      "1234567890123456",
+      "Test Patient",
+      "MALE",
+      "1990-01-01T00:00:00.000Z",
+      "081234567890",
+      "patient@test.com"
+    ]
+[04:46:50.026] INFO (19635): Executing query
+    query: "select \"id\", \"id_user\", \"expires_at\", \"ip\", \"user_agent\", \"created_at\", \"updated_at\" from \"tb_session\" where \"tb_session\".\"id\" = $1 limit $2"
+    params: [
+      "bb70a85b-b87a-472f-abc9-9c84448d5e30",
+      1
+    ]
+[04:46:50.086] INFO (19635): Executing query
+    query: "select \"id\", \"name\", \"email\", \"password\", \"avatar\", \"email_verified_at\", \"created_at\", \"updated_at\" from \"tb_user\" where \"tb_user\".\"id\" = $1 limit $2"
+    params: [
+      "95b8e065-465e-4d11-90f6-67d1586130b4",
+      1
+    ]
+[04:46:50.147] INFO (19635): Executing query
+    query: "select \"tb_role\".\"name\" from \"tb_user_role\" inner join \"tb_role\" on \"tb_user_role\".\"id_role\" = \"tb_role\".\"id\" where \"tb_user_role\".\"id_user\" = $1"
+    params: [
+      "95b8e065-465e-4d11-90f6-67d1586130b4"
+    ]
+[04:46:50.206] INFO (19635): Executing query
+    query: "select \"id_role\" from \"tb_user_role\" where \"tb_user_role\".\"id_user\" = $1"
+    params: [
+      "95b8e065-465e-4d11-90f6-67d1586130b4"
+    ]
+[04:46:50.265] INFO (19635): Executing query
+    query: "select \"tb_permission\".\"name\" from \"tb_user_permission\" inner join \"tb_permission\" on \"tb_user_permission\".\"id_permission\" = \"tb_permission\".\"id\" where \"tb_user_permission\".\"id_user\" = $1"
+    params: [
+      "95b8e065-465e-4d11-90f6-67d1586130b4"
+    ]
+[04:46:50.324] INFO (19635): Executing query
+    query: "select \"id\", \"mrn\", \"ihs_number\", \"ihs_last_sync\", \"ihs_response_status\", \"nik\", \"name\", \"gender\", \"birth_date\", \"phone\", \"email\", \"address\", \"id_province\", \"province\", \"id_city\", \"city\", \"id_district\", \"district\", \"id_sub_district\", \"sub_district\", \"rt\", \"rw\", \"postal_code\", \"emergency_contact_name\", \"emergency_contact_phone\", \"created_at\", \"updated_at\" from \"tb_patient\" where \"tb_patient\".\"id\" = $1 limit $2"
+    params: [
+      "00000000-0000-0000-0000-000000000000",
+      1
+    ]
+[04:46:50.383] INFO (19635): Request completed
+    req: {
+      "url": "/api/patients/00000000-0000-0000-0000-000000000000",
+      "method": "DELETE",
+      "headers": {
+        "cookie": "session_id=_CzWDLpgdhAIRlkjLAMpo4DCzwnUVEiUD6T1ml698pFMfjQco6YItwhsvMcUdc3Soh6FYH7zg5_AaZrkXOC0ug; Max-Age=604800; Path=/; Expires=Fri, 28 Nov 2025 04:46:49 GMT; HttpOnly; SameSite=None"
+      }
+    }
+    res: {
+      "status": 404,
+      "headers": {
+        "access-control-allow-credentials": "true",
+        "content-type": "application/json",
+        "x-request-id": "aa2b650e-f28c-4a83-a233-250227b5d127"
+      }
+    }
+    reqId: 37
+    responseTime: 356
+(pass) DELETE /api/patients/:id > should return 404 for non-existent patient [356.98ms]
+[04:46:50.383] DEBUG (19635):
+    message: "Patient not found"
+[04:46:50.383] INFO (19635): Executing query
+    query: "delete from \"tb_patient\""
+    params: []
+[04:46:50.443] INFO (19635): Executing query
+    query: "delete from \"tb_user\" where \"tb_user\".\"email\" = $1"
+    params: [
+      "test@test.com"
+    ]
+
+ 16 pass
+ 4 fail
+ 38 expect() calls
+Ran 20 tests across 1 file. [23.64s]

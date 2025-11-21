@@ -6,7 +6,8 @@ import createApp from "@/config/create-app";
 import { loggerPino } from "@/config/log";
 import authController from "@/controller/auth.controller";
 
-const app = createApp();
+// Skip rate limiting for tests to avoid false failures
+const app = createApp({ skipRateLimit: true });
 configureOpenAPI(app);
 app.route("/", authController);
 
