@@ -98,6 +98,13 @@ export const seedRolePermission = async () => {
                     p.name === "update:patient" ||
                     p.name === "delete:patient"
             ),
+            ...practitionerPermissions.filter(
+                (p) =>
+                    p.name === "create:practitioner" ||
+                    p.name === "read:practitioner" ||
+                    p.name === "update:practitioner" ||
+                    p.name === "delete:practitioner"
+            ),
         ];
 
         await db.insert(rolePermissionTable).values(
@@ -111,6 +118,7 @@ export const seedRolePermission = async () => {
         const permissionForDoctor = [
             ...satuSehatPermissions,
             ...patientPermissions.filter((p) => p.name === "read:patient"),
+            ...practitionerPermissions.filter((p) => p.name === "read:practitioner"),
         ];
 
         await db.insert(rolePermissionTable).values(
@@ -124,6 +132,7 @@ export const seedRolePermission = async () => {
         const permissionForNurse = [
             ...satuSehatPermissions,
             ...patientPermissions.filter((p) => p.name === "read:patient"),
+            ...practitionerPermissions.filter((p) => p.name === "read:practitioner"),
         ];
 
         await db.insert(rolePermissionTable).values(
