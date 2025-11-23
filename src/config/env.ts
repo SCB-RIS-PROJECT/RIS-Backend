@@ -36,6 +36,7 @@ const EnvSchema = z.object({
     SATU_SEHAT_ORGANIZATION_ID: z.string(),
     SATU_SEHAT_CLIENT_ID: z.string(),
     SATU_SEHAT_CLIENT_SECRET: z.string(),
+    SATU_SEHAT_ORGANIZATION_IHS_NUMBER: z.string().optional(),
 });
 
 export type env = z.infer<typeof EnvSchema>;

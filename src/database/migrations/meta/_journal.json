@@ -50,6 +50,20 @@
       "when": 1763873955521,
       "tag": "0006_good_kinsey_walden",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1763876054829,
+      "tag": "0007_vengeful_wallflower",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1763883433190,
+      "tag": "0008_melodic_midnight",
+      "breakpoints": true
     }
   ]
 }
