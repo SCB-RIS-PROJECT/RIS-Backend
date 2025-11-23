@@ -1,6 +1,6 @@
 import { fakerID_ID as faker } from "@faker-js/faker";
 import type { InferInsertModel } from "drizzle-orm";
-import { GENDERS, PRACTITIONER_ROLES } from "@/database/schemas/constants";
+import { GENDERS, PRACTITIONER_PROFFESIONS } from "@/database/schemas/constants";
 import type { practitionerTable } from "@/database/schemas/schema-practitioner";
 
 type NewPractitioner = InferInsertModel<typeof practitionerTable>;
@@ -21,13 +21,13 @@ const generatePhoneNumber = (): string => {
 export const createPractitioner = async (data?: Partial<NewPractitioner>): Promise<NewPractitioner> => {
     const gender = data?.gender || faker.helpers.arrayElement(GENDERS);
     const isMale = gender === "MALE";
-    const role = data?.role || faker.helpers.arrayElement(PRACTITIONER_ROLES);
+    const profession = data?.profession || faker.helpers.arrayElement(PRACTITIONER_PROFFESIONS);
 
     return {
         ihs_number: data?.ihs_number ?? null,
         ihs_last_sync: data?.ihs_last_sync ?? null,
         ihs_response_status: data?.ihs_response_status ?? null,
-        role: role,
+        profession: profession,
         nik: data?.nik || generateNIK(),
         name: data?.name || `${faker.person.fullName({ sex: isMale ? "male" : "female" })}`,
         gender: gender,

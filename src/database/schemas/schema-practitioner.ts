@@ -1,5 +1,5 @@
 import { boolean, index, pgTable, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
-import { genderEnum, practitionerRoleEnum } from "@/database/schemas/constants";
+import { genderEnum, practitionerProfessionEnum } from "@/database/schemas/constants";
 
 export const practitionerTable = pgTable(
     "tb_practitioner",
@@ -8,7 +8,7 @@ export const practitionerTable = pgTable(
         ihs_number: varchar({ length: 12 }).unique(),
         ihs_last_sync: timestamp("ihs_last_sync"),
         ihs_response_status: varchar({ length: 3 }),
-        role: practitionerRoleEnum("role").notNull().default("DOCTOR"),
+        profession: practitionerProfessionEnum("profession").notNull().default("DOCTOR"),
         nik: varchar({ length: 16 }).notNull().unique(),
         name: varchar({ length: 255 }).notNull(),
         gender: genderEnum("gender").notNull(),
@@ -35,6 +35,6 @@ export const practitionerTable = pgTable(
         nameIdx: index("practitioner_name_idx").on(table.name),
         emailIdx: index("practitioner_email_idx").on(table.email),
         nikIdx: index("practitioner_nik_idx").on(table.nik),
-        roleIdx: index("practitioner_role_idx").on(table.role),
+        professionIdx: index("practitioner_profession_idx").on(table.profession),
     })
 );

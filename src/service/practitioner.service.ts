@@ -16,7 +16,7 @@ export class PractitionerService {
             ihs_number: practitioner.ihs_number,
             ihs_last_sync: practitioner.ihs_last_sync?.toISOString() || null,
             ihs_response_status: practitioner.ihs_response_status,
-            role: practitioner.role,
+            profession: practitioner.profession,
             nik: practitioner.nik,
             name: practitioner.name,
             gender: practitioner.gender,
@@ -42,7 +42,7 @@ export class PractitionerService {
     }
 
     static async getAllPractitioners(query: PractitionerQuery): Promise<PractitionerPaginationResponse> {
-        const { page, per_page, search, role, active, sort, dir } = query;
+        const { page, per_page, search, profession, active, sort, dir } = query;
         const offset = (page - 1) * per_page;
 
         // Build where conditions
@@ -60,8 +60,8 @@ export class PractitionerService {
             }
         }
 
-        if (role) {
-            whereConditions.push(eq(practitionerTable.role, role));
+        if (profession) {
+            whereConditions.push(eq(practitionerTable.profession, profession));
         }
 
         if (active !== undefined) {

@@ -1,6 +1,6 @@
 import { pgEnum } from "drizzle-orm/pg-core";
 
-export const PRACTITIONER_ROLES = [
+export const PRACTITIONER_PROFFESIONS = [
     "DOCTOR",
     "NURSE",
     "MIDWIFE",
@@ -16,7 +16,7 @@ export const GENDERS = ["MALE", "FEMALE"] as const;
 
 export const genderEnum = pgEnum("gender", GENDERS);
 
-export const practitionerRoleEnum = pgEnum("role", PRACTITIONER_ROLES);
+export const practitionerProfessionEnum = pgEnum("profession", PRACTITIONER_PROFFESIONS);
 
 export const ss_patients = [
     {
@@ -120,7 +120,7 @@ export const ss_practitioners = [
         ihs_number: "10009880728",
         ihs_last_sync: new Date(),
         ihs_response_status: "200",
-        role: "DOCTOR",
+        profession: "DOCTOR",
     },
     {
         nik: "3322071302900002",
@@ -130,7 +130,7 @@ export const ss_practitioners = [
         ihs_number: "10006926841",
         ihs_last_sync: new Date(),
         ihs_response_status: "200",
-        role: "DOCTOR",
+        profession: "DOCTOR",
     },
     {
         nik: "3171071609900003",
@@ -140,7 +140,7 @@ export const ss_practitioners = [
         ihs_number: "10001354453",
         ihs_last_sync: new Date(),
         ihs_response_status: "200",
-        role: "DOCTOR",
+        profession: "DOCTOR",
     },
     {
         nik: "3207192310600004",
@@ -150,7 +150,7 @@ export const ss_practitioners = [
         ihs_number: "10010910332",
         ihs_last_sync: new Date(),
         ihs_response_status: "200",
-        role: "DOCTOR",
+        profession: "DOCTOR",
     },
     {
         nik: "6408130207800005",
@@ -160,7 +160,7 @@ export const ss_practitioners = [
         ihs_number: "10018180913",
         ihs_last_sync: new Date(),
         ihs_response_status: "200",
-        role: "DOCTOR",
+        profession: "DOCTOR",
     },
     {
         nik: "3217040109800006",
@@ -170,7 +170,7 @@ export const ss_practitioners = [
         ihs_number: "10002074224",
         ihs_last_sync: new Date(),
         ihs_response_status: "200",
-        role: "DOCTOR",
+        profession: "DOCTOR",
     },
     {
         nik: "3519111703800007",
@@ -180,7 +180,7 @@ export const ss_practitioners = [
         ihs_number: "10012572188",
         ihs_last_sync: new Date(),
         ihs_response_status: "200",
-        role: "DOCTOR",
+        profession: "DOCTOR",
     },
     {
         nik: "5271002009700008",
@@ -190,7 +190,7 @@ export const ss_practitioners = [
         ihs_number: "10018452434",
         ihs_last_sync: new Date(),
         ihs_response_status: "200",
-        role: "DOCTOR",
+        profession: "DOCTOR",
     },
     {
         nik: "3313096403900009",
@@ -200,7 +200,7 @@ export const ss_practitioners = [
         ihs_number: "10014058550",
         ihs_last_sync: new Date(),
         ihs_response_status: "200",
-        role: "NURSE",
+        profession: "NURSE",
     },
     {
         nik: "3578083008700010",
@@ -210,6 +210,6 @@ export const ss_practitioners = [
         ihs_number: "10001915884",
         ihs_last_sync: new Date(),
         ihs_response_status: "200",
-        role: "PHARMACIST",
+        profession: "PHARMACIST",
     },
 ];

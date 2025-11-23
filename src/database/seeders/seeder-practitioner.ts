@@ -11,7 +11,7 @@ export const SeedPractitioner = async () => {
         const ssPractitioners = await FactoryPractitioner(
             ss_practitioners.map((practitioner) => ({
                 gender: practitioner.gender as "MALE" | "FEMALE",
-                role: practitioner.role as "DOCTOR" | "NURSE" | "PHARMACIST",
+                profession: practitioner.profession as "DOCTOR" | "NURSE" | "PHARMACIST",
                 nik: practitioner.nik,
                 name: practitioner.name,
                 birth_date: practitioner.birth_date,
@@ -29,10 +29,10 @@ export const SeedPractitioner = async () => {
 
         await db.insert(practitionerTable).values(allPractitioners);
 
-        // Count by role
-        const roleCount = allPractitioners.reduce((acc, p) => {
-            const role = p.role as string;
-            acc[role] = (acc[role] || 0) + 1;
+        // Count by profession
+        const professionCount = allPractitioners.reduce((acc, p) => {
+            const profession = p.profession as string;
+            acc[profession] = (acc[profession] || 0) + 1;
             return acc;
         }, {} as Record<string, number>);
 
@@ -42,9 +42,9 @@ export const SeedPractitioner = async () => {
         console.log(`   - Random: ${randomPractitioners.length} practitioners`);
         console.log(`   - Laki-laki: ${allPractitioners.filter((p) => p.gender === "MALE").length} practitioners`);
         console.log(`   - Perempuan: ${allPractitioners.filter((p) => p.gender === "FEMALE").length} practitioners`);
-        console.log("   - By Role:");
-        Object.entries(roleCount).forEach(([role, count]) => {
-            console.log(`     • ${role}: ${count}`);
+        console.log("   - By Profession:");
+        Object.entries(professionCount).forEach(([profession, count]) => {
+            console.log(`     • ${profession}: ${count}`);
         });
     } catch (error) {
         console.error("❌ Error seeding practitioner:", error);
