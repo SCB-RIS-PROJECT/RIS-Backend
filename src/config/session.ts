@@ -76,9 +76,9 @@ export async function destroySession(sessionId: string): Promise<void> {
 export function setSessionCookie(c: Context, sessionId: string): void {
     setCookie(c, SESSION_COOKIE_NAME, sessionId, {
         path: "/",
-        secure: false,
+        // secure: false,
         httpOnly: true,
-        sameSite: "None",
+        sameSite: "lax",
         maxAge: SESSION_TTL_MS / 1000,
         expires: new Date(Date.now() + SESSION_TTL_MS),
     });
