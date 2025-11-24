@@ -37,6 +37,15 @@ const EnvSchema = z.object({
     SATU_SEHAT_CLIENT_ID: z.string(),
     SATU_SEHAT_CLIENT_SECRET: z.string(),
     SATU_SEHAT_ORGANIZATION_IHS_NUMBER: z.string().optional(),
+
+    // Orthanc (PACS)
+    ORTHANC_URL: z.string().default("http://localhost"),
+    ORTHANC_ACCESS_ALLOWED: z.coerce.boolean().default(true),
+    ORTHANC_AUTHENTICATION_ENABLED: z.coerce.boolean().default(false),
+    ORTHANC_STORAGE_COMPRESSION: z.coerce.boolean().default(false),
+    ORTHANC_REGISTERED_USERS: z.string().default('{"orthanc":"orthanc"}'),
+    ORTHANC_HTTP_PORT: z.coerce.number().default(8042),
+    ORTHANC_DICOM_PORT: z.coerce.number().default(4242),
 });
 
 export type env = z.infer<typeof EnvSchema>;

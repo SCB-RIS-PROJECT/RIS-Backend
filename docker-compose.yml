@@ -1,0 +1,20 @@
+services:
+    orthanc:
+        image: orthancteam/orthanc:latest
+        container_name: orthanc
+        restart: unless-stopped
+        ports:
+            - "${ORTHANC_HTTP_PORT}:${ORTHANC_HTTP_PORT}" # Web UI Orthanc
+            - "${ORTHANC_DICOM_PORT}:${ORTHANC_DICOM_PORT}" # Port DICOM
+        volumes:
+            - ./.docker/orthanc/orthanc-db:/var/lib/orthanc/db
+            - ./.docker/orthanc/worklists:/var/lib/orthanc/worklists
+        environment:
+            ORTHANC__NAME: "My Orthanc Server Docker"
+            ORTHANC__REGISTERED_USERS: |
+                {"orthanc": "orthanc"}
+            ORTHANC__WORKLISTS__ENABLE: "true"
+            ORTHANC__WORKLISTS__DATABASE: "/var/lib/orthanc/worklists"
+
+volumes:
+    orthanc-db:
