@@ -114,3 +114,40 @@ export const nikParamSchema = z.object({
 });
 
 export type NikParam = z.infer<typeof nikParamSchema>;
+
+// ==================== Snomed CT ====================
+export const snomedResponseSchema = z.object({
+    id: z.string(),
+    code: z.string(),
+    display: z.string(),
+    system: z.string(),
+    category: z.string().nullable(),
+    description: z.string().nullable(),
+    active: z.boolean(),
+    created_at: z.string(),
+    updated_at: z.string().nullable(),
+});
+
+export type SnomedResponse = z.infer<typeof snomedResponseSchema>;
+
+export const snomedQuerySchema = z.object({
+    page: z.coerce.number().int().positive().default(1),
+    per_page: z.coerce.number().int().positive().max(100).default(10),
+    search: z.string().optional(),
+});
+
+export type SnomedQuery = z.infer<typeof snomedQuerySchema>;
+
+export const snomedPaginationResponseSchema = z.object({
+    data: z.array(snomedResponseSchema),
+    meta: z.object({
+        total: z.number(),
+        page: z.number(),
+        per_page: z.number(),
+        total_pages: z.number(),
+        has_next_page: z.boolean(),
+        has_prev_page: z.boolean(),
+    }),
+});
+
+export type SnomedPaginationResponse = z.infer<typeof snomedPaginationResponseSchema>;

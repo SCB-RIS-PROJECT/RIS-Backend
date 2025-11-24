@@ -57,7 +57,7 @@ describe("Practitioner CRUD", () => {
                     name: "Dr. John Doe",
                     gender: "MALE",
                     birth_date: "1980-01-01T00:00:00.000Z",
-                    role: "DOCTOR",
+                    profession: "DOCTOR",
                     phone: "081234567890",
                     email: "dr.john@example.com",
                     active: true,
@@ -70,7 +70,7 @@ describe("Practitioner CRUD", () => {
             expect(response.status).toBe(HttpStatusCodes.CREATED);
             expect(body.name).toBe("Dr. John Doe");
             expect(body.nik).toBe("1234567890123456");
-            expect(body.role).toBe("DOCTOR");
+            expect(body.profession).toBe("DOCTOR");
             expect(body.gender).toBe("MALE");
             expect(body.active).toBe(true);
 
@@ -93,7 +93,7 @@ describe("Practitioner CRUD", () => {
                     name: "Nurse Jane",
                     gender: "FEMALE",
                     birth_date: "1985-05-15T00:00:00.000Z",
-                    role: "NURSE",
+                    profession: "NURSE",
                     active: true,
                 }),
             });
@@ -103,7 +103,7 @@ describe("Practitioner CRUD", () => {
 
             expect(response.status).toBe(HttpStatusCodes.CREATED);
             expect(body.name).toBe("Nurse Jane");
-            expect(body.role).toBe("NURSE");
+            expect(body.profession).toBe("NURSE");
 
             // Cleanup
             await db.delete(practitionerTable).where(eq(practitionerTable.id, body.id));
@@ -121,7 +121,7 @@ describe("Practitioner CRUD", () => {
                     name: "Test Practitioner",
                     gender: "MALE",
                     birth_date: "1990-01-01T00:00:00.000Z",
-                    role: "PHARMACIST",
+                    profession: "PHARMACIST",
                     active: true,
                 }),
             });
@@ -162,7 +162,7 @@ describe("Practitioner CRUD", () => {
                     name: "Test Practitioner Search",
                     gender: "MALE",
                     birth_date: new Date("1990-01-01"),
-                    role: "DOCTOR",
+                    profession: "DOCTOR",
                     active: true,
                 })
                 .returning();
@@ -185,8 +185,8 @@ describe("Practitioner CRUD", () => {
             await db.delete(practitionerTable).where(eq(practitionerTable.id, testPractitioner.id));
         });
 
-        it("should filter practitioners by role", async () => {
-            const response = await app.request("/api/practitioners?role=DOCTOR", {
+        it("should filter practitioners by profession", async () => {
+            const response = await app.request("/api/practitioners?profession=DOCTOR", {
                 method: "GET",
                 headers: {
                     Cookie: adminCookie,
@@ -199,7 +199,7 @@ describe("Practitioner CRUD", () => {
             expect(response.status).toBe(HttpStatusCodes.OK);
             expect(body.data).toBeInstanceOf(Array);
             for (const practitioner of body.data) {
-                expect(practitioner.role).toBe("DOCTOR");
+                expect(practitioner.profession).toBe("DOCTOR");
             }
         });
 
@@ -281,7 +281,7 @@ describe("Practitioner CRUD", () => {
                     name: "Test Practitioner 3",
                     gender: "MALE",
                     birth_date: new Date("1985-03-20"),
-                    role: "PHARMACIST",
+                    profession: "PHARMACIST",
                     active: true,
                 })
                 .returning();
@@ -330,7 +330,7 @@ describe("Practitioner CRUD", () => {
                     name: "Old Name",
                     gender: "FEMALE",
                     birth_date: new Date("1988-08-08"),
-                    role: "NURSE",
+                    profession: "NURSE",
                     active: true,
                 })
                 .returning();
@@ -367,7 +367,7 @@ describe("Practitioner CRUD", () => {
                     name: "Old Name",
                     gender: "FEMALE",
                     birth_date: new Date("1988-08-08"),
-                    role: "NURSE",
+                    profession: "NURSE",
                     active: true,
                 })
                 .returning();
@@ -402,7 +402,7 @@ describe("Practitioner CRUD", () => {
                     name: "Test Practitioner",
                     gender: "MALE",
                     birth_date: new Date("1990-01-01"),
-                    role: "DOCTOR",
+                    profession: "DOCTOR",
                     active: true,
                 })
                 .returning();
@@ -458,7 +458,7 @@ describe("Practitioner CRUD", () => {
                     name: "To Delete",
                     gender: "MALE",
                     birth_date: new Date("1990-01-01"),
-                    role: "DOCTOR",
+                    profession: "DOCTOR",
                     active: true,
                 })
                 .returning();
@@ -486,7 +486,7 @@ describe("Practitioner CRUD", () => {
                     name: "To Delete 2",
                     gender: "FEMALE",
                     birth_date: new Date("1990-01-01"),
-                    role: "NURSE",
+                    profession: "NURSE",
                     active: true,
                 })
                 .returning();
@@ -514,7 +514,7 @@ describe("Practitioner CRUD", () => {
                     name: "Should Not Delete",
                     gender: "MALE",
                     birth_date: new Date("1990-01-01"),
-                    role: "PHARMACIST",
+                    profession: "PHARMACIST",
                     active: true,
                 })
                 .returning();

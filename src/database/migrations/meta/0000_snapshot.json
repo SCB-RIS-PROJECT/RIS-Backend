@@ -1,5 +1,5 @@
 {
-  "id": "b0a45fdd-7427-409a-a9fa-c6f59469b663",
+  "id": "e7e5f2a3-30e4-4f02-94ac-11a6c4915cf3",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -309,9 +309,9 @@
           "primaryKey": false,
           "notNull": false
         },
-        "role": {
-          "name": "role",
-          "type": "role",
+        "profession": {
+          "name": "profession",
+          "type": "profession",
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": true,
@@ -493,11 +493,11 @@
           "method": "btree",
           "with": {}
         },
-        "practitioner_role_idx": {
-          "name": "practitioner_role_idx",
+        "practitioner_profession_idx": {
+          "name": "practitioner_profession_idx",
           "columns": [
             {
-              "expression": "role",
+              "expression": "profession",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -948,6 +948,21 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "expires_at_idx": {
+          "name": "expires_at_idx",
+          "columns": [
+            {
+              "expression": "expires_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
@@ -967,6 +982,84 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.tb_snomed": {
+      "name": "tb_snomed",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "code": {
+          "name": "code",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "display": {
+          "name": "display",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "system": {
+          "name": "system",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "category": {
+          "name": "category",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "active": {
+          "name": "active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "tb_snomed_code_unique": {
+          "name": "tb_snomed_code_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "code"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -1083,8 +1176,8 @@
         "FEMALE"
       ]
     },
-    "public.role": {
-      "name": "role",
+    "public.profession": {
+      "name": "profession",
       "schema": "public",
       "values": [
         "DOCTOR",

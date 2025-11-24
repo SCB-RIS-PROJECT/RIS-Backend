@@ -1,1 +1,0 @@
-CREATE INDEX "expires_at_idx" ON "tb_session" USING btree ("expires_at");

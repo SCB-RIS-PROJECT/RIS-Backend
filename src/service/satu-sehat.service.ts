@@ -1,7 +1,17 @@
 // biome-ignore-all lint/correctness/noUnusedPrivateClassMembers: <because service>
 
+import { and, count, type InferSelectModel, ilike, or, type SQL } from "drizzle-orm";
 import env from "@/config/env";
-import type { IHSPatientBundle, IHSPractitionerBundle, SatuSehatTokenResponse } from "@/interface/satu-sehat.interface";
+import db from "@/database/db";
+import { snomedTable } from "@/database/schemas/schema-snomed";
+import type {
+    IHSPatientBundle,
+    IHSPractitionerBundle,
+    SatuSehatTokenResponse,
+    SnomedPaginationResponse,
+    SnomedQuery,
+    SnomedResponse,
+} from "@/interface/satu-sehat.interface";
 
 export class SatuSehatService {
     private static tokenCache: {
@@ -96,5 +106,66 @@ export class SatuSehatService {
 
         const data = (await response.json()) as IHSPractitionerBundle;
         return data;
+    }
+
+    /**
+     * Format SNOMED response
+     */
+    static formatSnomedResponse(snomed: InferSelectModel<typeof snomedTable>): SnomedResponse {
+        return {
+            id: snomed.id,
+            code: snomed.code,
+            display: snomed.display,
+            system: snomed.system,
+            category: snomed.category,
+            description: snomed.description,
+            active: snomed.active,
+            created_at: snomed.created_at.toISOString(),
+            updated_at: snomed.updated_at?.toISOString() ?? null,
+        };
+    }
+
+    /**
+     * Get SNOMED-CT codes from database with pagination
+     */
+    static async getSnomedFromDatabase(query: SnomedQuery): Promise<SnomedPaginationResponse> {
+        const { page, per_page, search } = query;
+        const offset = (page - 1) * per_page;
+
+        // Build where conditions
+        const whereConditions: SQL[] = [];
+        if (search) {
+            const searchCondition = or(
+                ilike(snomedTable.code, `%${search}%`),
+                ilike(snomedTable.display, `%${search}%`),
+                ilike(snomedTable.description, `%${search}%`),
+                ilike(snomedTable.category, `%${search}%`)
+            );
+            if (searchCondition) {
+                whereConditions.push(searchCondition);
+            }
+        }
+
+        const whereClause = whereConditions.length > 0 ? and(...whereConditions) : undefined;
+
+        // Get SNOMED codes
+        const snomeds = await db.select().from(snomedTable).where(whereClause).limit(per_page).offset(offset);
+
+        // Get total count
+        const [{ total }] = await db.select({ total: count() }).from(snomedTable).where(whereClause);
+
+        const totalPages = Math.ceil(total / per_page);
+
+        return {
+            data: snomeds.map((snomed) => SatuSehatService.formatSnomedResponse(snomed)),
+            meta: {
+                total,
+                page,
+                per_page,
+                total_pages: totalPages,
+                has_next_page: page < totalPages,
+                has_prev_page: page > 1,
+            },
+        };
     }
 }

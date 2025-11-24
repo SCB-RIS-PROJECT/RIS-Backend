@@ -1,5 +1,5 @@
 CREATE TYPE "public"."gender" AS ENUM('MALE', 'FEMALE');--> statement-breakpoint
-CREATE TYPE "public"."role" AS ENUM('DOCTOR', 'NURSE', 'MIDWIFE', 'PHARMACIST', 'LAB_TECHNICIAN', 'RADIOLOGIST', 'THERAPIST', 'DENTIST', 'ADMINISTRATIVE_STAFF');--> statement-breakpoint
+CREATE TYPE "public"."profession" AS ENUM('DOCTOR', 'NURSE', 'MIDWIFE', 'PHARMACIST', 'LAB_TECHNICIAN', 'RADIOLOGIST', 'THERAPIST', 'DENTIST', 'ADMINISTRATIVE_STAFF');--> statement-breakpoint
 CREATE TABLE "tb_patient" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"mrn" varchar(6) NOT NULL,
@@ -38,7 +38,7 @@ CREATE TABLE "tb_practitioner" (
 	"ihs_number" varchar(12),
 	"ihs_last_sync" timestamp,
 	"ihs_response_status" varchar(3),
-	"role" "role" DEFAULT 'DOCTOR' NOT NULL,
+	"profession" "profession" DEFAULT 'DOCTOR' NOT NULL,
 	"nik" varchar(16) NOT NULL,
 	"name" varchar(255) NOT NULL,
 	"gender" "gender" NOT NULL,
@@ -106,6 +106,19 @@ CREATE TABLE "tb_session" (
 	"updated_at" timestamp
 );
 --> statement-breakpoint
+CREATE TABLE "tb_snomed" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"code" varchar NOT NULL,
+	"display" text NOT NULL,
+	"system" varchar NOT NULL,
+	"category" varchar,
+	"description" text,
+	"active" boolean DEFAULT true NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp,
+	CONSTRAINT "tb_snomed_code_unique" UNIQUE("code")
+);
+--> statement-breakpoint
 CREATE TABLE "tb_user" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"name" varchar(255) NOT NULL,
@@ -133,7 +146,7 @@ CREATE INDEX "patient_email_idx" ON "tb_patient" USING btree ("email");--> state
 CREATE INDEX "practitioner_name_idx" ON "tb_practitioner" USING btree ("name");--> statement-breakpoint
 CREATE INDEX "practitioner_email_idx" ON "tb_practitioner" USING btree ("email");--> statement-breakpoint
 CREATE INDEX "practitioner_nik_idx" ON "tb_practitioner" USING btree ("nik");--> statement-breakpoint
-CREATE INDEX "practitioner_role_idx" ON "tb_practitioner" USING btree ("role");--> statement-breakpoint
+CREATE INDEX "practitioner_profession_idx" ON "tb_practitioner" USING btree ("profession");--> statement-breakpoint
 CREATE INDEX "id_role_idx" ON "tb_role_permission" USING btree ("id_role");--> statement-breakpoint
 CREATE INDEX "id_permission_idx" ON "tb_role_permission" USING btree ("id_permission");--> statement-breakpoint
 CREATE INDEX "id_user_permission_idx" ON "tb_user_permission" USING btree ("id_user");--> statement-breakpoint
@@ -141,5 +154,6 @@ CREATE INDEX "id_permission_user_idx" ON "tb_user_permission" USING btree ("id_p
 CREATE INDEX "id_user_role_idx" ON "tb_user_role" USING btree ("id_user");--> statement-breakpoint
 CREATE INDEX "id_role_user_idx" ON "tb_user_role" USING btree ("id_role");--> statement-breakpoint
 CREATE INDEX "id_user_idx" ON "tb_session" USING btree ("id_user");--> statement-breakpoint
+CREATE INDEX "expires_at_idx" ON "tb_session" USING btree ("expires_at");--> statement-breakpoint
 CREATE UNIQUE INDEX "email_idx" ON "tb_user" USING btree ("email");--> statement-breakpoint
 CREATE INDEX "name_idx" ON "tb_user" USING btree ("name");

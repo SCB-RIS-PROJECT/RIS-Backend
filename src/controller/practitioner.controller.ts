@@ -23,7 +23,7 @@ const getAllPractitioners = createRoute({
     path: "/api/practitioners",
     method: "get",
     tags,
-    summary: "Get all practitioners with pagination and filters",
+    summary: "Get all practitioners",
     middleware: [authMiddleware, permissionMiddleware("read:practitioner")] as const,
     request: {
         query: practitionerQuerySchema,

@@ -140,17 +140,19 @@ export class PatientService {
     }
 
     static async updatePatient(patientId: string, data: UpdatePatientInput): Promise<PatientResponse | null> {
+        const { birth_date, ihs_last_sync, ...restData } = data;
+
         const updateData: Partial<InferSelectModel<typeof patientTable>> = {
-            ...data,
+            ...restData,
             updated_at: new Date(),
         };
 
-        if (data.birth_date) {
-            updateData.birth_date = new Date(data.birth_date);
+        if (birth_date) {
+            updateData.birth_date = new Date(birth_date);
         }
 
-        if (data.ihs_last_sync) {
-            updateData.ihs_last_sync = new Date(data.ihs_last_sync);
+        if (ihs_last_sync) {
+            updateData.ihs_last_sync = new Date(ihs_last_sync);
         }
 
         const [patient] = await db
