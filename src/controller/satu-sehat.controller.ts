@@ -4,13 +4,7 @@ import { jsonContent } from "stoker/openapi/helpers";
 import { createErrorSchema, createMessageObjectSchema } from "stoker/openapi/schemas";
 import createRouter from "@/config/create-router";
 import { loggerPino } from "@/config/log";
-import {
-    ihsPatientBundleSchema,
-    ihsPractitionerBundleSchema,
-    nikParamSchema,
-    snomedPaginationResponseSchema,
-    snomedQuerySchema,
-} from "@/interface/satu-sehat.interface";
+import { ihsPatientBundleSchema, ihsPractitionerBundleSchema, nikParamSchema } from "@/interface/satu-sehat.interface";
 import { authMiddleware } from "@/middleware/auth.middleware";
 import { permissionMiddleware } from "@/middleware/role-permission.middleware";
 import { SatuSehatService } from "@/service/satu-sehat.service";
@@ -120,52 +114,6 @@ satuSehatController.openapi(
         } catch (error) {
             loggerPino.error(error);
             return c.json({ message: "Failed to fetch IHS Practitioner data" }, HttpStatusCodes.INTERNAL_SERVER_ERROR);
-        }
-    }
-);
-
-// Get SNOMED-CT codes
-satuSehatController.openapi(
-    createRoute({
-        tags,
-        method: "get",
-        path: "/api/satu-sehat/snomed-ct",
-        summary: "Get SNOMED-CT codes",
-        description: "Get paginated SNOMED-CT codes from database with optional search",
-        middleware: [authMiddleware, permissionMiddleware("read:satu_sehat")] as const,
-        request: {
-            query: snomedQuerySchema,
-        },
-        responses: {
-            [HttpStatusCodes.OK]: jsonContent(snomedPaginationResponseSchema, "SNOMED-CT codes retrieved successfully"),
-            [HttpStatusCodes.UNAUTHORIZED]: jsonContent(
-                createMessageObjectSchema("Not authenticated"),
-                "User not authenticated"
-            ),
-            [HttpStatusCodes.FORBIDDEN]: jsonContent(
-                createMessageObjectSchema("Permission denied"),
-                "Insufficient permissions"
-            ),
-            [HttpStatusCodes.BAD_REQUEST]: jsonContent(
-                createErrorSchema(snomedQuerySchema),
-                "Invalid query parameters"
-            ),
-            [HttpStatusCodes.INTERNAL_SERVER_ERROR]: jsonContent(
-                createMessageObjectSchema("Failed to fetch SNOMED-CT codes"),
-                "Internal server error"
-            ),
-        },
-    }),
-    async (c) => {
-        try {
-            const query = c.req.valid("query");
-
-            const data = await SatuSehatService.getSnomedFromDatabase(query);
-
-            return c.json(data, HttpStatusCodes.OK);
-        } catch (error) {
-            loggerPino.error(error);
-            return c.json({ message: "Failed to fetch SNOMED-CT codes" }, HttpStatusCodes.INTERNAL_SERVER_ERROR);
         }
     }
 );

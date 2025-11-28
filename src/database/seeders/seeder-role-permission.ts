@@ -65,6 +65,13 @@ export const seedRolePermission = async () => {
             createPermission({ name: "delete:practitioner", description: "can delete practitioner" }),
         ]);
 
+        const modalityPermissions = await Promise.all([
+            createPermission({ name: "create:modality", description: "can create modality" }),
+            createPermission({ name: "read:modality", description: "can read modality" }),
+            createPermission({ name: "update:modality", description: "can update modality" }),
+            createPermission({ name: "delete:modality", description: "can delete modality" }),
+        ]);
+
         const satuSehatPermissions = await Promise.all([
             createPermission({ name: "read:satu_sehat", description: "can read satu sehat data" }),
             createPermission({ name: "create:satu_sehat", description: "can create satu sehat data" }),
@@ -77,6 +84,7 @@ export const seedRolePermission = async () => {
             ...permissionPermissions,
             ...patientPermissions,
             ...practitionerPermissions,
+            ...modalityPermissions,
             ...satuSehatPermissions,
         ];
 
@@ -89,6 +97,7 @@ export const seedRolePermission = async () => {
 
         // assign permission to officer role
         const permissionForOfficer = [
+            ...modalityPermissions,
             ...satuSehatPermissions,
             ...userPermissions.filter((p) => p.name === "read:user" || p.name === "update:user"),
             ...patientPermissions.filter(
@@ -119,6 +128,7 @@ export const seedRolePermission = async () => {
             ...satuSehatPermissions,
             ...patientPermissions.filter((p) => p.name === "read:patient"),
             ...practitionerPermissions.filter((p) => p.name === "read:practitioner"),
+            ...modalityPermissions.filter((p) => p.name === "read:modality"),
         ];
 
         await db.insert(rolePermissionTable).values(

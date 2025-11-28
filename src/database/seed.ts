@@ -3,10 +3,10 @@
 
 import { sql } from "drizzle-orm";
 import db from "@/database/db";
+import { seedModality } from "@/database/seeders/seeder-modality";
 import { SeedPatient } from "@/database/seeders/seeder-patient";
 import { SeedPractitioner } from "@/database/seeders/seeder-practitioner";
 import { seedRolePermission } from "@/database/seeders/seeder-role-permission";
-import { seedSnomed } from "@/database/seeders/seeder-snomed";
 import { SeedUser } from "@/database/seeders/seeder-user";
 
 const resetDatabase = async () => {
@@ -41,7 +41,7 @@ const main = async () => {
         await SeedUser();
         await SeedPatient();
         await SeedPractitioner();
-        await seedSnomed();
+        await seedModality();
 
         console.log("✅ All seeding completed");
         process.exit(0);

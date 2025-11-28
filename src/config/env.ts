@@ -46,6 +46,9 @@ const EnvSchema = z.object({
     ORTHANC_REGISTERED_USERS: z.string().default('{"orthanc":"orthanc"}'),
     ORTHANC_HTTP_PORT: z.coerce.number().default(8042),
     ORTHANC_DICOM_PORT: z.coerce.number().default(4242),
+    ORTHANC_USERNAME: z.string().default("orthanc"),
+    ORTHANC_PASSWORD: z.string().default("orthanc"),
+    ORTHANC_DICOM_MODALITY: z.string().default("SATUSEHAT_ROUTER"),
 });
 
 export type env = z.infer<typeof EnvSchema>;

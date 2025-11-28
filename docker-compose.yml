@@ -8,13 +8,39 @@ services:
             - "${ORTHANC_DICOM_PORT}:${ORTHANC_DICOM_PORT}" # Port DICOM
         volumes:
             - ./.docker/orthanc/orthanc-db:/var/lib/orthanc/db
-            - ./.docker/orthanc/worklists:/var/lib/orthanc/worklists
+            - ./.docker/orthanc/orthanc-worklists:/var/lib/orthanc/worklists
         environment:
             ORTHANC__NAME: "My Orthanc Server Docker"
             ORTHANC__REGISTERED_USERS: |
                 {"orthanc": "orthanc"}
             ORTHANC__WORKLISTS__ENABLE: "true"
             ORTHANC__WORKLISTS__DATABASE: "/var/lib/orthanc/worklists"
+            ORTHANC__DICOM_MODALITIES: |
+                {"SATUSEHAT_ROUTER": ["DCMROUTER", "dicom-router", 11112]}
+
+        networks:
+            - dicom-network
+
+    dicom:
+        image: registry.dto.kemkes.go.id/pub/dicom-router:latest
+        container_name: dicom-router
+        platform: linux/amd64
+        restart: always
+        ports:
+            - "11112:11112"
+            - "8080:8080"
+        environment:
+            - ORG_ID=${SATU_SEHAT_ORGANIZATION_ID}
+            - CLIENT=${SATU_SEHAT_CLIENT_ID}
+            - SECRET=${SATU_SEHAT_CLIENT_SECRET}
+            - URL=${SATU_SEHAT_STAGING_URL}
+        networks:
+            - dicom-network
+
+networks:
+    dicom-network:
+        driver: bridge
 
 volumes:
     orthanc-db:
+    orthanc-worklists:

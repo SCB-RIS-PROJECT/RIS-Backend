@@ -106,19 +106,6 @@ CREATE TABLE "tb_session" (
 	"updated_at" timestamp
 );
 --> statement-breakpoint
-CREATE TABLE "tb_snomed" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"code" varchar NOT NULL,
-	"display" text NOT NULL,
-	"system" varchar NOT NULL,
-	"category" varchar,
-	"description" text,
-	"active" boolean DEFAULT true NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp,
-	CONSTRAINT "tb_snomed_code_unique" UNIQUE("code")
-);
---> statement-breakpoint
 CREATE TABLE "tb_user" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"name" varchar(255) NOT NULL,
