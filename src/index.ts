@@ -2,6 +2,7 @@ import configureOpenAPI from "@/config/configure-open-api";
 import createApp from "@/config/create-app";
 import env from "@/config/env";
 import authController from "@/controller/auth.controller";
+import loincController from "@/controller/loinc.controller";
 import modalityController from "@/controller/modality.controller";
 import patientController from "@/controller/patient.controller";
 import practitionerController from "@/controller/practitioner.controller";
@@ -17,6 +18,7 @@ const routes = [
     patientController,
     practitionerController,
     modalityController,
+    loincController,
     satuSehatController,
 ] as const;
 

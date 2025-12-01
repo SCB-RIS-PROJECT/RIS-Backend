@@ -15,6 +15,13 @@
       "when": 1764322399420,
       "tag": "0001_cuddly_rictor",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1764562114316,
+      "tag": "0002_loud_mother_askani",
+      "breakpoints": true
     }
   ]
 }

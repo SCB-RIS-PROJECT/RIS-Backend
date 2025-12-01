@@ -3,6 +3,7 @@
 
 import { sql } from "drizzle-orm";
 import db from "@/database/db";
+import { seedLoinc } from "@/database/seeders/seeder-loinc";
 import { seedModality } from "@/database/seeders/seeder-modality";
 import { SeedPatient } from "@/database/seeders/seeder-patient";
 import { SeedPractitioner } from "@/database/seeders/seeder-practitioner";
@@ -42,6 +43,7 @@ const main = async () => {
         await SeedPatient();
         await SeedPractitioner();
         await seedModality();
+        await seedLoinc();
 
         console.log("✅ All seeding completed");
         process.exit(0);
