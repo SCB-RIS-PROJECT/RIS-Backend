@@ -1,5 +1,6 @@
+// biome-ignore-all lint/suspicious/noConsole: <because seeder>
+
 import type { InferInsertModel } from "drizzle-orm";
-import { loggerPino } from "@/config/log";
 import db from "@/database/db";
 import type { modalityTable } from "@/database/schemas/schema-modality";
 import { modalityTable as table } from "@/database/schemas/schema-modality";
@@ -34,14 +35,14 @@ const modalityData: ModalityInsert[] = [
 
 export async function seedModality() {
     try {
-        loggerPino.info("🌱 Seeding Modality data...");
+        console.log("🌱 Seeding Modality data...");
 
         // Insert all modalities
         await db.insert(table).values(modalityData).onConflictDoNothing();
 
-        loggerPino.info(`✅ Successfully seeded ${modalityData.length} modalities`);
+        console.log(`✅ Successfully seeded ${modalityData.length} modalities`);
     } catch (error) {
-        loggerPino.error({ error }, "❌ Failed to seed Modality data");
+        console.log("❌ Failed to seed Modality data", error);
         throw error;
     }
 }

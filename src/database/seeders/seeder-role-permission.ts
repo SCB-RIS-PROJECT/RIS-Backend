@@ -79,6 +79,13 @@ export const seedRolePermission = async () => {
             createPermission({ name: "delete:loinc", description: "can delete loinc" }),
         ]);
 
+        const orderPermissions = await Promise.all([
+            createPermission({ name: "create:order", description: "can create order" }),
+            createPermission({ name: "read:order", description: "can read order" }),
+            createPermission({ name: "update:order", description: "can update order" }),
+            createPermission({ name: "delete:order", description: "can delete order" }),
+        ]);
+
         const satuSehatPermissions = await Promise.all([
             createPermission({ name: "read:satu_sehat", description: "can read satu sehat data" }),
             createPermission({ name: "create:satu_sehat", description: "can create satu sehat data" }),
@@ -93,6 +100,7 @@ export const seedRolePermission = async () => {
             ...practitionerPermissions,
             ...modalityPermissions,
             ...loincPermissions,
+            ...orderPermissions,
             ...satuSehatPermissions,
         ];
 
@@ -108,6 +116,7 @@ export const seedRolePermission = async () => {
             ...modalityPermissions,
             ...satuSehatPermissions,
             ...loincPermissions,
+            ...orderPermissions,
             ...userPermissions.filter((p) => p.name === "read:user" || p.name === "update:user"),
             ...patientPermissions.filter(
                 (p) =>
@@ -135,7 +144,8 @@ export const seedRolePermission = async () => {
         // assign permission to doctor role
         const permissionForDoctor = [
             ...satuSehatPermissions,
-            ...loincPermissions.filter((p) => p.name === "read:loinc"),
+            ...orderPermissions,
+            ...loincPermissions,
             ...patientPermissions.filter((p) => p.name === "read:patient"),
             ...practitionerPermissions.filter((p) => p.name === "read:practitioner"),
             ...modalityPermissions.filter((p) => p.name === "read:modality"),
@@ -152,6 +162,7 @@ export const seedRolePermission = async () => {
         const permissionForNurse = [
             ...satuSehatPermissions,
             ...loincPermissions,
+            ...orderPermissions,
             ...patientPermissions.filter((p) => p.name === "read:patient"),
             ...practitionerPermissions.filter((p) => p.name === "read:practitioner"),
         ];

@@ -36,7 +36,9 @@ const EnvSchema = z.object({
     SATU_SEHAT_ORGANIZATION_ID: z.string(),
     SATU_SEHAT_CLIENT_ID: z.string(),
     SATU_SEHAT_CLIENT_SECRET: z.string(),
-    SATU_SEHAT_ORGANIZATION_IHS_NUMBER: z.string().optional(),
+    SATU_SEHAT_LOCATION_ID: z.string(),
+    SATU_SEHAT_LOCATION_NAME: z.string(),
+    SATU_SEHAT_ORGANIZATION_IHS_NUMBER: z.string(),
 
     // Orthanc (PACS)
     ORTHANC_URL: z.string().default("http://localhost"),

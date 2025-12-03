@@ -1,7 +1,13 @@
 // biome-ignore-all lint/correctness/noUnusedPrivateClassMembers: <because service>
 
 import env from "@/config/env";
-import type { IHSPatientBundle, IHSPractitionerBundle, SatuSehatTokenResponse } from "@/interface/satu-sehat.interface";
+import type {
+    FHIREncounter,
+    FHIREncounterResponse,
+    IHSPatientBundle,
+    IHSPractitionerBundle,
+    SatuSehatTokenResponse,
+} from "@/interface/satu-sehat.interface";
 
 export class SatuSehatService {
     private static tokenCache: {
@@ -95,6 +101,32 @@ export class SatuSehatService {
         }
 
         const data = (await response.json()) as IHSPractitionerBundle;
+        return data;
+    }
+
+    /**
+     * Post Encounter to Satu Sehat API
+     */
+    static async postEncounter(encounterData: FHIREncounter): Promise<FHIREncounterResponse> {
+        const token = await SatuSehatService.getAccessToken();
+
+        const url = `${env.SATU_SEHAT_BASE_URL}/Encounter`;
+
+        const response = await fetch(url, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(encounterData),
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Failed to post Encounter: ${response.statusText} - ${errorText}`);
+        }
+
+        const data = (await response.json()) as FHIREncounterResponse;
         return data;
     }
 }

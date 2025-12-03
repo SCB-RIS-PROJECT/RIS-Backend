@@ -1,6 +1,7 @@
+// biome-ignore-all lint/suspicious/noConsole: <because seeder>
+
 import type { InferInsertModel } from "drizzle-orm";
 import { eq } from "drizzle-orm";
-import { loggerPino } from "@/config/log";
 import db from "@/database/db";
 import { loincTable } from "@/database/schemas/schema-loinc";
 import { modalityTable } from "@/database/schemas/schema-modality";
@@ -22,7 +23,7 @@ async function getModalityIdByCode(code: string): Promise<string> {
 
 export async function seedLoinc() {
     try {
-        loggerPino.info("🌱 Seeding LOINC data...");
+        console.log("🌱 Seeding LOINC data...");
 
         // Get modality IDs
         const xrModalityId = await getModalityIdByCode("XR");
@@ -176,9 +177,9 @@ export async function seedLoinc() {
         // Insert LOINC data
         await db.insert(loincTable).values(loincData).onConflictDoNothing();
 
-        loggerPino.info(`✅ Successfully seeded ${loincData.length} LOINC codes`);
+        console.log(`✅ Successfully seeded ${loincData.length} LOINC codes`);
     } catch (error) {
-        loggerPino.error({ error }, "❌ Failed to seed LOINC data");
+        console.log("❌ Failed to seed LOINC data", error);
         throw error;
     }
 }

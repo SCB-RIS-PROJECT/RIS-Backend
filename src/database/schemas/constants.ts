@@ -213,3 +213,21 @@ export const ss_practitioners = [
         profession: "PHARMACIST",
     },
 ];
+
+export const ORDER_STATUS = [
+    "PENDING", // Baru dibuat, belum dikonfirmasi
+    "CONFIRMED", // Sudah dikonfirmasi
+    "IN_PROGRESS", // Sedang dilakukan pemeriksaan
+    "COMPLETED", // Pemeriksaan selesai
+    "CANCELLED", // Dibatalkan
+] as const;
+
+export const orderStatusEnum = pgEnum("order_status", ORDER_STATUS);
+
+export const ORDER_PRIORITY = [
+    "ROUTINE", // Rutin
+    "URGENT", // Mendesak
+    "STAT", // Segera/Emergency
+] as const;
+
+export const orderPriorityEnum = pgEnum("order_priority", ORDER_PRIORITY);
