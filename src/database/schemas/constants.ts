@@ -214,6 +214,10 @@ export const ss_practitioners = [
     },
 ];
 
+export const ORDER_FROM = ["INTERNAL", "EXTERNAL"] as const;
+
+export const orderFromEnum = pgEnum("order_from", ORDER_FROM);
+
 export const ORDER_STATUS = [
     "PENDING", // Baru dibuat, belum dikonfirmasi
     "CONFIRMED", // Sudah dikonfirmasi
