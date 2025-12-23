@@ -1,13 +1,13 @@
 import { createMiddleware } from "hono/factory";
 import * as HttpStatusCodes from "stoker/http-status-codes";
-import { getSession, getSessionCookie } from "@/config/session";
 import type { AppBindings } from "@/interface";
+import { verifyToken } from "@/lib/jwt";
 import { UserService } from "@/service/user.service";
 
 export const authMiddleware = createMiddleware<AppBindings>(async (c, next) => {
-    const sessionId = getSessionCookie(c);
+    const authHeader = c.req.header("Authorization");
 
-    if (!sessionId) {
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
         return c.json(
             {
                 message: "Not authenticated",
@@ -16,18 +16,20 @@ export const authMiddleware = createMiddleware<AppBindings>(async (c, next) => {
         );
     }
 
-    const session = await getSession(sessionId);
+    const token = authHeader.substring(7); // Remove "Bearer " prefix
 
-    if (!session) {
+    const payload = verifyToken(token);
+
+    if (!payload) {
         return c.json(
             {
-                message: "Invalid or expired session",
+                message: "Invalid or expired token",
             },
             HttpStatusCodes.UNAUTHORIZED
         );
     }
 
-    const user = await UserService.getUserById(session.id_user);
+    const user = await UserService.getUserById(payload.userId);
 
     if (!user) {
         return c.json(

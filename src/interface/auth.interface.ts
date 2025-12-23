@@ -24,6 +24,12 @@ export const userResponseSchema = z.object({
 
 export const loginResponseSchema = z.object({
     message: z.string(),
+    token: z.string(),
+    user: userResponseSchema,
+});
+
+export const loginDataSchema = z.object({
+    token: z.string(),
     user: userResponseSchema,
 });
 
@@ -32,4 +38,5 @@ export const currentUserResponseSchema = userResponseSchema;
 export type LoginPayload = z.infer<typeof loginPayloadSchema>;
 export type UserResponse = z.infer<typeof userResponseSchema>;
 export type LoginResponse = z.infer<typeof loginResponseSchema>;
+export type LoginData = z.infer<typeof loginDataSchema>;
 export type CurrentUserResponse = z.infer<typeof currentUserResponseSchema>;

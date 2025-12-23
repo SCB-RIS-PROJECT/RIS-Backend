@@ -18,7 +18,7 @@ authController.openapi(
         method: "post",
         path: "/api/auth/login",
         summary: "Login",
-        description: "Authenticate a user with email and password, create a session, and set an HTTP-only cookie.",
+        description: "Authenticate a user with email and password, and return a JWT token.",
         request: {
             body: jsonContentRequired(loginPayloadSchema, "Login credentials"),
         },
@@ -41,9 +41,9 @@ authController.openapi(
     async (c) => {
         const payload = c.req.valid("json");
 
-        const user = await AuthService.login(c, payload);
+        const result = await AuthService.login(c, payload);
 
-        if (!user) {
+        if (!result) {
             return c.json(
                 {
                     message: "Invalid email or password",
@@ -55,7 +55,8 @@ authController.openapi(
         return c.json(
             {
                 message: "Login successful",
-                user,
+                token: result.token,
+                user: result.user,
             },
             HttpStatusCodes.OK
         );
@@ -69,14 +70,14 @@ authController.openapi(
         method: "delete",
         path: "/api/auth/logout",
         summary: "Logout",
-        description: "Destroy the current user session and clear the HTTP-only cookie.",
-        security: [{ cookieAuth: [] }],
+        description: "Logout the current user. With JWT, client should remove the token.",
+        security: [{ bearerAuth: [] }],
         middleware: [authMiddleware],
         responses: {
             [HttpStatusCodes.OK]: jsonContent(createMessageObjectSchema("Logout successful"), "Logout successful"),
             [HttpStatusCodes.UNAUTHORIZED]: jsonContent(
-                createMessageObjectSchema("No active session found"),
-                "No session to logout"
+                createMessageObjectSchema("Not authenticated"),
+                "No token provided"
             ),
             [HttpStatusCodes.TOO_MANY_REQUESTS]: jsonContent(
                 createMessageObjectSchema("Too many requests"),
@@ -85,16 +86,7 @@ authController.openapi(
         },
     }),
     async (c) => {
-        const success = await AuthService.logout(c);
-
-        if (!success) {
-            return c.json(
-                {
-                    message: "No active session found",
-                },
-                HttpStatusCodes.UNAUTHORIZED
-            );
-        }
+        await AuthService.logout(c);
 
         return c.json(
             {
@@ -113,8 +105,8 @@ authController.openapi(
         path: "/api/auth/current",
         summary: "Get Current User",
         description:
-            "Get the currently authenticated user with roles and permissions. Requires authentication via session cookie.",
-        security: [{ cookieAuth: [] }],
+            "Get the currently authenticated user with roles and permissions. Requires JWT token in Authorization header.",
+        security: [{ bearerAuth: [] }],
         middleware: [authMiddleware],
         responses: {
             [HttpStatusCodes.OK]: jsonContent(currentUserResponseSchema, "Current user retrieved successfully"),

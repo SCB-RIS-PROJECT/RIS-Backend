@@ -7,7 +7,17 @@ export default function configureOpenAPI(app: AppOpenAPI) {
 
     app.doc("/documentation", {
         openapi: "3.0.0",
-        security: [{ cookieAuth: [] }],
+        security: [{ bearerAuth: [] }],
+        components: {
+            securitySchemes: {
+                bearerAuth: {
+                    type: "http",
+                    scheme: "bearer",
+                    bearerFormat: "JWT",
+                    description: "Enter your JWT token in the format: Bearer {token}",
+                },
+            },
+        },
         info: {
             title: title,
             version: packageJSON.version,

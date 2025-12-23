@@ -170,10 +170,19 @@ export const fhirIdentifierSchema = z.object({
 export const fhirReferenceSchema = z.object({
     reference: z.string(),
     display: z.string().optional(),
+    // Additional fields for patient subject
+    patient_name: z.string().optional(),
+    patient_mrn: z.string().optional(),
+    patient_birth_date: z.string().optional(),
+    patient_age: z.number().optional(),
+    patient_gender: z.string().optional(),
+    // Additional field for practitioner
+    Practitioner: z.string().optional(),
 });
 
 export const fhirServiceRequestSchema = z.object({
     resourceType: z.literal("ServiceRequest").default("ServiceRequest"),
+    ServiceRequestId: z.string().optional(),
     identifier: z.array(fhirIdentifierSchema).optional(),
     status: z.string().default("active"),
     intent: z.string().default("original-order"),
@@ -233,15 +242,9 @@ export type CreateDetailOrderItem = z.infer<typeof createDetailOrderItemSchema>;
 
 // ==================== Create Order Schema ====================
 export const createOrderSchema = z.object({
-    id_patient: z.string().uuid(),
-    id_practitioner: z.string().uuid(),
+    description: z.string().optional(),
     id_encounter_ss: z.string().max(255).optional(),
     id_pelayanan: z.string().max(255).optional(),
-    patient_name: z.string().max(255).optional(),
-    patient_mrn: z.string().max(100).optional(),
-    patient_birth_date: z.string().optional(),
-    patient_age: z.number().int().optional(),
-    patient_gender: z.string().max(10).optional(),
     details: z.array(createDetailOrderItemSchema).min(1, "At least one order detail is required"),
 });
 

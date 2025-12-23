@@ -11,10 +11,9 @@ const EnvSchema = z.object({
     // Database
     DATABASE_URL: z.string(),
 
-    // Session
-    SESSION_SECRET: z.string(),
-    SESSION_COOKIE_NAME: z.string().default("session_id"),
-    SESSION_LIFETIME_MS: z.coerce.number().default(604800000),
+    // JWT
+    JWT_SECRET: z.string(),
+    JWT_EXPIRES_IN: z.string().default("7d"),
 
     // Rate Limit
     RATE_LIMIT_KEY_GENERATOR: z.string(),

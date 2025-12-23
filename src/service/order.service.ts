@@ -377,6 +377,9 @@ export class OrderService {
     private static mapFhirToDetailOrder(fhir: any) {
         const result: any = {};
 
+        // Map ServiceRequestId
+        if (fhir.ServiceRequestId) result.id_service_request_ss = fhir.ServiceRequestId;
+
         // Map FHIR status and intent
         if (fhir.status) result.fhir_status = fhir.status;
         if (fhir.intent) result.fhir_intent = fhir.intent;
@@ -393,7 +396,7 @@ export class OrderService {
             const srId = fhir.identifier.find((id: any) => 
                 id.system?.includes("/servicerequest/")
             );
-            if (srId?.value) result.id_service_request_ss = srId.value;
+            if (srId?.value && !result.id_service_request_ss) result.id_service_request_ss = srId.value;
         }
 
         // Map category
@@ -438,25 +441,25 @@ export class OrderService {
             }
         }
 
-        // Map requester
+        // Map requester with Practitioner field
         if (fhir.requester) {
             result.id_requester_ss = fhir.requester.reference?.split("/")[1];
-            result.requester_display = fhir.requester.display;
+            result.requester_display = fhir.requester.Practitioner || fhir.requester.display;
         }
 
-        // Map performer
+        // Map performer (ID from RIS)
         if (fhir.performer?.[0]) {
             result.id_performer_ss = fhir.performer[0].reference?.split("/")[1];
             result.performer_display = fhir.performer[0].display;
         }
 
-        // Map reasonCode
+        // Map reasonCode (diagnosis)
         if (fhir.reasonCode?.[0]?.coding?.[0]) {
             result.reason_code = fhir.reasonCode[0].coding[0].code;
             result.reason_display = fhir.reasonCode[0].coding[0].display;
         }
 
-        // Map supportingInfo
+        // Map supportingInfo (extract IDs from references)
         if (fhir.supportingInfo) {
             fhir.supportingInfo.forEach((info: any) => {
                 const ref = info.reference;
@@ -475,20 +478,54 @@ export class OrderService {
     static async createOrder(data: CreateOrderInput, userId: string): Promise<FullOrderResponse> {
         const orderNumber = await OrderService.generateOrderNumber();
 
+        // Extract patient and practitioner info from first detail's service_request
+        let id_patient: string | null = null;
+        let id_practitioner: string | null = null;
+        let patient_name: string | null = null;
+        let patient_mrn: string | null = null;
+        let patient_birth_date: string | null = null;
+        let patient_age: number | null = null;
+        let patient_gender: string | null = null;
+
+        if (data.details.length > 0 && data.details[0].service_request) {
+            const sr = data.details[0].service_request;
+            
+            // Extract patient info from subject
+            if (sr.subject?.reference) {
+                const patientIdMatch = sr.subject.reference.match(/Patient\/([a-f0-9-]+)/i);
+                if (patientIdMatch) {
+                    id_patient = patientIdMatch[1];
+                }
+                patient_name = sr.subject.patient_name || null;
+                patient_mrn = sr.subject.patient_mrn || null;
+                patient_birth_date = sr.subject.patient_birth_date || null;
+                patient_age = sr.subject.patient_age || null;
+                patient_gender = sr.subject.patient_gender || null;
+            }
+
+            // Extract practitioner info from requester
+            if (sr.requester?.reference) {
+                const practitionerIdMatch = sr.requester.reference.match(/Practitioner\/([a-f0-9-]+)/i);
+                if (practitionerIdMatch) {
+                    id_practitioner = practitionerIdMatch[1];
+                }
+            }
+        }
+
         // Create order
         const [order] = await db
             .insert(orderTable)
             .values({
-                id_patient: data.id_patient,
-                id_practitioner: data.id_practitioner,
+                id_patient,
+                id_practitioner,
                 id_created_by: userId,
                 id_encounter_ss: data.id_encounter_ss,
                 id_pelayanan: data.id_pelayanan,
-                patient_name: data.patient_name,
-                patient_mrn: data.patient_mrn,
-                patient_birth_date: data.patient_birth_date,
-                patient_age: data.patient_age,
-                patient_gender: data.patient_gender,
+                patient_name,
+                patient_mrn,
+                patient_birth_date,
+                patient_age,
+                patient_gender,
             })
             .returning();
 
@@ -531,7 +568,7 @@ export class OrderService {
                     schedule_date: mergedData.schedule_date ? new Date(mergedData.schedule_date) : new Date(),
                     occurrence_datetime: mergedData.occurrence_datetime ? new Date(mergedData.occurrence_datetime) : undefined,
                     order_priority: mergedData.order_priority || "ROUTINE",
-                    order_from: mergedData.order_from || "INTERNAL",
+                    order_from: mergedData.order_from || "EXTERNAL",
                     fhir_status: mergedData.fhir_status || "active",
                     fhir_intent: mergedData.fhir_intent || "original-order",
                     id_requester_ss: mergedData.id_requester_ss,
