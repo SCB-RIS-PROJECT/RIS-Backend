@@ -11,14 +11,19 @@ import type {
     CreateOrderInput,
     DetailOrderResponse,
     FullOrderResponse,
+    OrderCreationSuccess,
     OrderPaginationResponse,
     OrderQuery,
     OrderResponse,
+    SimrsServiceRequest,
     UpdateDetailOrderInput,
     UpdateOrderInput,
 } from "@/interface/order.interface";
 import { pushWorklistToOrthanc, type MWLWorklistItem } from "@/lib/orthanc-mwl";
 import { pushWorklistToDcm4chee, type DCM4CHEEMWLItem } from "@/lib/dcm4chee-mwl";
+import { generateAccessionNumber } from "@/lib/utils";
+import { SatuSehatService } from "@/service/satu-sehat.service";
+import env from "@/config/env";
 
 // MWL Target types
 export type MWLTarget = "orthanc" | "dcm4chee" | "both";
@@ -77,49 +82,35 @@ export class OrderService {
      */
     static formatOrderResponse(
         order: InferSelectModel<typeof orderTable>,
-        patient?: InferSelectModel<typeof patientTable> | null,
         practitioner?: InferSelectModel<typeof practitionerTable> | null,
         createdBy?: InferSelectModel<typeof userTable> | null
     ): OrderResponse {
         return {
             id: order.id,
-            id_patient: order.id_patient ?? null,
-            patient: patient
-                ? {
-                      id: patient.id,
-                      mrn: patient.mrn,
-                      name: patient.name,
-                      nik: patient.nik,
-                      gender: patient.gender,
-                      birth_date: patient.birth_date.toISOString(),
-                      phone: patient.phone,
-                  }
-                : undefined,
-            id_practitioner: order.id_practitioner ?? null,
+            id_pelayanan: order.id_pelayanan,
+            id_encounter_ss: order.id_encounter_ss,
+            patient: {
+                mrn: order.patient_mrn,
+                name: order.patient_name,
+                birth_date: order.patient_birth_date?.toString() || null,
+                age: order.patient_age,
+                gender: order.patient_gender,
+            },
             practitioner: practitioner
                 ? {
                       id: practitioner.id,
                       name: practitioner.name,
                       nik: practitioner.nik,
                       profession: practitioner.profession,
-                      phone: practitioner.phone,
                   }
-                : undefined,
-            id_created_by: order.id_created_by ?? null,
+                : null,
             created_by: createdBy
                 ? {
                       id: createdBy.id,
                       name: createdBy.name,
                       email: createdBy.email,
                   }
-                : undefined,
-            id_encounter_ss: order.id_encounter_ss,
-            id_pelayanan: order.id_pelayanan,
-            patient_name: order.patient_name,
-            patient_mrn: order.patient_mrn,
-            patient_birth_date: order.patient_birth_date?.toString() || null,
-            patient_age: order.patient_age,
-            patient_gender: order.patient_gender,
+                : null,
             created_at: order.created_at.toISOString(),
             updated_at: order.updated_at?.toISOString() || null,
         };
@@ -135,64 +126,38 @@ export class OrderService {
     ): DetailOrderResponse {
         return {
             id: detail.id,
-            id_order: detail.id_order ?? null,
-            id_loinc: detail.id_loinc ?? null,
-            loinc:
-                loinc && modality
-                    ? {
-                          id: loinc.id,
-                          code: loinc.code,
-                          name: loinc.name,
-                          loinc_code: loinc.loinc_code,
-                          loinc_display: loinc.loinc_display,
-                          require_fasting: loinc.require_fasting,
-                          require_pregnancy_check: loinc.require_pregnancy_check,
-                          require_use_contrast: loinc.require_use_contrast,
-                          contrast_name: loinc.contrast_name,
-                          modality: {
-                              id: modality.id,
-                              code: modality.code,
-                              name: modality.name,
-                          },
-                      }
-                    : undefined,
-            id_service_request_ss: detail.id_service_request_ss,
-            id_observation_ss: detail.id_observation_ss,
-            id_procedure_ss: detail.id_procedure_ss,
-            id_allergy_intolerance_ss: detail.id_allergy_intolerance_ss,
-            id_requester_ss: detail.id_requester_ss,
-            requester_display: detail.requester_display,
-            id_performer_ss: detail.id_performer_ss,
-            performer_display: detail.performer_display,
             accession_number: detail.accession_number ?? null,
             order_number: detail.order_number ?? null,
-            order_date: detail.order_date?.toISOString() ?? null,
             schedule_date: detail.schedule_date?.toISOString() ?? null,
-            occurrence_datetime: detail.occurrence_datetime?.toISOString() ?? null,
             order_priority: detail.order_priority ?? null,
             order_status: detail.order_status ?? null,
-            order_from: detail.order_from ?? null,
-            fhir_status: detail.fhir_status,
-            fhir_intent: detail.fhir_intent,
-            order_category_code: detail.order_category_code,
-            order_category_display: detail.order_category_display,
-            loinc_code_alt: detail.loinc_code_alt,
-            loinc_display_alt: detail.loinc_display_alt,
-            kptl_code: detail.kptl_code,
-            kptl_display: detail.kptl_display,
-            code_text: detail.code_text,
-            modality_code: detail.modality_code,
-            ae_title: detail.ae_title,
-            contrast_code: detail.contrast_code,
-            contrast_name_kfa: detail.contrast_name_kfa,
-            reason_code: detail.reason_code,
-            reason_display: detail.reason_display,
             diagnosis: detail.diagnosis,
             notes: detail.notes,
-            require_fasting: detail.require_fasting ?? null,
-            require_pregnancy_check: detail.require_pregnancy_check ?? null,
-            require_use_contrast: detail.require_use_contrast ?? null,
-            service_request_json: detail.service_request_json ?? null,
+            exam: loinc
+                ? {
+                      id: loinc.id,
+                      code: loinc.code,
+                      name: loinc.name,
+                      loinc_code: loinc.loinc_code,
+                      loinc_display: loinc.loinc_display,
+                      require_fasting: loinc.require_fasting,
+                      require_pregnancy_check: loinc.require_pregnancy_check,
+                      require_use_contrast: loinc.require_use_contrast,
+                      contrast_name: loinc.contrast_name,
+                  }
+                : null,
+            modality: modality
+                ? {
+                      id: modality.id,
+                      code: modality.code,
+                      name: modality.name,
+                  }
+                : null,
+            satu_sehat: {
+                id_service_request: detail.id_service_request_ss,
+                id_observation: detail.id_observation_ss,
+                id_procedure: detail.id_procedure_ss,
+            },
             created_at: detail.created_at.toISOString(),
             updated_at: detail.updated_at?.toISOString() || null,
         };
@@ -303,7 +268,7 @@ export class OrderService {
                     .where(detailWhereClause);
 
                 return {
-                    ...OrderService.formatOrderResponse(order, patient, practitioner, createdBy),
+                    ...OrderService.formatOrderResponse(order, practitioner, createdBy),
                     details: details.map(({ detail, loinc, modality }) =>
                         OrderService.formatDetailOrderResponse(detail, loinc, modality)
                     ),
@@ -354,7 +319,7 @@ export class OrderService {
 
         if (result.length === 0) return null;
 
-        const { order, patient, practitioner, createdBy } = result[0];
+        const { order, practitioner, createdBy } = result[0];
 
         // Get order details
         const details = await db
@@ -369,7 +334,7 @@ export class OrderService {
             .where(eq(detailOrderTable.id_order, orderId));
 
         return {
-            ...OrderService.formatOrderResponse(order, patient, practitioner, createdBy),
+            ...OrderService.formatOrderResponse(order, practitioner, createdBy),
             details: details.map(({ detail, loinc, modality }) =>
                 OrderService.formatDetailOrderResponse(detail, loinc, modality)
             ),
@@ -377,6 +342,130 @@ export class OrderService {
     }
 
     /**
+     * Get order by ID with raw data (for internal use - Satu Sehat, MWL push)
+     */
+    private static async getOrderByIdRaw(orderId: string) {
+        const result = await db
+            .select({
+                order: orderTable,
+                practitioner: practitionerTable,
+            })
+            .from(orderTable)
+            .leftJoin(practitionerTable, eq(orderTable.id_practitioner, practitionerTable.id))
+            .where(eq(orderTable.id, orderId))
+            .limit(1);
+
+        if (result.length === 0) return null;
+
+        const { order, practitioner } = result[0];
+
+        // Get order details with all raw fields
+        const details = await db
+            .select({
+                detail: detailOrderTable,
+                loinc: loincTable,
+                modality: modalityTable,
+            })
+            .from(detailOrderTable)
+            .leftJoin(loincTable, eq(detailOrderTable.id_loinc, loincTable.id))
+            .leftJoin(modalityTable, eq(loincTable.id_modality, modalityTable.id))
+            .where(eq(detailOrderTable.id_order, orderId));
+
+        return {
+            ...order,
+            practitioner,
+            details: details.map(({ detail, loinc, modality }) => ({
+                ...detail,
+                loinc,
+                modality,
+            })),
+        };
+    }
+
+    /**
+     * Map FHIR ServiceRequest from SIMRS to flat detail order fields
+     */
+    private static mapSimrsServiceRequestToDetailOrder(sr: SimrsServiceRequest) {
+        const result: Record<string, unknown> = {};
+
+        // Map occurrence datetime
+        if (sr.occurrenceDateTime) result.occurrence_datetime = sr.occurrenceDateTime;
+
+        // Map code (LOINC and KPTL)
+        if (sr.code?.coding) {
+            const loincCoding = sr.code.coding.find((c) => c.system?.includes("loinc.org"));
+            const kptlCoding = sr.code.coding.find((c) => c.system?.includes("kptl"));
+            
+            if (loincCoding) {
+                result.loinc_code_alt = loincCoding.code;
+                result.loinc_display_alt = loincCoding.display;
+            }
+            if (kptlCoding) {
+                result.kptl_code = kptlCoding.code;
+                result.kptl_display = kptlCoding.display;
+            }
+        }
+        if (sr.code?.text) result.code_text = sr.code.text;
+
+        // Map orderDetail (modality, AE title, contrast)
+        if (sr.orderDetail) {
+            const modalityDetail = sr.orderDetail.find((d) => 
+                d.coding?.some((c) => c.system?.includes("dicom.nema.org"))
+            );
+            const aeDetail = sr.orderDetail.find((d) => 
+                d.coding?.some((c) => c.system?.includes("ae-title"))
+            );
+            const contrastDetail = sr.orderDetail.find((d) => 
+                d.coding?.some((c) => c.system?.includes("kfa"))
+            );
+
+            if (modalityDetail?.coding?.[0]?.code) result.modality_code = modalityDetail.coding[0].code;
+            if (aeDetail?.coding?.[0]?.display) result.ae_title = aeDetail.coding[0].display;
+            if (contrastDetail?.coding?.[0]) {
+                result.contrast_code = contrastDetail.coding[0].code;
+                result.contrast_name_kfa = contrastDetail.coding[0].display;
+            }
+        }
+
+        // Map requester
+        if (sr.requester) {
+            result.id_requester_ss = sr.requester.reference?.split("/")[1];
+            result.requester_display = sr.requester.display;
+        }
+
+        // Map performer
+        if (sr.performer?.[0]) {
+            result.id_performer_ss = sr.performer[0].reference?.split("/")[1];
+            result.performer_display = sr.performer[0].display;
+        }
+
+        // Map reasonCode (diagnosis)
+        if (sr.reasonCode?.[0]?.coding?.[0]) {
+            result.reason_code = sr.reasonCode[0].coding[0].code;
+            result.reason_display = sr.reasonCode[0].coding[0].display;
+            result.diagnosis = `${sr.reasonCode[0].coding[0].code} - ${sr.reasonCode[0].coding[0].display}`;
+        }
+
+        // Map supportingInfo (extract IDs from references)
+        if (sr.supportingInfo) {
+            sr.supportingInfo.forEach((info) => {
+                const ref = info.reference;
+                if (ref?.startsWith("Observation/")) result.id_observation_ss = ref.split("/")[1];
+                if (ref?.startsWith("Procedure/")) result.id_procedure_ss = ref.split("/")[1];
+                if (ref?.startsWith("AllergyIntolerance/")) result.id_allergy_intolerance_ss = ref.split("/")[1];
+            });
+        }
+
+        // Extract encounter ID
+        if (sr.encounter?.reference) {
+            result.id_encounter_ss = sr.encounter.reference.split("/")[1];
+        }
+
+        return result;
+    }
+
+    /**
+     * @deprecated Use mapSimrsServiceRequestToDetailOrder instead
      * Map FHIR ServiceRequest to flat detail order fields
      */
     private static mapFhirToDetailOrder(fhir: any) {
@@ -478,14 +567,18 @@ export class OrderService {
     }
 
     /**
-     * Create new order with details
+     * Create new order with details from SIMRS
+     * Flow:
+     * 1. Extract patient/practitioner info from service_request
+     * 2. Create order record
+     * 3. Generate ACSN for each detail (format: {MODALITY}{YYYYMMDD}{SEQ})
+     * 4. Create detail order records
+     * 5. Return order with details
      */
     static async createOrder(data: CreateOrderInput, userId: string): Promise<FullOrderResponse> {
-        const orderNumber = await OrderService.generateOrderNumber();
-
         // Extract patient and practitioner info from first detail's service_request
-        let id_patient: string | null = null;
-        let id_practitioner: string | null = null;
+        let id_patient_ss: string | null = null;
+        let id_encounter_ss: string | null = null;
         let patient_name: string | null = null;
         let patient_mrn: string | null = null;
         let patient_birth_date: string | null = null;
@@ -495,36 +588,30 @@ export class OrderService {
         if (data.details.length > 0 && data.details[0].service_request) {
             const sr = data.details[0].service_request;
             
-            // Extract patient info from subject
-            if (sr.subject?.reference) {
-                const patientIdMatch = sr.subject.reference.match(/Patient\/([a-f0-9-]+)/i);
-                if (patientIdMatch) {
-                    id_patient = patientIdMatch[1];
-                }
-                patient_name = sr.subject.patient_name || null;
-                patient_mrn = sr.subject.patient_mrn || null;
-                patient_birth_date = sr.subject.patient_birth_date || null;
-                patient_age = sr.subject.patient_age || null;
-                patient_gender = sr.subject.patient_gender || null;
+            // Extract patient info from subject (required)
+            if (sr.subject) {
+                id_patient_ss = sr.subject.reference?.split("/")[1] || null;
+                patient_name = sr.subject.patient_name;
+                patient_mrn = sr.subject.patient_mrn;
+                patient_birth_date = sr.subject.patient_birth_date;
+                patient_age = sr.subject.patient_age;
+                patient_gender = sr.subject.patient_gender;
             }
 
-            // Extract practitioner info from requester
-            if (sr.requester?.reference) {
-                const practitionerIdMatch = sr.requester.reference.match(/Practitioner\/([a-f0-9-]+)/i);
-                if (practitionerIdMatch) {
-                    id_practitioner = practitionerIdMatch[1];
-                }
+            // Extract encounter ID (required)
+            if (sr.encounter) {
+                id_encounter_ss = sr.encounter.reference?.split("/")[1] || null;
             }
         }
 
-        // Create order
+        // Create order record
         const [order] = await db
             .insert(orderTable)
             .values({
-                id_patient,
-                id_practitioner,
+                id_patient: null, // We store SS ID separately
+                id_practitioner: null,
                 id_created_by: userId,
-                id_encounter_ss: data.id_encounter_ss,
+                id_encounter_ss: id_encounter_ss || data.id_pelayanan,
                 id_pelayanan: data.id_pelayanan,
                 patient_name,
                 patient_mrn,
@@ -534,75 +621,102 @@ export class OrderService {
             })
             .returning();
 
-        // Generate base accession number info
-        const now = new Date();
-        const datePrefix = now.toISOString().slice(0, 10).replace(/-/g, "");
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const tomorrow = new Date(today);
-        tomorrow.setDate(tomorrow.getDate() + 1);
-
-        const [{ total }] = await db
-            .select({ total: count() })
-            .from(detailOrderTable)
-            .where(and(gte(detailOrderTable.created_at, today), lte(detailOrderTable.created_at, tomorrow)));
-
-        // Create order details with sequential accession numbers
+        // Create order details with generated ACSN
         const detailsToInsert = await Promise.all(
-            data.details.map(async (detailData: CreateDetailOrderItem, index: number) => {
-                // Generate unique accession number for each detail
-                const sequence = (total + 1 + index).toString().padStart(4, "0");
-                const accessionNumber = `${datePrefix}-${sequence}`;
+            data.details.map(async (detailData: CreateDetailOrderItem) => {
+                // Get LOINC data to get modality code
+                const loincResult = await db
+                    .select({
+                        loinc: loincTable,
+                        modality: modalityTable,
+                    })
+                    .from(loincTable)
+                    .leftJoin(modalityTable, eq(loincTable.id_modality, modalityTable.id))
+                    .where(eq(loincTable.id, detailData.id_loinc))
+                    .limit(1);
 
-                // Get LOINC data to copy requirements
-                const [loincData] = await db.select().from(loincTable).where(eq(loincTable.id, detailData.id_loinc));
+                const loincData = loincResult[0]?.loinc;
+                const modalityData = loincResult[0]?.modality;
 
-                // Merge FHIR data if provided
-                let mergedData = { ...detailData };
-                if ((detailData as any).service_request) {
-                    const fhirMapped = OrderService.mapFhirToDetailOrder((detailData as any).service_request);
-                    mergedData = { ...mergedData, ...fhirMapped };
+                // Determine modality code for ACSN
+                let modalityCode = "OT"; // Default: Other
+                
+                // Priority: service_request.orderDetail > modality from LOINC
+                if (detailData.service_request?.orderDetail) {
+                    const modalityDetail = detailData.service_request.orderDetail.find((d) => 
+                        d.coding?.some((c) => c.system?.includes("dicom.nema.org"))
+                    );
+                    if (modalityDetail?.coding?.[0]?.code) {
+                        modalityCode = modalityDetail.coding[0].code;
+                    }
+                } else if (modalityData?.code) {
+                    modalityCode = modalityData.code;
+                }
+
+                // Generate ACSN with modality code: {MODALITY}{YYYYMMDD}{SEQ}
+                const accessionNumber = await generateAccessionNumber(modalityCode);
+
+                // Generate order number
+                const orderNumber = `ORD-${accessionNumber}`;
+
+                // Map service_request data to flat fields
+                let mappedData: Record<string, unknown> = {};
+                if (detailData.service_request) {
+                    mappedData = OrderService.mapSimrsServiceRequestToDetailOrder(detailData.service_request);
                 }
 
                 return {
                     id_order: order.id,
-                    id_loinc: mergedData.id_loinc,
+                    id_loinc: detailData.id_loinc,
                     accession_number: accessionNumber,
                     order_number: orderNumber,
-                    order_date: mergedData.order_date ? new Date(mergedData.order_date) : new Date(),
-                    schedule_date: mergedData.schedule_date ? new Date(mergedData.schedule_date) : new Date(),
-                    occurrence_datetime: mergedData.occurrence_datetime ? new Date(mergedData.occurrence_datetime) : undefined,
-                    order_priority: mergedData.order_priority || "ROUTINE",
-                    order_from: mergedData.order_from || "EXTERNAL",
-                    fhir_status: mergedData.fhir_status || "active",
-                    fhir_intent: mergedData.fhir_intent || "original-order",
-                    id_requester_ss: mergedData.id_requester_ss,
-                    requester_display: mergedData.requester_display,
-                    id_performer_ss: mergedData.id_performer_ss,
-                    performer_display: mergedData.performer_display,
-                    order_category_code: mergedData.order_category_code,
-                    order_category_display: mergedData.order_category_display,
-                    loinc_code_alt: mergedData.loinc_code_alt,
-                    loinc_display_alt: mergedData.loinc_display_alt,
-                    kptl_code: mergedData.kptl_code,
-                    kptl_display: mergedData.kptl_display,
-                    code_text: mergedData.code_text,
-                    modality_code: mergedData.modality_code,
-                    ae_title: mergedData.ae_title,
-                    contrast_code: mergedData.contrast_code,
-                    contrast_name_kfa: mergedData.contrast_name_kfa,
-                    reason_code: mergedData.reason_code,
-                    reason_display: mergedData.reason_display,
-                    id_service_request_ss: mergedData.id_service_request_ss,
-                    id_observation_ss: mergedData.id_observation_ss,
-                    id_procedure_ss: mergedData.id_procedure_ss,
-                    id_allergy_intolerance_ss: mergedData.id_allergy_intolerance_ss,
-                    diagnosis: mergedData.diagnosis,
-                    notes: mergedData.notes,
+                    order_date: detailData.order_date ? new Date(detailData.order_date) : new Date(),
+                    schedule_date: detailData.schedule_date ? new Date(detailData.schedule_date) : new Date(),
+                    occurrence_datetime: mappedData.occurrence_datetime 
+                        ? new Date(mappedData.occurrence_datetime as string) 
+                        : (detailData.schedule_date ? new Date(detailData.schedule_date) : new Date()),
+                    order_priority: detailData.order_priority || "ROUTINE",
+                    order_from: detailData.order_from || "EXTERNAL",
+                    order_status: "PENDING" as const,
+                    fhir_status: "active",
+                    fhir_intent: "original-order",
+                    order_category_code: "363679005",
+                    order_category_display: "Imaging",
+                    // LOINC info from master data
+                    loinc_code_alt: (mappedData.loinc_code_alt as string) || loincData?.loinc_code || null,
+                    loinc_display_alt: (mappedData.loinc_display_alt as string) || loincData?.loinc_display || null,
+                    // KPTL info from service_request
+                    kptl_code: (mappedData.kptl_code as string) || null,
+                    kptl_display: (mappedData.kptl_display as string) || null,
+                    code_text: (mappedData.code_text as string) || loincData?.name || null,
+                    // Modality info
+                    modality_code: (mappedData.modality_code as string) || modalityCode,
+                    ae_title: (mappedData.ae_title as string) || null,
+                    // Contrast info
+                    contrast_code: (mappedData.contrast_code as string) || loincData?.contrast_kfa_code || null,
+                    contrast_name_kfa: (mappedData.contrast_name_kfa as string) || loincData?.contrast_name || null,
+                    // Requester info
+                    id_requester_ss: (mappedData.id_requester_ss as string) || null,
+                    requester_display: (mappedData.requester_display as string) || null,
+                    // Performer info
+                    id_performer_ss: (mappedData.id_performer_ss as string) || null,
+                    performer_display: (mappedData.performer_display as string) || null,
+                    // Diagnosis info
+                    reason_code: (mappedData.reason_code as string) || null,
+                    reason_display: (mappedData.reason_display as string) || null,
+                    diagnosis: (mappedData.diagnosis as string) || null,
+                    // Supporting info IDs
+                    id_observation_ss: (mappedData.id_observation_ss as string) || null,
+                    id_procedure_ss: (mappedData.id_procedure_ss as string) || null,
+                    id_allergy_intolerance_ss: (mappedData.id_allergy_intolerance_ss as string) || null,
+                    // Notes
+                    notes: detailData.notes || null,
+                    // Requirements from LOINC master
                     require_fasting: loincData?.require_fasting || false,
                     require_pregnancy_check: loincData?.require_pregnancy_check || false,
                     require_use_contrast: loincData?.require_use_contrast || false,
-                    service_request_json: (detailData as any).service_request || null,
+                    // Store original service_request JSON
+                    service_request_json: detailData.service_request || null,
                 };
             })
         );
@@ -612,6 +726,190 @@ export class OrderService {
         // Return created order with details
         const createdOrder = await OrderService.getOrderById(order.id);
         return createdOrder!;
+    }
+
+    /**
+     * Create order from SIMRS and return simplified response
+     * Sends ServiceRequest to Satu Sehat immediately and includes result in response
+     */
+    static async createOrderForSimrs(
+        data: CreateOrderInput, 
+        userId: string
+    ): Promise<OrderCreationSuccess> {
+        // Create order first
+        const order = await OrderService.createOrder(data, userId);
+
+        // Send to Satu Sehat and wait for result
+        let satuSehatResult: {
+            sent: boolean;
+            success: boolean;
+            message: string;
+            results: Array<{
+                accession_number: string;
+                success: boolean;
+                id_service_request_ss?: string;
+                error?: string;
+            }>;
+        } | undefined;
+
+        try {
+            const sendResult = await OrderService.sendOrderToSatuSehat(order.id);
+            satuSehatResult = {
+                sent: true,
+                success: sendResult.success,
+                message: sendResult.message,
+                results: sendResult.results.map(r => ({
+                    accession_number: r.accessionNumber,
+                    success: r.success,
+                    id_service_request_ss: r.id_service_request_ss,
+                    error: r.error,
+                })),
+            };
+        } catch (error) {
+            // If Satu Sehat send fails, still return order but include error
+            satuSehatResult = {
+                sent: true,
+                success: false,
+                message: error instanceof Error ? error.message : "Failed to send to Satu Sehat",
+                results: [],
+            };
+        }
+
+        // Build simple response - echo back what SIMRS sent + id_order + generated ACSN + Satu Sehat result
+        const response: OrderCreationSuccess = {
+            success: true,
+            message: "Order created successfully",
+            data: {
+                id_order: order.id,
+                id_pelayanan: data.id_pelayanan || null,
+                details: order.details.map((detail, index) => ({
+                    id_loinc: data.details[index]?.id_loinc || "",
+                    accession_number: detail.accession_number || "",
+                    schedule_date: detail.schedule_date || null,
+                    order_priority: detail.order_priority || "ROUTINE",
+                    notes: detail.notes || null,
+                })),
+            },
+            satu_sehat: satuSehatResult,
+        };
+
+        return response;
+    }
+
+    /**
+     * Send order details to Satu Sehat as ServiceRequest
+     */
+    static async sendOrderToSatuSehat(orderId: string): Promise<{
+        success: boolean;
+        results: Array<{
+            detailId: string;
+            accessionNumber: string;
+            success: boolean;
+            id_service_request_ss?: string;
+            error?: string;
+        }>;
+        message: string;
+    }> {
+        const order = await OrderService.getOrderByIdRaw(orderId);
+        if (!order) {
+            return {
+                success: false,
+                results: [],
+                message: "Order not found",
+            };
+        }
+
+        const results: Array<{
+            detailId: string;
+            accessionNumber: string;
+            success: boolean;
+            id_service_request_ss?: string;
+            error?: string;
+        }> = [];
+
+        // Get patient and encounter IDs from first service_request
+        const firstDetail = order.details[0];
+        const serviceRequestJson = firstDetail?.service_request_json as SimrsServiceRequest | null;
+        
+        if (!serviceRequestJson?.subject?.reference || !serviceRequestJson?.encounter?.reference) {
+            return {
+                success: false,
+                results: [],
+                message: "Missing patient or encounter reference in service_request",
+            };
+        }
+
+        const patientId = serviceRequestJson.subject.reference.split("/")[1];
+        const encounterId = serviceRequestJson.encounter.reference.split("/")[1];
+
+        for (const detail of order.details) {
+            const sr = detail.service_request_json as SimrsServiceRequest | null;
+            
+            try {
+                // Build ServiceRequest for Satu Sehat
+                const serviceRequestPayload = SatuSehatService.buildServiceRequest({
+                    organizationId: env.SATU_SEHAT_ORGANIZATION_ID,
+                    accessionNumber: detail.accession_number || "",
+                    loincCode: detail.loinc?.loinc_code || detail.loinc_code_alt || "",
+                    loincDisplay: detail.loinc?.loinc_display || detail.loinc_display_alt || "",
+                    kptlCode: detail.kptl_code || undefined,
+                    kptlDisplay: detail.kptl_display || undefined,
+                    codeText: detail.code_text || undefined,
+                    modalityCode: detail.modality_code || undefined,
+                    aeTitle: detail.ae_title || undefined,
+                    contrastKfaCode: detail.contrast_code || undefined,
+                    contrastKfaDisplay: detail.contrast_name_kfa || undefined,
+                    patientId,
+                    encounterId,
+                    occurrenceDateTime: detail.occurrence_datetime?.toISOString() || detail.schedule_date?.toISOString() || undefined,
+                    requesterId: detail.id_requester_ss || "",
+                    requesterDisplay: detail.requester_display || undefined,
+                    performerId: detail.id_performer_ss || undefined,
+                    performerDisplay: detail.performer_display || undefined,
+                    reasonIcdCode: detail.reason_code || undefined,
+                    reasonIcdDisplay: detail.reason_display || undefined,
+                    observationId: detail.id_observation_ss || undefined,
+                    procedureId: detail.id_procedure_ss || undefined,
+                    allergyIntoleranceId: detail.id_allergy_intolerance_ss || undefined,
+                    priority: (detail.order_priority?.toLowerCase() as "routine" | "urgent" | "asap" | "stat") || "routine",
+                });
+
+                // Send to Satu Sehat
+                const response = await SatuSehatService.postServiceRequest(serviceRequestPayload);
+
+                // Update detail with ServiceRequest ID
+                await db
+                    .update(detailOrderTable)
+                    .set({ 
+                        id_service_request_ss: response.id,
+                        updated_at: new Date(),
+                    })
+                    .where(eq(detailOrderTable.id, detail.id));
+
+                results.push({
+                    detailId: detail.id,
+                    accessionNumber: detail.accession_number || "",
+                    success: true,
+                    id_service_request_ss: response.id,
+                });
+            } catch (error) {
+                results.push({
+                    detailId: detail.id,
+                    accessionNumber: detail.accession_number || "",
+                    success: false,
+                    error: error instanceof Error ? error.message : "Unknown error",
+                });
+            }
+        }
+
+        const allSuccess = results.every(r => r.success);
+        return {
+            success: allSuccess,
+            results,
+            message: allSuccess 
+                ? `Successfully sent ${results.length} ServiceRequest(s) to Satu Sehat`
+                : `Sent ${results.filter(r => r.success).length}/${results.length} ServiceRequest(s) to Satu Sehat`,
+        };
     }
 
     /**
@@ -770,8 +1068,8 @@ export class OrderService {
         }>;
         message: string;
     }> {
-        // Get full order with details
-        const order = await OrderService.getOrderById(orderId);
+        // Get full order with details (raw data for MWL push)
+        const order = await OrderService.getOrderByIdRaw(orderId);
 
         if (!order) {
             return {
@@ -839,7 +1137,7 @@ export class OrderService {
                 patientSex: (order.patient_gender === "MALE" ? "M" : order.patient_gender === "FEMALE" ? "F" : "O") as "M" | "F" | "O",
                 accessionNumber: detail.accession_number,
                 requestedProcedure: detail.loinc?.loinc_display || detail.code_text || "Unknown Procedure",
-                modality: detail.modality_code || detail.loinc?.modality?.code || "OT",
+                modality: detail.modality_code || detail.modality?.code || "OT",
                 stationAETitle: detail.ae_title || "UNKNOWN",
                 scheduledDate: new Date(detail.schedule_date),
                 scheduledStepId: `SPS-${detail.accession_number}`,

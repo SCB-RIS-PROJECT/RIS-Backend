@@ -221,3 +221,130 @@ export interface FHIREncounterResponse {
         };
     }>;
 }
+
+// ==================== FHIR ServiceRequest for Satu Sehat ====================
+
+/**
+ * FHIR Coding element
+ */
+export interface FHIRCoding {
+    system: string;
+    code?: string;
+    display?: string;
+}
+
+/**
+ * FHIR CodeableConcept element
+ */
+export interface FHIRCodeableConcept {
+    coding?: FHIRCoding[];
+    text?: string;
+}
+
+/**
+ * FHIR Reference element
+ */
+export interface FHIRReference {
+    reference: string;
+    display?: string;
+}
+
+/**
+ * FHIR Identifier element
+ */
+export interface FHIRIdentifier {
+    use?: string;
+    type?: FHIRCodeableConcept;
+    system?: string;
+    value?: string;
+}
+
+/**
+ * ServiceRequest resource for Satu Sehat
+ * Based on: https://api-satusehat-stg.dto.kemkes.go.id/fhir-r4/v1/ServiceRequest
+ */
+export interface FHIRServiceRequest {
+    resourceType: "ServiceRequest";
+    id?: string;
+    identifier?: FHIRIdentifier[];
+    status: "draft" | "active" | "on-hold" | "revoked" | "completed" | "entered-in-error" | "unknown";
+    intent: "proposal" | "plan" | "directive" | "order" | "original-order" | "reflex-order" | "filler-order" | "instance-order" | "option";
+    priority?: "routine" | "urgent" | "asap" | "stat";
+    category?: FHIRCodeableConcept[];
+    code?: FHIRCodeableConcept;
+    orderDetail?: FHIRCodeableConcept[];
+    subject: FHIRReference;
+    encounter?: FHIRReference;
+    occurrenceDateTime?: string;
+    requester?: FHIRReference;
+    performer?: FHIRReference[];
+    reasonCode?: FHIRCodeableConcept[];
+    supportingInfo?: FHIRReference[];
+}
+
+/**
+ * ServiceRequest response from Satu Sehat
+ */
+export interface FHIRServiceRequestResponse extends FHIRServiceRequest {
+    id: string;
+    meta?: {
+        versionId: string;
+        lastUpdated: string;
+    };
+}
+
+/**
+ * Parameters to build ServiceRequest for Satu Sehat
+ */
+export interface ServiceRequestParams {
+    // Organization info
+    organizationId: string;
+
+    // Identifiers
+    accessionNumber: string;
+    serviceRequestId?: string; // If already exists in Satu Sehat
+
+    // FHIR metadata
+    status?: "draft" | "active" | "on-hold" | "revoked" | "completed" | "entered-in-error" | "unknown";
+    intent?: "proposal" | "plan" | "directive" | "order" | "original-order" | "reflex-order" | "filler-order" | "instance-order" | "option";
+    priority?: "routine" | "urgent" | "asap" | "stat";
+
+    // Code (Procedure/Exam)
+    loincCode: string;
+    loincDisplay: string;
+    kptlCode?: string;
+    kptlDisplay?: string;
+    codeText?: string;
+
+    // Order Detail
+    modalityCode?: string;
+    aeTitle?: string;
+    contrastKfaCode?: string;
+    contrastKfaDisplay?: string;
+
+    // Subject (Patient)
+    patientId: string;
+
+    // Encounter
+    encounterId: string;
+
+    // Schedule
+    occurrenceDateTime?: string;
+
+    // Requester (Referring Physician)
+    requesterId: string;
+    requesterDisplay?: string;
+
+    // Performer (Radiologist) - optional
+    performerId?: string;
+    performerDisplay?: string;
+
+    // Reason (Diagnosis)
+    reasonIcdCode?: string;
+    reasonIcdDisplay?: string;
+
+    // Supporting Info - optional
+    observationId?: string;
+    procedureId?: string;
+    allergyIntoleranceId?: string;
+}

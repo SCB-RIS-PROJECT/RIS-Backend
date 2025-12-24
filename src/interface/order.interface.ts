@@ -4,40 +4,153 @@ import type { LoincResponse } from "@/interface/loinc.interface";
 import type { PatientResponse } from "@/interface/patient.interface";
 import type { PractitionerResponse } from "@/interface/practitioner.interface";
 
+// ==================== FHIR Base Schemas ====================
+export const fhirCodingSchema = z.object({
+    system: z.string(),
+    code: z.string().optional(),
+    display: z.string().optional(),
+});
+
+export const fhirCodeableConceptSchema = z.object({
+    coding: z.array(fhirCodingSchema).optional(),
+    text: z.string().optional(),
+});
+
+export const fhirIdentifierSchema = z.object({
+    use: z.string().optional(),
+    type: fhirCodeableConceptSchema.optional(),
+    system: z.string().optional(),
+    value: z.string().optional(),
+});
+
+export const fhirReferenceSchema = z.object({
+    reference: z.string(),
+    display: z.string().optional(),
+});
+
+// ==================== SIMRS Request Schemas ====================
+
+/**
+ * Patient subject from SIMRS
+ * Contains Satu Sehat Patient ID + patient demographic info
+ */
+export const simrsPatientSubjectSchema = z.object({
+    // Required: Satu Sehat Patient ID
+    reference: z.string().describe("Format: Patient/{id_patient_ss}"),
+    // Required: Patient demographic info for display and MWL
+    patient_name: z.string().describe("Patient full name"),
+    patient_mrn: z.string().describe("Patient MRN from SIMRS"),
+    patient_birth_date: z.string().describe("Patient birth date (YYYY-MM-DD)"),
+    patient_age: z.number().int().describe("Patient age in years"),
+    patient_gender: z.enum(["MALE", "FEMALE"]).describe("Patient gender"),
+});
+
+/**
+ * Encounter reference from SIMRS
+ * Contains Satu Sehat Encounter ID
+ */
+export const simrsEncounterSchema = z.object({
+    reference: z.string().describe("Format: Encounter/{id_encounter_ss}"),
+});
+
+/**
+ * Requester (Referring Physician) from SIMRS
+ */
+export const simrsRequesterSchema = z.object({
+    reference: z.string().describe("Format: Practitioner/{id_practitioner_ss}"),
+    display: z.string().describe("Practitioner name"),
+});
+
+/**
+ * Performer (Radiologist) from SIMRS - optional
+ */
+export const simrsPerformerSchema = z.object({
+    reference: z.string().describe("Format: Practitioner/{id_performer_ss}"),
+    display: z.string().optional().describe("Performer name"),
+});
+
+/**
+ * Reason/Diagnosis code from SIMRS
+ */
+export const simrsReasonCodeSchema = z.object({
+    coding: z.array(z.object({
+        system: z.string().default("http://hl7.org/fhir/sid/icd-10"),
+        code: z.string().describe("ICD-10 code"),
+        display: z.string().describe("ICD-10 display"),
+    })),
+});
+
+/**
+ * Supporting Info (optional references)
+ */
+export const simrsSupportingInfoSchema = z.object({
+    reference: z.string().describe("Format: {ResourceType}/{id}"),
+});
+
+/**
+ * Service Request from SIMRS (embedded in detail)
+ * This contains FHIR-like structure that RIS will use to build ServiceRequest for Satu Sehat
+ */
+export const simrsServiceRequestSchema = z.object({
+    // Code: LOINC + KPTL
+    code: z.object({
+        coding: z.array(fhirCodingSchema).min(1).describe("At least LOINC code required"),
+        text: z.string().optional().describe("Free text description of procedure"),
+    }),
+
+    // Order Detail: Modality, AE Title, Contrast
+    orderDetail: z.array(fhirCodeableConceptSchema).optional(),
+
+    // Subject: Patient info (required)
+    subject: simrsPatientSubjectSchema,
+
+    // Encounter: Satu Sehat Encounter ID (required)
+    encounter: simrsEncounterSchema,
+
+    // Occurrence: Scheduled datetime (optional, RIS can set default)
+    occurrenceDateTime: z.string().datetime().optional(),
+
+    // Requester: Referring physician (required)
+    requester: simrsRequesterSchema,
+
+    // Performer: Radiologist (optional)
+    performer: z.array(simrsPerformerSchema).optional(),
+
+    // Reason: Diagnosis/ICD-10 (optional but recommended)
+    reasonCode: z.array(simrsReasonCodeSchema).optional(),
+
+    // Supporting Info: Observation, Procedure, AllergyIntolerance IDs (optional)
+    supportingInfo: z.array(simrsSupportingInfoSchema).optional(),
+});
+
+export type SimrsServiceRequest = z.infer<typeof simrsServiceRequestSchema>;
+
 // ==================== Order Response Schema ====================
 export const orderResponseSchema = z.object({
     id: z.string().uuid(),
-    id_patient: z.string().uuid().nullable(),
+    id_pelayanan: z.string().nullable(),
+    id_encounter_ss: z.string().nullable(),
+    // Patient info (embedded from SIMRS)
     patient: z.object({
-        id: z.string().uuid(),
-        mrn: z.string(),
-        name: z.string(),
-        nik: z.string(),
-        gender: z.enum(["MALE", "FEMALE"]),
-        birth_date: z.string().datetime(),
-        phone: z.string().nullable(),
-    }).optional(),
-    id_practitioner: z.string().uuid().nullable(),
+        mrn: z.string().nullable(),
+        name: z.string().nullable(),
+        birth_date: z.string().nullable(),
+        age: z.number().nullable(),
+        gender: z.string().nullable(),
+    }),
+    // Practitioner info (if linked)
     practitioner: z.object({
         id: z.string().uuid(),
         name: z.string(),
         nik: z.string(),
         profession: z.string(),
-        phone: z.string().nullable(),
-    }).optional(),
-    id_created_by: z.string().uuid().nullable(),
+    }).nullable(),
+    // Created by user
     created_by: z.object({
         id: z.string().uuid(),
         name: z.string(),
         email: z.string(),
-    }).optional(),
-    id_encounter_ss: z.string().nullable(),
-    id_pelayanan: z.string().nullable(),
-    patient_name: z.string().nullable(),
-    patient_mrn: z.string().nullable(),
-    patient_birth_date: z.string().nullable(),
-    patient_age: z.number().nullable(),
-    patient_gender: z.string().nullable(),
+    }).nullable(),
     created_at: z.string().datetime(),
     updated_at: z.string().datetime().nullable(),
 });
@@ -47,9 +160,15 @@ export type OrderResponse = z.infer<typeof orderResponseSchema>;
 // ==================== Detail Order Response Schema ====================
 export const detailOrderResponseSchema = z.object({
     id: z.string().uuid(),
-    id_order: z.string().uuid().nullable(),
-    id_loinc: z.string().uuid().nullable(),
-    loinc: z.object({
+    accession_number: z.string().nullable(),
+    order_number: z.string().nullable(),
+    schedule_date: z.string().datetime().nullable(),
+    order_priority: z.enum(ORDER_PRIORITY).nullable(),
+    order_status: z.enum(ORDER_STATUS).nullable(),
+    diagnosis: z.string().nullable(),
+    notes: z.string().nullable(),
+    // Exam info from LOINC
+    exam: z.object({
         id: z.string().uuid(),
         code: z.string(),
         name: z.string(),
@@ -59,49 +178,19 @@ export const detailOrderResponseSchema = z.object({
         require_pregnancy_check: z.boolean(),
         require_use_contrast: z.boolean(),
         contrast_name: z.string().nullable(),
-        modality: z.object({
-            id: z.string().uuid(),
-            code: z.string(),
-            name: z.string(),
-        }).optional(),
-    }).optional(),
-    id_service_request_ss: z.string().nullable(),
-    id_observation_ss: z.string().nullable(),
-    id_procedure_ss: z.string().nullable(),
-    id_allergy_intolerance_ss: z.string().nullable(),
-    id_requester_ss: z.string().nullable(),
-    requester_display: z.string().nullable(),
-    id_performer_ss: z.string().nullable(),
-    performer_display: z.string().nullable(),
-    accession_number: z.string().nullable(),
-    order_number: z.string().nullable(),
-    order_date: z.string().datetime().nullable(),
-    schedule_date: z.string().datetime().nullable(),
-    occurrence_datetime: z.string().datetime().nullable(),
-    order_priority: z.enum(ORDER_PRIORITY).nullable(),
-    order_status: z.enum(ORDER_STATUS).nullable(),
-    order_from: z.enum(ORDER_FROM).nullable(),
-    fhir_status: z.string().nullable(),
-    fhir_intent: z.string().nullable(),
-    order_category_code: z.string().nullable(),
-    order_category_display: z.string().nullable(),
-    loinc_code_alt: z.string().nullable(),
-    loinc_display_alt: z.string().nullable(),
-    kptl_code: z.string().nullable(),
-    kptl_display: z.string().nullable(),
-    code_text: z.string().nullable(),
-    modality_code: z.string().nullable(),
-    ae_title: z.string().nullable(),
-    contrast_code: z.string().nullable(),
-    contrast_name_kfa: z.string().nullable(),
-    reason_code: z.string().nullable(),
-    reason_display: z.string().nullable(),
-    diagnosis: z.string().nullable(),
-    notes: z.string().nullable(),
-    require_fasting: z.boolean().nullable(),
-    require_pregnancy_check: z.boolean().nullable(),
-    require_use_contrast: z.boolean().nullable(),
-    service_request_json: z.any().nullable(),
+    }).nullable(),
+    // Modality info
+    modality: z.object({
+        id: z.string().uuid(),
+        code: z.string(),
+        name: z.string(),
+    }).nullable(),
+    // Satu Sehat integration IDs (for tracking)
+    satu_sehat: z.object({
+        id_service_request: z.string().nullable(),
+        id_observation: z.string().nullable(),
+        id_procedure: z.string().nullable(),
+    }).nullable(),
     created_at: z.string().datetime(),
     updated_at: z.string().datetime().nullable(),
 });
@@ -148,103 +237,32 @@ export const orderPaginationResponseSchema = z.object({
 
 export type OrderPaginationResponse = z.infer<typeof orderPaginationResponseSchema>;
 
-// ==================== FHIR ServiceRequest Schema ====================
-export const fhirCodingSchema = z.object({
-    system: z.string(),
-    code: z.string().optional(),
-    display: z.string().optional(),
-});
-
-export const fhirCodeableConceptSchema = z.object({
-    coding: z.array(fhirCodingSchema).optional(),
-    text: z.string().optional(),
-});
-
-export const fhirIdentifierSchema = z.object({
-    use: z.string().optional(),
-    type: fhirCodeableConceptSchema.optional(),
-    system: z.string().optional(),
-    value: z.string().optional(),
-});
-
-export const fhirReferenceSchema = z.object({
-    reference: z.string(),
-    display: z.string().optional(),
-    // Additional fields for patient subject
-    patient_name: z.string().optional(),
-    patient_mrn: z.string().optional(),
-    patient_birth_date: z.string().optional(),
-    patient_age: z.number().optional(),
-    patient_gender: z.string().optional(),
-    // Additional field for practitioner
-    Practitioner: z.string().optional(),
-});
-
-export const fhirServiceRequestSchema = z.object({
-    resourceType: z.literal("ServiceRequest").default("ServiceRequest"),
-    ServiceRequestId: z.string().optional(),
-    identifier: z.array(fhirIdentifierSchema).optional(),
-    status: z.string().default("active"),
-    intent: z.string().default("original-order"),
-    priority: z.string().default("routine"),
-    category: z.array(fhirCodeableConceptSchema).optional(),
-    code: fhirCodeableConceptSchema.optional(),
-    orderDetail: z.array(fhirCodeableConceptSchema).optional(),
-    subject: fhirReferenceSchema.optional(),
-    encounter: fhirReferenceSchema.optional(),
-    occurrenceDateTime: z.string().datetime().optional(),
-    requester: fhirReferenceSchema.optional(),
-    performer: z.array(fhirReferenceSchema).optional(),
-    reasonCode: z.array(fhirCodeableConceptSchema).optional(),
-    supportingInfo: z.array(fhirReferenceSchema).optional(),
-});
-
-export type FhirServiceRequest = z.infer<typeof fhirServiceRequestSchema>;
-
-// ==================== Create Detail Order Item Schema ====================
+// ==================== Create Detail Order Item Schema (from SIMRS) ====================
 export const createDetailOrderItemSchema = z.object({
-    id_loinc: z.string().uuid(),
-    order_date: z.string().datetime().optional(),
-    schedule_date: z.string().datetime().optional(),
-    occurrence_datetime: z.string().datetime().optional(),
+    // LOINC reference - Required
+    id_loinc: z.string().uuid().describe("LOINC ID from RIS master data"),
+    
+    // Scheduling - optional, RIS will set defaults
+    order_date: z.string().datetime().optional().describe("Order date, default: now"),
+    schedule_date: z.string().datetime().optional().describe("Scheduled examination date"),
     order_priority: z.enum(ORDER_PRIORITY).default("ROUTINE"),
-    order_from: z.enum(ORDER_FROM).default("INTERNAL"),
-    fhir_status: z.string().optional().default("active"),
-    fhir_intent: z.string().optional().default("original-order"),
-    id_requester_ss: z.string().optional(),
-    requester_display: z.string().optional(),
-    id_performer_ss: z.string().optional(),
-    performer_display: z.string().optional(),
-    order_category_code: z.string().optional(),
-    order_category_display: z.string().optional(),
-    loinc_code_alt: z.string().optional(),
-    loinc_display_alt: z.string().optional(),
-    kptl_code: z.string().optional(),
-    kptl_display: z.string().optional(),
-    code_text: z.string().optional(),
-    modality_code: z.string().optional(),
-    ae_title: z.string().optional(),
-    contrast_code: z.string().optional(),
-    contrast_name_kfa: z.string().optional(),
-    reason_code: z.string().optional(),
-    reason_display: z.string().optional(),
-    id_service_request_ss: z.string().optional(),
-    id_observation_ss: z.string().optional(),
-    id_procedure_ss: z.string().optional(),
-    id_allergy_intolerance_ss: z.string().optional(),
-    diagnosis: z.string().optional(),
-    notes: z.string().optional(),
-    // FHIR ServiceRequest (optional) - akan disimpan sebagai JSON
-    service_request: fhirServiceRequestSchema.optional(),
+    order_from: z.enum(ORDER_FROM).default("EXTERNAL"),
+    
+    // Notes
+    notes: z.string().optional().describe("Additional notes from SIMRS"),
+
+    // FHIR ServiceRequest from SIMRS (required for Satu Sehat integration)
+    service_request: simrsServiceRequestSchema.describe("FHIR ServiceRequest data from SIMRS"),
 });
 
 export type CreateDetailOrderItem = z.infer<typeof createDetailOrderItemSchema>;
 
-// ==================== Create Order Schema ====================
+// ==================== Create Order Schema (from SIMRS) ====================
 export const createOrderSchema = z.object({
-    description: z.string().optional(),
-    id_encounter_ss: z.string().max(255).optional(),
-    id_pelayanan: z.string().max(255).optional(),
+    // Pelayanan ID from SIMRS - optional
+    id_pelayanan: z.string().max(255).optional().describe("Service ID from SIMRS"),
+    
+    // Order details - at least one required
     details: z.array(createDetailOrderItemSchema).min(1, "At least one order detail is required"),
 });
 
@@ -288,14 +306,63 @@ export const detailOrderIdParamSchema = z.object({
 export type DetailOrderIdParam = z.infer<typeof detailOrderIdParamSchema>;
 
 // ==================== Order Creation Success Response (for SIMRS) ====================
+// Simple response: return what SIMRS sent + id_order + Satu Sehat result
 export const orderCreationSuccessSchema = z.object({
     success: z.boolean(),
     message: z.string(),
     data: z.object({
-        id_order: z.string().uuid(),
-        order_number: z.string(),
-        created_at: z.string().datetime(),
+        id_order: z.string().uuid().describe("Order ID from RIS"),
+        id_pelayanan: z.string().nullable().describe("Service ID from SIMRS (echoed back)"),
+        details: z.array(z.object({
+            id_loinc: z.string().uuid(),
+            accession_number: z.string().describe("Generated ACSN"),
+            schedule_date: z.string().datetime().nullable(),
+            order_priority: z.enum(ORDER_PRIORITY),
+            notes: z.string().nullable(),
+        })),
     }),
+    satu_sehat: z.object({
+        sent: z.boolean().describe("Whether sending to Satu Sehat was attempted"),
+        success: z.boolean().describe("Whether all ServiceRequests were sent successfully"),
+        message: z.string().describe("Summary message"),
+        results: z.array(z.object({
+            accession_number: z.string(),
+            success: z.boolean(),
+            id_service_request_ss: z.string().optional(),
+            error: z.string().optional(),
+        })),
+    }).optional().describe("Satu Sehat send result (only if attempted)"),
 });
 
 export type OrderCreationSuccess = z.infer<typeof orderCreationSuccessSchema>;
+
+// ==================== MWL Push Response ====================
+export const mwlPushResponseSchema = z.object({
+    success: z.boolean(),
+    message: z.string(),
+    results: z.array(z.object({
+        detailId: z.string().uuid(),
+        accessionNumber: z.string(),
+        success: z.boolean(),
+        target: z.string().optional(),
+        instanceId: z.string().optional(),
+        error: z.string().optional(),
+    })),
+});
+
+export type MWLPushResponse = z.infer<typeof mwlPushResponseSchema>;
+
+// ==================== Satu Sehat Push Response ====================
+export const satuSehatPushResponseSchema = z.object({
+    success: z.boolean(),
+    message: z.string(),
+    results: z.array(z.object({
+        detailId: z.string().uuid(),
+        accessionNumber: z.string(),
+        success: z.boolean(),
+        id_service_request_ss: z.string().optional(),
+        error: z.string().optional(),
+    })),
+});
+
+export type SatuSehatPushResponse = z.infer<typeof satuSehatPushResponseSchema>;

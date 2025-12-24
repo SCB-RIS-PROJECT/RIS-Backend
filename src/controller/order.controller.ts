@@ -15,6 +15,7 @@ import {
     updateOrderSchema,
     detailOrderResponseSchema,
     orderCreationSuccessSchema,
+    mwlPushResponseSchema,
 } from "@/interface/order.interface";
 import { authMiddleware } from "@/middleware/auth.middleware";
 import { permissionMiddleware } from "@/middleware/role-permission.middleware";
@@ -420,14 +421,23 @@ orderController.openapi(
         method: "post",
         path: "/api/orders/simrs",
         summary: "Create order from SIMRS",
-        description:
-            "Create a new order from SIMRS. This endpoint accepts FHIR ServiceRequest data and returns only the order ID for SIMRS reference.",
+        description: `Create a new radiology order from SIMRS with FHIR ServiceRequest format.
+
+**Flow:**
+1. SIMRS sends order data
+2. RIS generates ACSN and stores order
+3. RIS automatically sends ServiceRequest to Satu Sehat (async)
+4. Returns simple response with id_order + echoed data
+
+**Required data from SIMRS:**
+- id_loinc: LOINC ID from RIS master data (get from /api/loinc)
+- service_request: FHIR ServiceRequest data`,
         middleware: [authMiddleware, permissionMiddleware("create:order")] as const,
         request: {
-            body: jsonContentRequired(createOrderSchema, "SIMRS order data with FHIR fields"),
+            body: jsonContentRequired(createOrderSchema, "SIMRS order data with FHIR ServiceRequest"),
         },
         responses: {
-            [HttpStatusCodes.CREATED]: jsonContent(orderCreationSuccessSchema, "Order created successfully, returns order ID"),
+            [HttpStatusCodes.CREATED]: jsonContent(orderCreationSuccessSchema, "Order created successfully"),
             [HttpStatusCodes.UNAUTHORIZED]: jsonContent(
                 createMessageObjectSchema("Not authenticated"),
                 "User not authenticated"
@@ -452,21 +462,10 @@ orderController.openapi(
                 return c.json({ message: "User not found in context" }, HttpStatusCodes.UNAUTHORIZED);
             }
 
-            const order = await OrderService.createOrder(data, user.id);
+            // Create order and auto-send to Satu Sehat
+            const result = await OrderService.createOrderForSimrs(data, user.id);
             
-            // Return simplified response for SIMRS
-            return c.json(
-                {
-                    success: true,
-                    message: "Order created successfully",
-                    data: {
-                        id_order: order.id,
-                        order_number: order.details[0]?.order_number || "",
-                        created_at: order.created_at,
-                    },
-                },
-                HttpStatusCodes.CREATED
-            );
+            return c.json(result, HttpStatusCodes.CREATED);
         } catch (error) {
             loggerPino.error(error);
             return c.json({ message: "Failed to create order" }, HttpStatusCodes.INTERNAL_SERVER_ERROR);
@@ -475,6 +474,7 @@ orderController.openapi(
 );
 
 // ==================== PUSH ORDER TO MWL ====================
+// Note: Send to Satu Sehat is now automatic when creating order from SIMRS
 orderController.openapi(
     createRoute({
         tags,
