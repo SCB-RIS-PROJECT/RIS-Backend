@@ -50,6 +50,13 @@ const EnvSchema = z.object({
     ORTHANC_USERNAME: z.string().default("orthanc"),
     ORTHANC_PASSWORD: z.string().default("orthanc"),
     ORTHANC_DICOM_MODALITY: z.string().default("SATUSEHAT_ROUTER"),
+
+    // DCM4CHEE (PACS Archive)
+    DCM4CHEE_HOST: z.string().default("192.168.250.205"),
+    DCM4CHEE_PORT: z.coerce.number().default(8080),
+    DCM4CHEE_AE_TITLE: z.string().default("DCM4CHEE"),
+    DCM4CHEE_REST_API: z.string().optional(),
+    DCM4CHEE_DICOM_PORT: z.coerce.number().default(11112),
 });
 
 export type env = z.infer<typeof EnvSchema>;

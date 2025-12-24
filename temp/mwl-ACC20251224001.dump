@@ -1,0 +1,25 @@
+# DICOM Modality Worklist Item
+# Generated for: Susanto^Agus
+
+# Patient Identification
+(0010,0020) LO [MR202512240011]                    # Patient ID
+(0010,0010) PN [Susanto^Agus]                  # Patient Name
+(0010,0030) DA [19880612]             # Patient Birth Date
+(0010,0040) CS [M]                   # Patient Sex
+
+# Imaging Service Request
+(0008,0050) SH [ACC20251224001]              # Accession Number
+(0008,0090) PN [dr. Maria^Internist]           # Referring Physician Name
+(0032,1060) LO [CT Thorax with contrast]           # Requested Procedure Description
+
+# Scheduled Procedure Step Sequence
+(0040,0100) SQ                                         # Scheduled Procedure Step Sequence
+  (fffe,e000) na                                       # Item
+    (0008,0060) CS [CT]                 # Modality
+    (0040,0001) AE [CT01]           # Scheduled Station AE Title
+    (0040,0002) DA [20251225]            # Scheduled Procedure Step Start Date
+    (0040,0003) TM [090000]            # Scheduled Procedure Step Start Time
+    (0040,0009) SH [SPS20251224001]          # Scheduled Procedure Step ID
+    (0040,0007) LO [CT Thorax dengan kontras] # Scheduled Procedure Step Description
+  (fffe,e00d) na                                       # Item Delimitation
+(fffe,e0dd) na                                         # Sequence Delimitation

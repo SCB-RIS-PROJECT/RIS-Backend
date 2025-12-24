@@ -17,6 +17,11 @@ import type {
     UpdateDetailOrderInput,
     UpdateOrderInput,
 } from "@/interface/order.interface";
+import { pushWorklistToOrthanc, type MWLWorklistItem } from "@/lib/orthanc-mwl";
+import { pushWorklistToDcm4chee, type DCM4CHEEMWLItem } from "@/lib/dcm4chee-mwl";
+
+// MWL Target types
+export type MWLTarget = "orthanc" | "dcm4chee" | "both";
 
 export class OrderService {
     /**
@@ -709,4 +714,183 @@ export class OrderService {
         const { detail, loinc, modality } = result[0];
         return OrderService.formatDetailOrderResponse(detail, loinc, modality);
     }
+
+    /**
+     * Push order to MWL (Modality Worklist) - Orthanc
+     * Akan push setiap detail order sebagai worklist item terpisah
+     * @deprecated Use pushOrderToMWLWithTarget instead
+     */
+    static async pushOrderToMWL(orderId: string): Promise<{
+        success: boolean;
+        results: Array<{
+            detailId: string;
+            accessionNumber: string;
+            success: boolean;
+            instanceId?: string;
+            error?: string;
+        }>;
+        message: string;
+    }> {
+        return OrderService.pushOrderToMWLWithTarget(orderId, "orthanc");
+    }
+
+    /**
+     * Push order to DCM4CHEE MWL
+     * @deprecated Use pushOrderToMWLWithTarget instead
+     */
+    static async pushOrderToDcm4cheeMWL(orderId: string): Promise<{
+        success: boolean;
+        results: Array<{
+            detailId: string;
+            accessionNumber: string;
+            success: boolean;
+            error?: string;
+        }>;
+        message: string;
+    }> {
+        return OrderService.pushOrderToMWLWithTarget(orderId, "dcm4chee");
+    }
+
+    /**
+     * Push order to MWL with target selection
+     * Supports: orthanc, dcm4chee, or both
+     */
+    static async pushOrderToMWLWithTarget(
+        orderId: string,
+        target: MWLTarget = "dcm4chee"
+    ): Promise<{
+        success: boolean;
+        results: Array<{
+            detailId: string;
+            accessionNumber: string;
+            success: boolean;
+            instanceId?: string;
+            error?: string;
+            target?: string;
+        }>;
+        message: string;
+    }> {
+        // Get full order with details
+        const order = await OrderService.getOrderById(orderId);
+
+        if (!order) {
+            return {
+                success: false,
+                results: [],
+                message: "Order not found",
+            };
+        }
+
+        if (!order.details || order.details.length === 0) {
+            return {
+                success: false,
+                results: [],
+                message: "Order has no details to push",
+            };
+        }
+
+        // Validate required data
+        if (!order.patient_name || !order.patient_mrn) {
+            return {
+                success: false,
+                results: [],
+                message: "Order missing patient information",
+            };
+        }
+
+        const results: Array<{
+            detailId: string;
+            accessionNumber: string;
+            success: boolean;
+            instanceId?: string;
+            error?: string;
+            target?: string;
+        }> = [];
+
+        let successCount = 0;
+
+        // Push each detail as separate worklist item
+        for (const detail of order.details) {
+            if (!detail.accession_number) {
+                results.push({
+                    detailId: detail.id,
+                    accessionNumber: "N/A",
+                    success: false,
+                    error: "Missing accession number",
+                });
+                continue;
+            }
+
+            if (!detail.schedule_date) {
+                results.push({
+                    detailId: detail.id,
+                    accessionNumber: detail.accession_number,
+                    success: false,
+                    error: "Missing schedule date",
+                });
+                continue;
+            }
+
+            // Prepare base MWL data
+            const baseMwlData = {
+                patientId: order.patient_mrn,
+                patientName: order.patient_name,
+                patientBirthDate: order.patient_birth_date || "19000101",
+                patientSex: (order.patient_gender === "MALE" ? "M" : order.patient_gender === "FEMALE" ? "F" : "O") as "M" | "F" | "O",
+                accessionNumber: detail.accession_number,
+                requestedProcedure: detail.loinc?.loinc_display || detail.code_text || "Unknown Procedure",
+                modality: detail.modality_code || detail.loinc?.modality?.code || "OT",
+                stationAETitle: detail.ae_title || "UNKNOWN",
+                scheduledDate: new Date(detail.schedule_date),
+                scheduledStepId: `SPS-${detail.accession_number}`,
+                scheduledStepDescription: detail.loinc?.loinc_display || detail.code_text || "Radiologic Examination",
+                referringPhysician: detail.requester_display || order.practitioner?.name || undefined,
+            };
+
+            // Push to selected target(s)
+            if (target === "orthanc" || target === "both") {
+                const orthancItem: MWLWorklistItem = baseMwlData;
+                const orthancResult = await pushWorklistToOrthanc(orthancItem);
+
+                if (orthancResult.success) {
+                    successCount++;
+                }
+
+                results.push({
+                    detailId: detail.id,
+                    accessionNumber: detail.accession_number,
+                    success: orthancResult.success,
+                    instanceId: orthancResult.instanceId,
+                    error: orthancResult.error,
+                    target: "orthanc",
+                });
+            }
+
+            if (target === "dcm4chee" || target === "both") {
+                const dcm4cheeItem: DCM4CHEEMWLItem = baseMwlData;
+                const dcm4cheeResult = await pushWorklistToDcm4chee(dcm4cheeItem);
+
+                if (dcm4cheeResult.success) {
+                    successCount++;
+                }
+
+                results.push({
+                    detailId: detail.id,
+                    accessionNumber: detail.accession_number,
+                    success: dcm4cheeResult.success,
+                    error: dcm4cheeResult.error,
+                    target: "dcm4chee",
+                });
+            }
+        }
+
+        const totalExpected = target === "both" ? order.details.length * 2 : order.details.length;
+
+        return {
+            success: successCount > 0,
+            results,
+            message: `Pushed ${successCount}/${totalExpected} worklist items to MWL (${target})`,
+        };
+    }
 }
+

@@ -1,0 +1,25 @@
+# DICOM Modality Worklist Item
+# Generated for: Ahmad^Hidayat
+
+# Patient Identification
+(0010,0020) LO [MR202312230003]                    # Patient ID
+(0010,0010) PN [Ahmad^Hidayat]                  # Patient Name
+(0010,0030) DA [19751108]             # Patient Birth Date
+(0010,0040) CS [M]                   # Patient Sex
+
+# Imaging Service Request
+(0008,0050) SH [ACC20231223003]              # Accession Number
+(0008,0090) PN [dr. Budi^Ortopedi]           # Referring Physician Name
+(0032,1060) LO [MRI Lumbar Spine]           # Requested Procedure Description
+
+# Scheduled Procedure Step Sequence
+(0040,0100) SQ                                         # Scheduled Procedure Step Sequence
+  (fffe,e000) na                                       # Item
+    (0008,0060) CS [MR]                 # Modality
+    (0040,0001) AE [MRI01]           # Scheduled Station AE Title
+    (0040,0002) DA [20231224]            # Scheduled Procedure Step Start Date
+    (0040,0003) TM [143000]            # Scheduled Procedure Step Start Time
+    (0040,0009) SH [SPS003]          # Scheduled Procedure Step ID
+    (0040,0007) LO [MRI Lumbar Spine] # Scheduled Procedure Step Description
+  (fffe,e00d) na                                       # Item Delimitation
+(fffe,e0dd) na                                         # Sequence Delimitation

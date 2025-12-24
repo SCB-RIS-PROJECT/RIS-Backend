@@ -1,4 +1,4 @@
-import { createRoute } from "@hono/zod-openapi";
+import { createRoute, z } from "@hono/zod-openapi";
 import * as HttpStatusCodes from "stoker/http-status-codes";
 import { jsonContent, jsonContentRequired } from "stoker/openapi/helpers";
 import { createErrorSchema, createMessageObjectSchema } from "stoker/openapi/schemas";
@@ -470,6 +470,96 @@ orderController.openapi(
         } catch (error) {
             loggerPino.error(error);
             return c.json({ message: "Failed to create order" }, HttpStatusCodes.INTERNAL_SERVER_ERROR);
+        }
+    }
+);
+
+// ==================== PUSH ORDER TO MWL ====================
+orderController.openapi(
+    createRoute({
+        tags,
+        method: "post",
+        path: "/api/orders/{id}/push-to-mwl",
+        summary: "Push order to MWL (Modality Worklist)",
+        description:
+            "Push existing order details to MWL server (Orthanc or DCM4CHEE). Each order detail will be sent as separate worklist item. Use query parameter 'target' to specify destination: 'orthanc', 'dcm4chee', or 'both'.",
+        middleware: [authMiddleware, permissionMiddleware("create:order")] as const,
+        request: {
+            params: orderIdParamSchema,
+            query: z.object({
+                target: z.enum(["orthanc", "dcm4chee", "both"]).default("dcm4chee").openapi({
+                    description: "MWL target server: orthanc, dcm4chee, or both",
+                    example: "dcm4chee",
+                }),
+            }),
+        },
+        responses: {
+            [HttpStatusCodes.OK]: jsonContent(
+                createMessageObjectSchema("Order pushed to MWL successfully"),
+                "Order pushed to MWL"
+            ),
+            [HttpStatusCodes.NOT_FOUND]: jsonContent(
+                createMessageObjectSchema("Order not found"),
+                "Order does not exist"
+            ),
+            [HttpStatusCodes.BAD_REQUEST]: jsonContent(
+                createMessageObjectSchema("Invalid order data"),
+                "Order cannot be pushed to MWL"
+            ),
+            [HttpStatusCodes.UNAUTHORIZED]: jsonContent(
+                createMessageObjectSchema("Not authenticated"),
+                "User not authenticated"
+            ),
+            [HttpStatusCodes.FORBIDDEN]: jsonContent(
+                createMessageObjectSchema("Permission denied"),
+                "Insufficient permissions"
+            ),
+            [HttpStatusCodes.INTERNAL_SERVER_ERROR]: jsonContent(
+                createMessageObjectSchema("Failed to push order to MWL"),
+                "Server error"
+            ),
+        },
+        security: [{ bearerAuth: [] }],
+    }),
+    async (c) => {
+        try {
+            const { id } = c.req.valid("param");
+            const { target } = c.req.valid("query");
+
+            const result = await OrderService.pushOrderToMWLWithTarget(id, target);
+
+            if (!result.success) {
+                const statusCode = result.message.includes("not found")
+                    ? HttpStatusCodes.NOT_FOUND
+                    : HttpStatusCodes.BAD_REQUEST;
+
+                return c.json(
+                    {
+                        success: false,
+                        message: result.message,
+                        results: result.results,
+                    },
+                    statusCode
+                );
+            }
+
+            return c.json(
+                {
+                    success: true,
+                    message: result.message,
+                    results: result.results,
+                },
+                HttpStatusCodes.OK
+            );
+        } catch (error) {
+            loggerPino.error(error);
+            return c.json(
+                {
+                    success: false,
+                    message: "Failed to push order to MWL",
+                },
+                HttpStatusCodes.INTERNAL_SERVER_ERROR
+            );
         }
     }
 );

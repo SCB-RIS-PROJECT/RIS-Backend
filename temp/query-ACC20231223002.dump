@@ -1,0 +1,10 @@
+# MWL Query
+(0008,0050) SH [ACC20231223002]  # Accession Number
+(0010,0010) PN []                    # Patient Name (return key)
+(0010,0020) LO []                    # Patient ID (return key)
+(0040,0100) SQ                       # Scheduled Procedure Step Sequence
+  (fffe,e000) na
+    (0008,0060) CS []                # Modality (return key)
+    (0040,0002) DA []                # Start Date (return key)
+  (fffe,e00d) na
+(fffe,e0dd) na

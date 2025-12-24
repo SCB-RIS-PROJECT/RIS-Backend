@@ -1,0 +1,25 @@
+# DICOM Modality Worklist Item
+# Generated for: Novita^Sari
+
+# Patient Identification
+(0010,0020) LO [MR202512240014]                    # Patient ID
+(0010,0010) PN [Novita^Sari]                  # Patient Name
+(0010,0030) DA [19950504]             # Patient Birth Date
+(0010,0040) CS [F]                   # Patient Sex
+
+# Imaging Service Request
+(0008,0050) SH [ACC20251224004]              # Accession Number
+(0008,0090) PN [dr. Budi^Ortopedi]           # Referring Physician Name
+(0032,1060) LO [XR Lumbal Spine AP-Lateral]           # Requested Procedure Description
+
+# Scheduled Procedure Step Sequence
+(0040,0100) SQ                                         # Scheduled Procedure Step Sequence
+  (fffe,e000) na                                       # Item
+    (0008,0060) CS [DX]                 # Modality
+    (0040,0001) AE [XRAY01]           # Scheduled Station AE Title
+    (0040,0002) DA [20251225]            # Scheduled Procedure Step Start Date
+    (0040,0003) TM [143000]            # Scheduled Procedure Step Start Time
+    (0040,0009) SH [SPS20251224004]          # Scheduled Procedure Step ID
+    (0040,0007) LO [X-Ray Lumbal Spine 2 posisi] # Scheduled Procedure Step Description
+  (fffe,e00d) na                                       # Item Delimitation
+(fffe,e0dd) na                                         # Sequence Delimitation

@@ -1,0 +1,25 @@
+# DICOM Modality Worklist Item
+# Generated for: Lestari^Putri
+
+# Patient Identification
+(0010,0020) LO [MR202512240012]                    # Patient ID
+(0010,0010) PN [Lestari^Putri]                  # Patient Name
+(0010,0030) DA [19920218]             # Patient Birth Date
+(0010,0040) CS [F]                   # Patient Sex
+
+# Imaging Service Request
+(0008,0050) SH [ACC20251224002]              # Accession Number
+(0008,0090) PN [dr. Handoko^Neurologi]           # Referring Physician Name
+(0032,1060) LO [MRI Brain with contrast]           # Requested Procedure Description
+
+# Scheduled Procedure Step Sequence
+(0040,0100) SQ                                         # Scheduled Procedure Step Sequence
+  (fffe,e000) na                                       # Item
+    (0008,0060) CS [MR]                 # Modality
+    (0040,0001) AE [MRI01]           # Scheduled Station AE Title
+    (0040,0002) DA [20251225]            # Scheduled Procedure Step Start Date
+    (0040,0003) TM [110000]            # Scheduled Procedure Step Start Time
+    (0040,0009) SH [SPS20251224002]          # Scheduled Procedure Step ID
+    (0040,0007) LO [MRI Brain dengan kontras] # Scheduled Procedure Step Description
+  (fffe,e00d) na                                       # Item Delimitation
+(fffe,e0dd) na                                         # Sequence Delimitation
