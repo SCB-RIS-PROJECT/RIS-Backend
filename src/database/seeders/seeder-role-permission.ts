@@ -29,6 +29,11 @@ export const seedRolePermission = async () => {
             description: "Nurse who assists doctors and cares for patients",
         });
 
+        const simrsRole = await createRole({
+            name: "simrs",
+            description: "SIMRS Integration - can only create orders via API",
+        });
+
         // create permission
         const userPermissions = await Promise.all([
             createPermission({ name: "create:user", description: "can create user" }),
@@ -174,12 +179,25 @@ export const seedRolePermission = async () => {
             }))
         );
 
+        // assign permission to simrs role (only create order)
+        const permissionForSimrs = [
+            orderPermissions.filter((p) => p.name === "create:order"),
+        ].flat();
+
+        await db.insert(rolePermissionTable).values(
+            permissionForSimrs.map((permission) => ({
+                id_role: simrsRole.id,
+                id_permission: permission.id,
+            }))
+        );
+
         // create users with their roles
         const userConfigs = [
             { name: "admin", role: adminRole },
             { name: "officer", role: officerRole },
             { name: "doctor", role: doctorRole },
             { name: "nurse", role: nurseRole },
+            { name: "simrs", role: simrsRole },
         ];
 
         // Create users using FactoryUser
