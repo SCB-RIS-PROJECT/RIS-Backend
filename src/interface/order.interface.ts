@@ -240,7 +240,7 @@ export type OrderPaginationResponse = z.infer<typeof orderPaginationResponseSche
 // ==================== Create Detail Order Item Schema (from SIMRS) ====================
 export const createDetailOrderItemSchema = z.object({
     // LOINC reference - Optional untuk order dari SIMRS (dapat null, data LOINC disimpan di service_request)
-    id_loinc: z.string().uuid().optional().describe("Optional LOINC ID from RIS master data. Leave empty for SIMRS orders."),
+    loinc_code: z.string().optional().describe("Optional LOINC code from RIS master data (e.g., 'XR-THORAX-PA'). Leave empty for SIMRS orders."),
     
     // Scheduling - optional, RIS will set defaults
     order_date: z.string().datetime().optional().describe("Order date, default: now"),
@@ -314,7 +314,7 @@ export const orderCreationSuccessSchema = z.object({
         id_order: z.string().uuid().describe("Order ID from RIS"),
         id_pelayanan: z.string().nullable().describe("Service ID from SIMRS (echoed back)"),
         details: z.array(z.object({
-            id_loinc: z.string().uuid(),
+            loinc_code: z.string().describe("LOINC code (echoed back if provided)"),
             accession_number: z.string().describe("Generated ACSN"),
             schedule_date: z.string().datetime().nullable(),
             order_priority: z.enum(ORDER_PRIORITY),

@@ -569,13 +569,39 @@ export class OrderService {
     /**
      * Create new order with details from SIMRS
      * Flow:
-     * 1. Extract patient/practitioner info from service_request
-     * 2. Create order record
-     * 3. Generate ACSN for each detail (format: {MODALITY}{YYYYMMDD}{SEQ})
-     * 4. Create detail order records
-     * 5. Return order with details
+     * 1. Validate all id_loinc if provided
+     * 2. Extract patient/practitioner info from service_request
+     * 3. Create order record
+     * 4. Generate ACSN for each detail (format: {MODALITY}{YYYYMMDD}{SEQ})
+     * 5. Create detail order records
+     * 6. Return order with details
      */
     static async createOrder(data: CreateOrderInput, userId: string): Promise<FullOrderResponse> {
+        // Validate all loinc_code before starting transaction
+        const loincCodes = data.details
+            .map(d => d.loinc_code)
+            .filter((code): code is string => code !== null && code !== undefined && code !== "");
+
+        if (loincCodes.length > 0) {
+            // Check all LOINC codes exist in database
+            const loincRecords = await db
+                .select({ code: loincTable.code })
+                .from(loincTable)
+                .where(
+                    or(...loincCodes.map(code => eq(loincTable.code, code)))
+                );
+
+            const foundCodes = new Set(loincRecords.map(r => r.code));
+            const invalidCodes = loincCodes.filter(code => !foundCodes.has(code));
+
+            if (invalidCodes.length > 0) {
+                throw new Error(
+                    `Invalid LOINC code(s): ${invalidCodes.join(", ")}. ` +
+                    `Please use valid LOINC codes from the database or omit loinc_code for SIMRS orders.`
+                );
+            }
+        }
+
         // Extract patient and practitioner info from first detail's service_request
         let id_patient_ss: string | null = null;
         let id_encounter_ss: string | null = null;
@@ -625,10 +651,11 @@ export class OrderService {
         const detailsToInsert = await Promise.all(
             data.details.map(async (detailData: CreateDetailOrderItem) => {
                 // Get LOINC data from master (optional - for RIS internal orders)
+                // Already validated above, so we can safely query
                 let loincData = null;
                 let modalityData = null;
                 
-                if (detailData.id_loinc) {
+                if (detailData.loinc_code) {
                     const loincResult = await db
                         .select({
                             loinc: loincTable,
@@ -636,7 +663,7 @@ export class OrderService {
                         })
                         .from(loincTable)
                         .leftJoin(modalityTable, eq(loincTable.id_modality, modalityTable.id))
-                        .where(eq(loincTable.id, detailData.id_loinc))
+                        .where(eq(loincTable.code, detailData.loinc_code))
                         .limit(1);
 
                     loincData = loincResult[0]?.loinc || null;
@@ -672,7 +699,7 @@ export class OrderService {
 
                 return {
                     id_order: order.id,
-                    id_loinc: detailData.id_loinc || null, // Null untuk order dari SIMRS
+                    id_loinc: loincData?.id || null, // Store LOINC ID if found, null untuk order dari SIMRS
                     accession_number: accessionNumber,
                     order_number: orderNumber,
                     order_date: detailData.order_date ? new Date(detailData.order_date) : new Date(),
@@ -788,7 +815,7 @@ export class OrderService {
                 id_order: order.id,
                 id_pelayanan: data.id_pelayanan || null,
                 details: order.details.map((detail, index) => ({
-                    id_loinc: data.details[index]?.id_loinc || "",
+                    loinc_code: data.details[index]?.loinc_code || "",
                     accession_number: detail.accession_number || "",
                     schedule_date: detail.schedule_date || null,
                     order_priority: detail.order_priority || "ROUTINE",
