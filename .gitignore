@@ -1,11 +1,67 @@
-# deps
+# Dependencies
 node_modules/
+bun.lockb
 
-# environment files
+# Environment files
 .env
+.env.local
+.env.development
+.env.production
+.env.test
+.env*.local
 
-# docker
+# Build outputs
+dist/
+build/
+public/
+*.js.map
+
+# Docker
 .docker/
 
-dist/
-public/
+# PM2
+.pm2/
+ecosystem.config.js
+*.log
+pids/
+logs/
+
+# Database
+*.sql
+*.dump
+*.db
+*.sqlite
+*.sqlite3
+migrations/temp/
+
+# Temporary files
+temp/
+tmp/
+*.tmp
+*.temp
+.cache/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# OS
+Thumbs.db
+Desktop.ini
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Drizzle
+drizzle/
+.drizzle/
+
+# Backup files
+*.backup
+*.bak
+*.old

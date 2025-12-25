@@ -624,19 +624,24 @@ export class OrderService {
         // Create order details with generated ACSN
         const detailsToInsert = await Promise.all(
             data.details.map(async (detailData: CreateDetailOrderItem) => {
-                // Get LOINC data to get modality code
-                const loincResult = await db
-                    .select({
-                        loinc: loincTable,
-                        modality: modalityTable,
-                    })
-                    .from(loincTable)
-                    .leftJoin(modalityTable, eq(loincTable.id_modality, modalityTable.id))
-                    .where(eq(loincTable.id, detailData.id_loinc))
-                    .limit(1);
+                // Get LOINC data from master (optional - for RIS internal orders)
+                let loincData = null;
+                let modalityData = null;
+                
+                if (detailData.id_loinc) {
+                    const loincResult = await db
+                        .select({
+                            loinc: loincTable,
+                            modality: modalityTable,
+                        })
+                        .from(loincTable)
+                        .leftJoin(modalityTable, eq(loincTable.id_modality, modalityTable.id))
+                        .where(eq(loincTable.id, detailData.id_loinc))
+                        .limit(1);
 
-                const loincData = loincResult[0]?.loinc;
-                const modalityData = loincResult[0]?.modality;
+                    loincData = loincResult[0]?.loinc || null;
+                    modalityData = loincResult[0]?.modality || null;
+                }
 
                 // Determine modality code for ACSN
                 let modalityCode = "OT"; // Default: Other
@@ -667,7 +672,7 @@ export class OrderService {
 
                 return {
                     id_order: order.id,
-                    id_loinc: detailData.id_loinc,
+                    id_loinc: detailData.id_loinc || null, // Null untuk order dari SIMRS
                     accession_number: accessionNumber,
                     order_number: orderNumber,
                     order_date: detailData.order_date ? new Date(detailData.order_date) : new Date(),
@@ -682,7 +687,7 @@ export class OrderService {
                     fhir_intent: "original-order",
                     order_category_code: "363679005",
                     order_category_display: "Imaging",
-                    // LOINC info from master data
+                    // LOINC info: prioritas dari SIMRS, fallback ke master data
                     loinc_code_alt: (mappedData.loinc_code_alt as string) || loincData?.loinc_code || null,
                     loinc_display_alt: (mappedData.loinc_display_alt as string) || loincData?.loinc_display || null,
                     // KPTL info from service_request

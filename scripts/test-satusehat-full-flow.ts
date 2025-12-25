@@ -52,10 +52,10 @@ const TEST_PRACTITIONER = {
 
 const TEST_LOCATION = {
     // IMPORTANT: You MUST provide a valid Location ID from Satu Sehat
-    // To get your location ID, query: GET {{base_url}}/Location?identifier=...
-    // Or use a known valid Location ID from your organization
-    id: process.env.TEST_LOCATION_ID || "b4362ccb-148b-4f74-b334-269bbff74f02", // Replace with YOUR valid Location ID
-    name: process.env.TEST_LOCATION_NAME || "Poli Radiologi",
+    // To get your location ID, run: bun run scripts/get-satusehat-location.ts
+    // Or query: GET {{base_url}}/Location?organization={{org_id}}
+    id: env.SATU_SEHAT_LOCATION_ID || process.env.TEST_LOCATION_ID || "b4362ccb-148b-4f74-b334-269bbff74f02",
+    name: env.SATU_SEHAT_LOCATION_NAME || process.env.TEST_LOCATION_NAME || "Poli Radiologi",
 };
 
 // ========== Step 1: Get OAuth2 Token ==========

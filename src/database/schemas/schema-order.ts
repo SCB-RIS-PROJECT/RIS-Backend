@@ -36,7 +36,7 @@ export const detailOrderTable = pgTable(
     {
         id: uuid("id").primaryKey().defaultRandom(),
         id_order: uuid("id_order").references(() => orderTable.id),
-        id_loinc: uuid("id_loinc").references(() => loincTable.id),
+        id_loinc: uuid("id_loinc").references(() => loincTable.id), // Nullable - optional reference untuk order dari SIMRS
         id_service_request_ss: varchar({ length: 255 }),
         id_observation_ss: varchar({ length: 255 }),
         id_procedure_ss: varchar({ length: 255 }),
