@@ -138,12 +138,16 @@ export const orderResponseSchema = z.object({
         age: z.number().nullable(),
         gender: z.string().nullable(),
     }),
-    // Practitioner info (if linked)
-    practitioner: z.object({
-        id: z.string().uuid(),
-        name: z.string(),
-        nik: z.string(),
-        profession: z.string(),
+    // Practitioners info from service_request
+    practitioners: z.object({
+        requester: z.object({
+            id_ss: z.string(),
+            name: z.string(),
+        }).nullable(),
+        performers: z.array(z.object({
+            id_ss: z.string(),
+            name: z.string(),
+        })),
     }).nullable(),
     // Created by user
     created_by: z.object({

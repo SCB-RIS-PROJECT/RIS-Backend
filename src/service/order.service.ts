@@ -82,7 +82,10 @@ export class OrderService {
      */
     static formatOrderResponse(
         order: InferSelectModel<typeof orderTable>,
-        practitioner?: InferSelectModel<typeof practitionerTable> | null,
+        practitioners: {
+            requester: { id_ss: string; name: string } | null;
+            performers: Array<{ id_ss: string; name: string }>;
+        } | null,
         createdBy?: InferSelectModel<typeof userTable> | null
     ): OrderResponse {
         return {
@@ -96,14 +99,7 @@ export class OrderService {
                 age: order.patient_age,
                 gender: order.patient_gender,
             },
-            practitioner: practitioner
-                ? {
-                      id: practitioner.id,
-                      name: practitioner.name,
-                      nik: practitioner.nik,
-                      profession: practitioner.profession,
-                  }
-                : null,
+            practitioners: practitioners,
             created_by: createdBy
                 ? {
                       id: createdBy.id,
@@ -124,6 +120,52 @@ export class OrderService {
         loinc?: InferSelectModel<typeof loincTable> | null,
         modality?: InferSelectModel<typeof modalityTable> | null
     ): DetailOrderResponse {
+        // For exam: prioritize master data, fallback to service_request data
+        let exam = null;
+        if (loinc) {
+            exam = {
+                id: loinc.id,
+                code: loinc.code,
+                name: loinc.name,
+                loinc_code: loinc.loinc_code,
+                loinc_display: loinc.loinc_display,
+                require_fasting: loinc.require_fasting,
+                require_pregnancy_check: loinc.require_pregnancy_check,
+                require_use_contrast: loinc.require_use_contrast,
+                contrast_name: loinc.contrast_name,
+            };
+        } else if (detail.loinc_code_alt || detail.loinc_display_alt) {
+            // Use data from service_request (for SIMRS orders)
+            exam = {
+                id: detail.id, // Use detail ID as placeholder
+                code: detail.loinc_code_alt || "N/A",
+                name: detail.code_text || detail.loinc_display_alt || "N/A",
+                loinc_code: detail.loinc_code_alt || "N/A",
+                loinc_display: detail.loinc_display_alt || "N/A",
+                require_fasting: detail.require_fasting || false,
+                require_pregnancy_check: detail.require_pregnancy_check || false,
+                require_use_contrast: detail.require_use_contrast || false,
+                contrast_name: detail.contrast_name_kfa || null,
+            };
+        }
+
+        // For modality: prioritize master data, fallback to modality_code from service_request
+        let modalityInfo = null;
+        if (modality) {
+            modalityInfo = {
+                id: modality.id,
+                code: modality.code,
+                name: modality.name,
+            };
+        } else if (detail.modality_code) {
+            // Use modality_code from service_request (for SIMRS orders)
+            modalityInfo = {
+                id: detail.id, // Use detail ID as placeholder
+                code: detail.modality_code,
+                name: detail.modality_code, // Use code as name if no master data
+            };
+        }
+
         return {
             id: detail.id,
             accession_number: detail.accession_number ?? null,
@@ -133,26 +175,8 @@ export class OrderService {
             order_status: detail.order_status ?? null,
             diagnosis: detail.diagnosis,
             notes: detail.notes,
-            exam: loinc
-                ? {
-                      id: loinc.id,
-                      code: loinc.code,
-                      name: loinc.name,
-                      loinc_code: loinc.loinc_code,
-                      loinc_display: loinc.loinc_display,
-                      require_fasting: loinc.require_fasting,
-                      require_pregnancy_check: loinc.require_pregnancy_check,
-                      require_use_contrast: loinc.require_use_contrast,
-                      contrast_name: loinc.contrast_name,
-                  }
-                : null,
-            modality: modality
-                ? {
-                      id: modality.id,
-                      code: modality.code,
-                      name: modality.name,
-                  }
-                : null,
+            exam: exam,
+            modality: modalityInfo,
             satu_sehat: {
                 id_service_request: detail.id_service_request_ss,
                 id_observation: detail.id_observation_ss,
@@ -225,12 +249,10 @@ export class OrderService {
             .select({
                 order: orderTable,
                 patient: patientTable,
-                practitioner: practitionerTable,
                 createdBy: userTable,
             })
             .from(orderTable)
             .leftJoin(patientTable, eq(orderTable.id_patient, patientTable.id))
-            .leftJoin(practitionerTable, eq(orderTable.id_practitioner, practitionerTable.id))
             .leftJoin(userTable, eq(orderTable.id_created_by, userTable.id))
             .where(orderWhereClause)
             .orderBy(orderBy)
@@ -239,7 +261,7 @@ export class OrderService {
 
         // Get details for each order with filters
         const ordersWithDetails: FullOrderResponse[] = await Promise.all(
-            orders.map(async ({ order, patient, practitioner, createdBy }) => {
+            orders.map(async ({ order, patient, createdBy }) => {
                 const detailWhereConditions: SQL[] = [eq(detailOrderTable.id_order, order.id)];
 
                 if (order_status) {
@@ -267,8 +289,30 @@ export class OrderService {
                     .leftJoin(modalityTable, eq(loincTable.id_modality, modalityTable.id))
                     .where(detailWhereClause);
 
+                // Extract practitioners from first detail's service_request
+                const firstDetail = details[0]?.detail;
+                const serviceRequestJson = firstDetail?.service_request_json as SimrsServiceRequest | null;
+                
+                let practitioners: {
+                    requester: { id_ss: string; name: string } | null;
+                    performers: Array<{ id_ss: string; name: string }>;
+                } | null = null;
+
+                if (serviceRequestJson) {
+                    practitioners = {
+                        requester: serviceRequestJson.requester ? {
+                            id_ss: serviceRequestJson.requester.reference?.split("/")[1] || "",
+                            name: serviceRequestJson.requester.display || "",
+                        } : null,
+                        performers: serviceRequestJson.performer?.map(p => ({
+                            id_ss: p.reference?.split("/")[1] || "",
+                            name: p.display || "",
+                        })) || [],
+                    };
+                }
+
                 return {
-                    ...OrderService.formatOrderResponse(order, practitioner, createdBy),
+                    ...OrderService.formatOrderResponse(order, practitioners, createdBy),
                     details: details.map(({ detail, loinc, modality }) =>
                         OrderService.formatDetailOrderResponse(detail, loinc, modality)
                     ),
@@ -281,7 +325,6 @@ export class OrderService {
             .select({ total: count() })
             .from(orderTable)
             .leftJoin(patientTable, eq(orderTable.id_patient, patientTable.id))
-            .leftJoin(practitionerTable, eq(orderTable.id_practitioner, practitionerTable.id))
             .where(orderWhereClause);
 
         const totalPages = Math.ceil(total / per_page);
@@ -307,19 +350,17 @@ export class OrderService {
             .select({
                 order: orderTable,
                 patient: patientTable,
-                practitioner: practitionerTable,
                 createdBy: userTable,
             })
             .from(orderTable)
             .leftJoin(patientTable, eq(orderTable.id_patient, patientTable.id))
-            .leftJoin(practitionerTable, eq(orderTable.id_practitioner, practitionerTable.id))
             .leftJoin(userTable, eq(orderTable.id_created_by, userTable.id))
             .where(eq(orderTable.id, orderId))
             .limit(1);
 
         if (result.length === 0) return null;
 
-        const { order, practitioner, createdBy } = result[0];
+        const { order, createdBy } = result[0];
 
         // Get order details
         const details = await db
@@ -333,8 +374,30 @@ export class OrderService {
             .leftJoin(modalityTable, eq(loincTable.id_modality, modalityTable.id))
             .where(eq(detailOrderTable.id_order, orderId));
 
+        // Extract practitioners from first detail's service_request
+        const firstDetail = details[0]?.detail;
+        const serviceRequestJson = firstDetail?.service_request_json as SimrsServiceRequest | null;
+        
+        let practitioners: {
+            requester: { id_ss: string; name: string } | null;
+            performers: Array<{ id_ss: string; name: string }>;
+        } | null = null;
+
+        if (serviceRequestJson) {
+            practitioners = {
+                requester: serviceRequestJson.requester ? {
+                    id_ss: serviceRequestJson.requester.reference?.split("/")[1] || "",
+                    name: serviceRequestJson.requester.display || "",
+                } : null,
+                performers: serviceRequestJson.performer?.map(p => ({
+                    id_ss: p.reference?.split("/")[1] || "",
+                    name: p.display || "",
+                })) || [],
+            };
+        }
+
         return {
-            ...OrderService.formatOrderResponse(order, practitioner, createdBy),
+            ...OrderService.formatOrderResponse(order, practitioners, createdBy),
             details: details.map(({ detail, loinc, modality }) =>
                 OrderService.formatDetailOrderResponse(detail, loinc, modality)
             ),
@@ -814,13 +877,29 @@ export class OrderService {
             data: {
                 id_order: order.id,
                 id_pelayanan: data.id_pelayanan || null,
-                details: order.details.map((detail, index) => ({
-                    loinc_code: data.details[index]?.loinc_code || "",
-                    accession_number: detail.accession_number || "",
-                    schedule_date: detail.schedule_date || null,
-                    order_priority: detail.order_priority || "ROUTINE",
-                    notes: detail.notes || null,
-                })),
+                details: order.details.map((detail, index) => {
+                    const inputDetail = data.details[index];
+                    
+                    // Get LOINC code from input sources:
+                    // 1. Direct input loinc_code
+                    // 2. From service_request.code.coding (LOINC)
+                    let loincCode = inputDetail?.loinc_code || "";
+                    
+                    if (!loincCode && inputDetail?.service_request?.code?.coding) {
+                        const loincCoding = inputDetail.service_request.code.coding.find(
+                            c => c.system?.includes("loinc.org")
+                        );
+                        loincCode = loincCoding?.code || "";
+                    }
+                    
+                    return {
+                        loinc_code: loincCode,
+                        accession_number: detail.accession_number || "",
+                        schedule_date: detail.schedule_date || null,
+                        order_priority: detail.order_priority || "ROUTINE",
+                        notes: detail.notes || null,
+                    };
+                }),
             },
             satu_sehat: satuSehatResult,
         };
