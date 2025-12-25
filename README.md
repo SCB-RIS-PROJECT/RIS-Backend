@@ -2,7 +2,13 @@
 
 API backend untuk sistem informasi radiologi menggunakan Hono.js, Drizzle ORM, dan PostgreSQL.
 
-## 🔐 Authentication
+## � Documentation
+
+- **[PANDUAN_DEPLOYMENT_AMAN.md](PANDUAN_DEPLOYMENT_AMAN.md)** - 🛡️ Panduan deployment yang AMAN (tidak ganggu PM2 apps lain)
+- **[SAFETY_CHECKLIST.md](SAFETY_CHECKLIST.md)** - ✅ Checklist keamanan sebelum deploy
+- **[DEPLOYMENT.md](DEPLOYMENT.md)** - 📖 Dokumentasi lengkap deployment & CI/CD
+
+## �🔐 Authentication
 
 Project ini menggunakan **JWT (JSON Web Token)** untuk authentication.
 

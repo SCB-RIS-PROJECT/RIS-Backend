@@ -1,0 +1,76 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Run biome check
+        run: bun run biome:check
+
+      - name: Build application
+        run: bun run build
+
+      - name: Deploy to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          source: "dist/ris-api,package.json,.env.example,drizzle.config.ts"
+          target: "/home/ris_2/RIS-Backend"
+
+      - name: Execute deployment script
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          script: |
+            cd /home/ris_2/RIS-Backend
+            
+            # Install/Update Bun if not exists
+            if ! command -v bun &> /dev/null; then
+              curl -fsSL https://bun.sh/install | bash
+              export BUN_INSTALL="$HOME/.bun"
+              export PATH="$BUN_INSTALL/bin:$PATH"
+            fi
+            
+            # Install/Update PM2 if not exists
+            if ! command -v pm2 &> /dev/null; then
+              bun install -g pm2
+            fi
+            
+            # Make binary executable
+            chmod +x dist/ris-api
+            
+            # Check if app exists, then restart or start
+            if pm2 describe ris-api > /dev/null 2>&1; then
+              echo "Restarting existing application..."
+              pm2 restart ris-api
+            else
+              echo "Starting new application..."
+              pm2 start dist/ris-api --name ris-api
+            fi
+            
+            # Save PM2 process list (only adds/updates ris-api)
+            pm2 save
