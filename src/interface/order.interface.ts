@@ -28,16 +28,24 @@ export const fhirReferenceSchema = z.object({
     display: z.string().optional(),
 });
 
-// ==================== SIMRS Request Schemas ====================
+// ==================== SIMRS Request Schemas (Simplified) ====================
+
+/**
+ * Pemeriksaan (Examination) from SIMRS - LOINC code info
+ */
+export const simrsPemeriksaanSchema = z.object({
+    system: z.string().default("http://loinc.org").describe("LOINC system URL"),
+    code: z.string().describe("LOINC code"),
+    display: z.string().describe("LOINC display name"),
+    text: z.string().optional().describe("Procedure description"),
+});
 
 /**
  * Patient subject from SIMRS
- * Contains Satu Sehat Patient ID + patient demographic info
+ * Contains Satu Sehat Patient IHS ID + patient demographic info
  */
-export const simrsPatientSubjectSchema = z.object({
-    // Required: Satu Sehat Patient ID
-    reference: z.string().describe("Format: Patient/{id_patient_ss}"),
-    // Required: Patient demographic info for display and MWL
+export const simrsSubjectSchema = z.object({
+    ihs_id: z.string().describe("Satu Sehat Patient IHS ID"),
     patient_name: z.string().describe("Patient full name"),
     patient_mrn: z.string().describe("Patient MRN from SIMRS"),
     patient_birth_date: z.string().describe("Patient birth date (YYYY-MM-DD)"),
@@ -46,84 +54,89 @@ export const simrsPatientSubjectSchema = z.object({
 });
 
 /**
- * Encounter reference from SIMRS
+ * Encounter from SIMRS
  * Contains Satu Sehat Encounter ID
  */
 export const simrsEncounterSchema = z.object({
-    reference: z.string().describe("Format: Encounter/{id_encounter_ss}"),
+    encounter_id: z.string().describe("Satu Sehat Encounter ID"),
 });
 
 /**
  * Requester (Referring Physician) from SIMRS
  */
 export const simrsRequesterSchema = z.object({
-    reference: z.string().describe("Format: Practitioner/{id_practitioner_ss}"),
-    display: z.string().describe("Practitioner name"),
+    id_practitioner: z.string().describe("Satu Sehat Practitioner ID"),
+    name_practitioner: z.string().describe("Practitioner name"),
 });
 
 /**
- * Performer (Radiologist) from SIMRS - optional
+ * Diagnosa (Diagnosis) from SIMRS - ICD-10 code
  */
-export const simrsPerformerSchema = z.object({
-    reference: z.string().describe("Format: Practitioner/{id_performer_ss}"),
-    display: z.string().optional().describe("Performer name"),
+export const simrsDiagnosaSchema = z.object({
+    system: z.string().default("http://hl7.org/fhir/sid/icd-10").describe("ICD-10 system URL"),
+    code: z.string().describe("ICD-10 code"),
+    display: z.string().describe("ICD-10 description"),
 });
 
+export type SimrsPemeriksaan = z.infer<typeof simrsPemeriksaanSchema>;
+export type SimrsSubject = z.infer<typeof simrsSubjectSchema>;
+export type SimrsEncounter = z.infer<typeof simrsEncounterSchema>;
+export type SimrsRequester = z.infer<typeof simrsRequesterSchema>;
+export type SimrsDiagnosa = z.infer<typeof simrsDiagnosaSchema>;
+
+// ==================== Internal ServiceRequest JSON (stored in DB for Satu Sehat) ====================
 /**
- * Reason/Diagnosis code from SIMRS
+ * This is the internal format stored in service_request_json column
+ * Used when sending to Satu Sehat later
  */
-export const simrsReasonCodeSchema = z.object({
-    coding: z.array(z.object({
-        system: z.string().default("http://hl7.org/fhir/sid/icd-10"),
-        code: z.string().describe("ICD-10 code"),
-        display: z.string().describe("ICD-10 display"),
-    })),
-});
-
-/**
- * Supporting Info (optional references)
- */
-export const simrsSupportingInfoSchema = z.object({
-    reference: z.string().describe("Format: {ResourceType}/{id}"),
-});
-
-/**
- * Service Request from SIMRS (embedded in detail)
- * This contains FHIR-like structure that RIS will use to build ServiceRequest for Satu Sehat
- */
-export const simrsServiceRequestSchema = z.object({
-    // Code: LOINC + KPTL
-    code: z.object({
-        coding: z.array(fhirCodingSchema).min(1).describe("At least LOINC code required"),
-        text: z.string().optional().describe("Free text description of procedure"),
-    }),
-
-    // Order Detail: Modality, AE Title, Contrast
-    orderDetail: z.array(fhirCodeableConceptSchema).optional(),
-
-    // Subject: Patient info (required)
-    subject: simrsPatientSubjectSchema,
-
-    // Encounter: Satu Sehat Encounter ID (required)
-    encounter: simrsEncounterSchema,
-
-    // Occurrence: Scheduled datetime (optional, RIS can set default)
-    occurrenceDateTime: z.string().datetime().optional(),
-
-    // Requester: Referring physician (required)
-    requester: simrsRequesterSchema,
-
-    // Performer: Radiologist (optional)
-    performer: z.array(simrsPerformerSchema).optional(),
-
-    // Reason: Diagnosis/ICD-10 (optional but recommended)
-    reasonCode: z.array(simrsReasonCodeSchema).optional(),
-
-    // Supporting Info: Observation, Procedure, AllergyIntolerance IDs (optional)
-    supportingInfo: z.array(simrsSupportingInfoSchema).optional(),
-});
-
-export type SimrsServiceRequest = z.infer<typeof simrsServiceRequestSchema>;
+export interface SimrsServiceRequest {
+    code?: {
+        coding?: Array<{
+            system?: string;
+            code?: string;
+            display?: string;
+        }>;
+        text?: string;
+    };
+    orderDetail?: Array<{
+        coding?: Array<{
+            system?: string;
+            code?: string;
+            display?: string;
+        }>;
+        text?: string;
+    }>;
+    subject?: {
+        reference?: string;
+        patient_name?: string;
+        patient_mrn?: string;
+        patient_birth_date?: string;
+        patient_age?: number;
+        patient_gender?: string;
+    };
+    encounter?: {
+        reference?: string;
+    };
+    occurrenceDateTime?: string;
+    requester?: {
+        reference?: string;
+        display?: string;
+    };
+    performer?: Array<{
+        reference?: string;
+        display?: string;
+    }>;
+    reasonCode?: Array<{
+        coding?: Array<{
+            system?: string;
+            code?: string;
+            display?: string;
+        }>;
+    }>;
+    supportingInfo?: Array<{
+        reference?: string;
+    }>;
+}
 
 // ==================== Order Response Schema ====================
 export const orderResponseSchema = z.object({
@@ -243,20 +256,27 @@ export type OrderPaginationResponse = z.infer<typeof orderPaginationResponseSche
 
 // ==================== Create Detail Order Item Schema (from SIMRS) ====================
 export const createDetailOrderItemSchema = z.object({
-    // LOINC reference - Optional untuk order dari SIMRS (dapat null, data LOINC disimpan di service_request)
-    loinc_code: z.string().optional().describe("Optional LOINC code from RIS master data (e.g., 'XR-THORAX-PA'). Leave empty for SIMRS orders."),
-    
-    // Scheduling - optional, RIS will set defaults
-    order_date: z.string().datetime().optional().describe("Order date, default: now"),
-    schedule_date: z.string().datetime().optional().describe("Scheduled examination date"),
+    // Scheduling - ccurence_date_time (occurrence datetime)
+    ccurence_date_time: z.string().datetime().optional().describe("Occurrence datetime (ISO 8601)"),
     order_priority: z.enum(ORDER_PRIORITY).default("ROUTINE"),
-    order_from: z.enum(ORDER_FROM).default("EXTERNAL"),
     
     // Notes
     notes: z.string().optional().describe("Additional notes from SIMRS"),
 
-    // FHIR ServiceRequest from SIMRS (required for Satu Sehat integration)
-    service_request: simrsServiceRequestSchema.describe("FHIR ServiceRequest data from SIMRS"),
+    // Pemeriksaan (LOINC code info) - required
+    pemeriksaan: simrsPemeriksaanSchema.describe("LOINC code information for the examination"),
+    
+    // Subject (Patient info) - required
+    subject: simrsSubjectSchema.describe("Patient information"),
+    
+    // Encounter - required
+    encounter: simrsEncounterSchema.describe("Encounter information"),
+    
+    // Requester (Referring physician) - required
+    requester: simrsRequesterSchema.describe("Referring physician information"),
+    
+    // Diagnosa (ICD-10) - optional but recommended
+    diagnosa: simrsDiagnosaSchema.optional().describe("Diagnosis ICD-10 code"),
 });
 
 export type CreateDetailOrderItem = z.infer<typeof createDetailOrderItemSchema>;
@@ -310,32 +330,11 @@ export const detailOrderIdParamSchema = z.object({
 export type DetailOrderIdParam = z.infer<typeof detailOrderIdParamSchema>;
 
 // ==================== Order Creation Success Response (for SIMRS) ====================
-// Simple response: return what SIMRS sent + id_order + Satu Sehat result
+// Simple response: return success message only
+// Satu Sehat will be sent later after RIS completes the order
 export const orderCreationSuccessSchema = z.object({
     success: z.boolean(),
     message: z.string(),
-    data: z.object({
-        id_order: z.string().uuid().describe("Order ID from RIS"),
-        id_pelayanan: z.string().nullable().describe("Service ID from SIMRS (echoed back)"),
-        details: z.array(z.object({
-            loinc_code: z.string().describe("LOINC code (echoed back if provided)"),
-            accession_number: z.string().describe("Generated ACSN"),
-            schedule_date: z.string().datetime().nullable(),
-            order_priority: z.enum(ORDER_PRIORITY),
-            notes: z.string().nullable(),
-        })),
-    }),
-    satu_sehat: z.object({
-        sent: z.boolean().describe("Whether sending to Satu Sehat was attempted"),
-        success: z.boolean().describe("Whether all ServiceRequests were sent successfully"),
-        message: z.string().describe("Summary message"),
-        results: z.array(z.object({
-            accession_number: z.string(),
-            success: z.boolean(),
-            id_service_request_ss: z.string().optional(),
-            error: z.string().optional(),
-        })),
-    }).optional().describe("Satu Sehat send result (only if attempted)"),
 });
 
 export type OrderCreationSuccess = z.infer<typeof orderCreationSuccessSchema>;

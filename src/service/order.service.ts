@@ -632,40 +632,15 @@ export class OrderService {
     /**
      * Create new order with details from SIMRS
      * Flow:
-     * 1. Validate all id_loinc if provided
-     * 2. Extract patient/practitioner info from service_request
-     * 3. Create order record
-     * 4. Generate ACSN for each detail (format: {MODALITY}{YYYYMMDD}{SEQ})
-     * 5. Create detail order records
-     * 6. Return order with details
+     * 1. Extract patient/practitioner info from new SIMRS format
+     * 2. Create order record
+     * 3. Generate ACSN for each detail (format: {MODALITY}{YYYYMMDD}{SEQ})
+     * 4. Create detail order records
+     * 5. Return order with details
+     * Note: Satu Sehat will be sent later after RIS completes the order
      */
     static async createOrder(data: CreateOrderInput, userId: string): Promise<FullOrderResponse> {
-        // Validate all loinc_code before starting transaction
-        const loincCodes = data.details
-            .map(d => d.loinc_code)
-            .filter((code): code is string => code !== null && code !== undefined && code !== "");
-
-        if (loincCodes.length > 0) {
-            // Check all LOINC codes exist in database
-            const loincRecords = await db
-                .select({ code: loincTable.code })
-                .from(loincTable)
-                .where(
-                    or(...loincCodes.map(code => eq(loincTable.code, code)))
-                );
-
-            const foundCodes = new Set(loincRecords.map(r => r.code));
-            const invalidCodes = loincCodes.filter(code => !foundCodes.has(code));
-
-            if (invalidCodes.length > 0) {
-                throw new Error(
-                    `Invalid LOINC code(s): ${invalidCodes.join(", ")}. ` +
-                    `Please use valid LOINC codes from the database or omit loinc_code for SIMRS orders.`
-                );
-            }
-        }
-
-        // Extract patient and practitioner info from first detail's service_request
+        // Extract patient and practitioner info from first detail
         let id_patient_ss: string | null = null;
         let id_encounter_ss: string | null = null;
         let patient_name: string | null = null;
@@ -674,22 +649,22 @@ export class OrderService {
         let patient_age: number | null = null;
         let patient_gender: string | null = null;
 
-        if (data.details.length > 0 && data.details[0].service_request) {
-            const sr = data.details[0].service_request;
+        if (data.details.length > 0) {
+            const firstDetail = data.details[0];
             
-            // Extract patient info from subject (required)
-            if (sr.subject) {
-                id_patient_ss = sr.subject.reference?.split("/")[1] || null;
-                patient_name = sr.subject.patient_name;
-                patient_mrn = sr.subject.patient_mrn;
-                patient_birth_date = sr.subject.patient_birth_date;
-                patient_age = sr.subject.patient_age;
-                patient_gender = sr.subject.patient_gender;
+            // Extract patient info from subject
+            if (firstDetail.subject) {
+                id_patient_ss = firstDetail.subject.ihs_id || null;
+                patient_name = firstDetail.subject.patient_name;
+                patient_mrn = firstDetail.subject.patient_mrn;
+                patient_birth_date = firstDetail.subject.patient_birth_date;
+                patient_age = firstDetail.subject.patient_age;
+                patient_gender = firstDetail.subject.patient_gender;
             }
 
-            // Extract encounter ID (required)
-            if (sr.encounter) {
-                id_encounter_ss = sr.encounter.reference?.split("/")[1] || null;
+            // Extract encounter ID
+            if (firstDetail.encounter) {
+                id_encounter_ss = firstDetail.encounter.encounter_id || null;
             }
         }
 
@@ -713,12 +688,12 @@ export class OrderService {
         // Create order details with generated ACSN
         const detailsToInsert = await Promise.all(
             data.details.map(async (detailData: CreateDetailOrderItem) => {
-                // Get LOINC data from master (optional - for RIS internal orders)
-                // Already validated above, so we can safely query
-                let loincData = null;
-                let modalityData = null;
+                // Determine modality code for ACSN from LOINC code prefix (e.g., "36687-2" -> search in DB)
+                // For now, try to determine from LOINC code pattern or use default
+                let modalityCode = "OT"; // Default: Other
                 
-                if (detailData.loinc_code) {
+                // Try to find modality from LOINC code in pemeriksaan
+                if (detailData.pemeriksaan?.code) {
                     const loincResult = await db
                         .select({
                             loinc: loincTable,
@@ -726,26 +701,12 @@ export class OrderService {
                         })
                         .from(loincTable)
                         .leftJoin(modalityTable, eq(loincTable.id_modality, modalityTable.id))
-                        .where(eq(loincTable.code, detailData.loinc_code))
+                        .where(eq(loincTable.loinc_code, detailData.pemeriksaan.code))
                         .limit(1);
 
-                    loincData = loincResult[0]?.loinc || null;
-                    modalityData = loincResult[0]?.modality || null;
-                }
-
-                // Determine modality code for ACSN
-                let modalityCode = "OT"; // Default: Other
-                
-                // Priority: service_request.orderDetail > modality from LOINC
-                if (detailData.service_request?.orderDetail) {
-                    const modalityDetail = detailData.service_request.orderDetail.find((d) => 
-                        d.coding?.some((c) => c.system?.includes("dicom.nema.org"))
-                    );
-                    if (modalityDetail?.coding?.[0]?.code) {
-                        modalityCode = modalityDetail.coding[0].code;
+                    if (loincResult[0]?.modality?.code) {
+                        modalityCode = loincResult[0].modality.code;
                     }
-                } else if (modalityData?.code) {
-                    modalityCode = modalityData.code;
                 }
 
                 // Generate ACSN with modality code: {MODALITY}{YYYYMMDD}{SEQ}
@@ -754,64 +715,80 @@ export class OrderService {
                 // Generate order number
                 const orderNumber = `ORD-${accessionNumber}`;
 
-                // Map service_request data to flat fields
-                let mappedData: Record<string, unknown> = {};
-                if (detailData.service_request) {
-                    mappedData = OrderService.mapSimrsServiceRequestToDetailOrder(detailData.service_request);
+                // Build diagnosis string from diagnosa
+                let diagnosis: string | null = null;
+                if (detailData.diagnosa) {
+                    diagnosis = `${detailData.diagnosa.code} - ${detailData.diagnosa.display}`;
                 }
+
+                // Build service_request_json for later Satu Sehat integration
+                const serviceRequestJson = {
+                    code: {
+                        coding: [{
+                            system: detailData.pemeriksaan.system,
+                            code: detailData.pemeriksaan.code,
+                            display: detailData.pemeriksaan.display,
+                        }],
+                        text: detailData.pemeriksaan.text,
+                    },
+                    subject: {
+                        reference: `Patient/${detailData.subject.ihs_id}`,
+                        patient_name: detailData.subject.patient_name,
+                        patient_mrn: detailData.subject.patient_mrn,
+                        patient_birth_date: detailData.subject.patient_birth_date,
+                        patient_age: detailData.subject.patient_age,
+                        patient_gender: detailData.subject.patient_gender,
+                    },
+                    encounter: {
+                        reference: `Encounter/${detailData.encounter.encounter_id}`,
+                    },
+                    requester: {
+                        reference: `Practitioner/${detailData.requester.id_practitioner}`,
+                        display: detailData.requester.name_practitioner,
+                    },
+                    reasonCode: detailData.diagnosa ? [{
+                        coding: [{
+                            system: detailData.diagnosa.system,
+                            code: detailData.diagnosa.code,
+                            display: detailData.diagnosa.display,
+                        }],
+                    }] : undefined,
+                    occurrenceDateTime: detailData.ccurence_date_time,
+                };
 
                 return {
                     id_order: order.id,
-                    id_loinc: loincData?.id || null, // Store LOINC ID if found, null untuk order dari SIMRS
+                    id_loinc: null, // SIMRS orders don't use RIS LOINC master
                     accession_number: accessionNumber,
                     order_number: orderNumber,
-                    order_date: detailData.order_date ? new Date(detailData.order_date) : new Date(),
-                    schedule_date: detailData.schedule_date ? new Date(detailData.schedule_date) : new Date(),
-                    occurrence_datetime: mappedData.occurrence_datetime 
-                        ? new Date(mappedData.occurrence_datetime as string) 
-                        : (detailData.schedule_date ? new Date(detailData.schedule_date) : new Date()),
+                    order_date: new Date(),
+                    schedule_date: detailData.ccurence_date_time ? new Date(detailData.ccurence_date_time) : new Date(),
+                    occurrence_datetime: detailData.ccurence_date_time ? new Date(detailData.ccurence_date_time) : new Date(),
                     order_priority: detailData.order_priority || "ROUTINE",
-                    order_from: detailData.order_from || "EXTERNAL",
+                    order_from: "EXTERNAL" as const,
                     order_status: "PENDING" as const,
                     fhir_status: "active",
                     fhir_intent: "original-order",
                     order_category_code: "363679005",
                     order_category_display: "Imaging",
-                    // LOINC info: prioritas dari SIMRS, fallback ke master data
-                    loinc_code_alt: (mappedData.loinc_code_alt as string) || loincData?.loinc_code || null,
-                    loinc_display_alt: (mappedData.loinc_display_alt as string) || loincData?.loinc_display || null,
-                    // KPTL info from service_request
-                    kptl_code: (mappedData.kptl_code as string) || null,
-                    kptl_display: (mappedData.kptl_display as string) || null,
-                    code_text: (mappedData.code_text as string) || loincData?.name || null,
+                    // LOINC info from pemeriksaan
+                    loinc_code_alt: detailData.pemeriksaan.code || null,
+                    loinc_display_alt: detailData.pemeriksaan.display || null,
+                    code_text: detailData.pemeriksaan.text || detailData.pemeriksaan.display || null,
                     // Modality info
-                    modality_code: (mappedData.modality_code as string) || modalityCode,
-                    ae_title: (mappedData.ae_title as string) || null,
-                    // Contrast info
-                    contrast_code: (mappedData.contrast_code as string) || loincData?.contrast_kfa_code || null,
-                    contrast_name_kfa: (mappedData.contrast_name_kfa as string) || loincData?.contrast_name || null,
+                    modality_code: modalityCode,
+                    ae_title: null,
                     // Requester info
-                    id_requester_ss: (mappedData.id_requester_ss as string) || null,
-                    requester_display: (mappedData.requester_display as string) || null,
-                    // Performer info
-                    id_performer_ss: (mappedData.id_performer_ss as string) || null,
-                    performer_display: (mappedData.performer_display as string) || null,
+                    id_requester_ss: detailData.requester.id_practitioner || null,
+                    requester_display: detailData.requester.name_practitioner || null,
                     // Diagnosis info
-                    reason_code: (mappedData.reason_code as string) || null,
-                    reason_display: (mappedData.reason_display as string) || null,
-                    diagnosis: (mappedData.diagnosis as string) || null,
-                    // Supporting info IDs
-                    id_observation_ss: (mappedData.id_observation_ss as string) || null,
-                    id_procedure_ss: (mappedData.id_procedure_ss as string) || null,
-                    id_allergy_intolerance_ss: (mappedData.id_allergy_intolerance_ss as string) || null,
+                    reason_code: detailData.diagnosa?.code || null,
+                    reason_display: detailData.diagnosa?.display || null,
+                    diagnosis: diagnosis,
                     // Notes
                     notes: detailData.notes || null,
-                    // Requirements from LOINC master
-                    require_fasting: loincData?.require_fasting || false,
-                    require_pregnancy_check: loincData?.require_pregnancy_check || false,
-                    require_use_contrast: loincData?.require_use_contrast || false,
-                    // Store original service_request JSON
-                    service_request_json: detailData.service_request || null,
+                    // Store original data as service_request_json for later Satu Sehat integration
+                    service_request_json: serviceRequestJson,
                 };
             })
         );
@@ -824,84 +801,20 @@ export class OrderService {
     }
 
     /**
-     * Create order from SIMRS and return simplified response
-     * Sends ServiceRequest to Satu Sehat immediately and includes result in response
+     * Create order from SIMRS and return simple message
+     * Satu Sehat will NOT be sent immediately - it will be sent later after RIS completes the order
      */
     static async createOrderForSimrs(
         data: CreateOrderInput, 
         userId: string
     ): Promise<OrderCreationSuccess> {
-        // Create order first
-        const order = await OrderService.createOrder(data, userId);
+        // Create order (no Satu Sehat send)
+        await OrderService.createOrder(data, userId);
 
-        // Send to Satu Sehat and wait for result
-        let satuSehatResult: {
-            sent: boolean;
-            success: boolean;
-            message: string;
-            results: Array<{
-                accession_number: string;
-                success: boolean;
-                id_service_request_ss?: string;
-                error?: string;
-            }>;
-        } | undefined;
-
-        try {
-            const sendResult = await OrderService.sendOrderToSatuSehat(order.id);
-            satuSehatResult = {
-                sent: true,
-                success: sendResult.success,
-                message: sendResult.message,
-                results: sendResult.results.map(r => ({
-                    accession_number: r.accessionNumber,
-                    success: r.success,
-                    id_service_request_ss: r.id_service_request_ss,
-                    error: r.error,
-                })),
-            };
-        } catch (error) {
-            // If Satu Sehat send fails, still return order but include error
-            satuSehatResult = {
-                sent: true,
-                success: false,
-                message: error instanceof Error ? error.message : "Failed to send to Satu Sehat",
-                results: [],
-            };
-        }
-
-        // Build simple response - echo back what SIMRS sent + id_order + generated ACSN + Satu Sehat result
+        // Return simple success message only
         const response: OrderCreationSuccess = {
             success: true,
             message: "Order created successfully",
-            data: {
-                id_order: order.id,
-                id_pelayanan: data.id_pelayanan || null,
-                details: order.details.map((detail, index) => {
-                    const inputDetail = data.details[index];
-                    
-                    // Get LOINC code from input sources:
-                    // 1. Direct input loinc_code
-                    // 2. From service_request.code.coding (LOINC)
-                    let loincCode = inputDetail?.loinc_code || "";
-                    
-                    if (!loincCode && inputDetail?.service_request?.code?.coding) {
-                        const loincCoding = inputDetail.service_request.code.coding.find(
-                            c => c.system?.includes("loinc.org")
-                        );
-                        loincCode = loincCoding?.code || "";
-                    }
-                    
-                    return {
-                        loinc_code: loincCode,
-                        accession_number: detail.accession_number || "",
-                        schedule_date: detail.schedule_date || null,
-                        order_priority: detail.order_priority || "ROUTINE",
-                        notes: detail.notes || null,
-                    };
-                }),
-            },
-            satu_sehat: satuSehatResult,
         };
 
         return response;

@@ -421,17 +421,20 @@ orderController.openapi(
         method: "post",
         path: "/api/orders/simrs",
         summary: "Create order from SIMRS",
-        description: `Create a new radiology order from SIMRS with FHIR ServiceRequest format.
+        description: `Create a new radiology order from SIMRS with simplified format.
 
 **Flow:**
 1. SIMRS sends order data
 2. RIS generates ACSN and stores order
-3. RIS automatically sends ServiceRequest to Satu Sehat (async)
-4. Returns simple response with id_order + echoed data
+3. Returns simple success message
+4. Satu Sehat will be sent later after RIS completes/updates the order
 
 **Required data from SIMRS:**
-- id_loinc: LOINC ID from RIS master data (get from /api/loinc)
-- service_request: FHIR ServiceRequest data`,
+- pemeriksaan: LOINC code information
+- subject: Patient information (ihs_id, name, mrn, birth_date, age, gender)
+- encounter: Encounter ID from Satu Sehat
+- requester: Referring physician (id_practitioner, name_practitioner)
+- diagnosa: ICD-10 diagnosis (optional)`,
         middleware: [authMiddleware, permissionMiddleware("create:order")] as const,
         request: {
             body: jsonContentRequired(createOrderSchema, "SIMRS order data with FHIR ServiceRequest"),
