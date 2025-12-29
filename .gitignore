@@ -10,6 +10,8 @@ bun.lockb
 .env.test
 .env*.local
 
+bun.lock
+
 # Build outputs
 dist/
 build/
