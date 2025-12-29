@@ -1,0 +1,36 @@
+{
+  "id_pelayanan": "PEL-20251229-0001",
+  "details": [
+    {
+      "ccurence_date_time": "2025-12-29T10:00:00Z",
+      "order_priority": "ROUTINE",
+      "notes": "Pasien mengeluh batuk berdahak sejak 3 hari yang lalu, disertai demam tinggi",
+      "pemeriksaan": {
+        "system": "http://loinc.org",
+        "code": "36687-2",
+        "display": "Chest X-ray",
+        "text": "Foto thorax PA/Lateral"
+      },
+      "subject": {
+        "ihs_id": "P02478375538",
+        "patient_name": "John Doe",
+        "patient_mrn": "MRN-2025-001234",
+        "patient_birth_date": "1990-05-15",
+        "patient_age": 35,
+        "patient_gender": "MALE"
+      },
+      "encounter": {
+        "encounter_id": "e35ab0d4-c0a1-4d2e-bde4-1dbf5cf06352"
+      },
+      "requester": {
+        "id_practitioner": "N10000001",
+        "name_practitioner": "dr. Jane Smith, Sp.PD"
+      },
+      "diagnosa": {
+        "system": "http://hl7.org/fhir/sid/icd-10",
+        "code": "J18.9",
+        "display": "Pneumonia, unspecified organism"
+      }
+    }
+  ]
+}

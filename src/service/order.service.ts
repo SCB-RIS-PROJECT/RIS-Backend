@@ -156,6 +156,7 @@ export class OrderService {
                 id: modality.id,
                 code: modality.code,
                 name: modality.name,
+                ae_title: detail.ae_title || null,
             };
         } else if (detail.modality_code) {
             // Use modality_code from service_request (for SIMRS orders)
@@ -163,8 +164,27 @@ export class OrderService {
                 id: detail.id, // Use detail ID as placeholder
                 code: detail.modality_code,
                 name: detail.modality_code, // Use code as name if no master data
+                ae_title: detail.ae_title || null,
             };
         }
+
+        // Contrast info (from RIS update)
+        const contrastInfo = detail.contrast_code || detail.contrast_name_kfa ? {
+            code: detail.contrast_code ?? null,
+            name: detail.contrast_name_kfa ?? null,
+        } : null;
+
+        // KPTL info
+        const kptlInfo = detail.kptl_code || detail.kptl_display ? {
+            code: detail.kptl_code ?? null,
+            display: detail.kptl_display ?? null,
+        } : null;
+
+        // Performer info (radiologist from RIS)
+        const performerInfo = detail.id_performer_ss || detail.performer_display ? {
+            id_ss: detail.id_performer_ss ?? null,
+            name: detail.performer_display ?? null,
+        } : null;
 
         return {
             id: detail.id,
@@ -173,14 +193,21 @@ export class OrderService {
             schedule_date: detail.schedule_date?.toISOString() ?? null,
             order_priority: detail.order_priority ?? null,
             order_status: detail.order_status ?? null,
-            diagnosis: detail.diagnosis,
+            diagnosis: detail.diagnosis_code || detail.diagnosis_display ? {
+                code: detail.diagnosis_code ?? null,
+                display: detail.diagnosis_display ?? null,
+            } : null,
             notes: detail.notes,
             exam: exam,
             modality: modalityInfo,
+            contrast: contrastInfo,
+            kptl: kptlInfo,
+            performer: performerInfo,
             satu_sehat: {
                 id_service_request: detail.id_service_request_ss,
                 id_observation: detail.id_observation_ss,
                 id_procedure: detail.id_procedure_ss,
+                id_allergy_intolerance: detail.id_allergy_intolerance_ss,
             },
             created_at: detail.created_at.toISOString(),
             updated_at: detail.updated_at?.toISOString() || null,
@@ -383,16 +410,50 @@ export class OrderService {
             performers: Array<{ id_ss: string; name: string }>;
         } | null = null;
 
-        if (serviceRequestJson) {
-            practitioners = {
-                requester: serviceRequestJson.requester ? {
+        if (serviceRequestJson || firstDetail) {
+            // Get requester from service_request_json OR from detail fields
+            let requester: { id_ss: string; name: string } | null = null;
+            if (firstDetail?.id_requester_ss) {
+                requester = {
+                    id_ss: firstDetail.id_requester_ss,
+                    name: firstDetail.requester_display || "",
+                };
+            } else if (serviceRequestJson?.requester) {
+                requester = {
                     id_ss: serviceRequestJson.requester.reference?.split("/")[1] || "",
                     name: serviceRequestJson.requester.display || "",
-                } : null,
-                performers: serviceRequestJson.performer?.map(p => ({
-                    id_ss: p.reference?.split("/")[1] || "",
-                    name: p.display || "",
-                })) || [],
+                };
+            }
+
+            // Get performers - combine from service_request_json AND from detail fields (id_performer_ss)
+            const performersSet = new Map<string, { id_ss: string; name: string }>();
+            
+            // Add performers from service_request_json
+            if (serviceRequestJson?.performer) {
+                for (const p of serviceRequestJson.performer) {
+                    const id = p.reference?.split("/")[1] || "";
+                    if (id) {
+                        performersSet.set(id, {
+                            id_ss: id,
+                            name: p.display || "",
+                        });
+                    }
+                }
+            }
+            
+            // Add/update performers from detail fields (takes precedence - data from RIS)
+            for (const { detail } of details) {
+                if (detail.id_performer_ss) {
+                    performersSet.set(detail.id_performer_ss, {
+                        id_ss: detail.id_performer_ss,
+                        name: detail.performer_display || "",
+                    });
+                }
+            }
+
+            practitioners = {
+                requester,
+                performers: Array.from(performersSet.values()),
             };
         }
 
@@ -506,6 +567,8 @@ export class OrderService {
         if (sr.reasonCode?.[0]?.coding?.[0]) {
             result.reason_code = sr.reasonCode[0].coding[0].code;
             result.reason_display = sr.reasonCode[0].coding[0].display;
+            result.diagnosis_code = sr.reasonCode[0].coding[0].code;
+            result.diagnosis_display = sr.reasonCode[0].coding[0].display;
             result.diagnosis = `${sr.reasonCode[0].coding[0].code} - ${sr.reasonCode[0].coding[0].display}`;
         }
 
@@ -717,8 +780,12 @@ export class OrderService {
 
                 // Build diagnosis string from diagnosa
                 let diagnosis: string | null = null;
+                let diagnosis_code: string | null = null;
+                let diagnosis_display: string | null = null;
                 if (detailData.diagnosa) {
                     diagnosis = `${detailData.diagnosa.code} - ${detailData.diagnosa.display}`;
+                    diagnosis_code = detailData.diagnosa.code;
+                    diagnosis_display = detailData.diagnosa.display;
                 }
 
                 // Build service_request_json for later Satu Sehat integration
@@ -785,6 +852,8 @@ export class OrderService {
                     reason_code: detailData.diagnosa?.code || null,
                     reason_display: detailData.diagnosa?.display || null,
                     diagnosis: diagnosis,
+                    diagnosis_code: diagnosis_code,
+                    diagnosis_display: diagnosis_display,
                     // Notes
                     notes: detailData.notes || null,
                     // Store original data as service_request_json for later Satu Sehat integration
@@ -937,6 +1006,485 @@ export class OrderService {
     }
 
     /**
+     * Send ServiceRequest to Satu Sehat (tanpa MWL push)
+     * Data diambil dari database yang sudah di-update sebelumnya
+     */
+    static async sendToSatuSehat(
+        orderId: string,
+        detailId: string
+    ): Promise<{
+        success: boolean;
+        message: string;
+        data?: {
+            detail_id: string;
+            accession_number: string;
+            service_request_id: string;
+        };
+    }> {
+        // Get order and detail
+        const order = await OrderService.getOrderByIdRaw(orderId);
+        if (!order) {
+            return { success: false, message: "Order not found" };
+        }
+
+        const detail = order.details.find((d) => d.id === detailId);
+        if (!detail) {
+            return { success: false, message: "Order detail not found" };
+        }
+
+        // Validate required data from database
+        if (!detail.accession_number) {
+            return { success: false, message: "Missing accession number" };
+        }
+
+        if (!detail.modality_code) {
+            return { success: false, message: "Missing modality_code. Please update order detail first." };
+        }
+
+        if (!detail.ae_title) {
+            return { success: false, message: "Missing ae_title. Please update order detail first." };
+        }
+
+        if (!detail.id_performer_ss) {
+            return { success: false, message: "Missing performer_id. Please update order detail first." };
+        }
+
+        if (!detail.performer_display) {
+            return { success: false, message: "Missing performer_name. Please update order detail first." };
+        }
+
+        if (!detail.schedule_date && !detail.occurrence_datetime) {
+            return { success: false, message: "Missing schedule date" };
+        }
+
+        // Get patient and encounter from service_request_json
+        const serviceRequestJson = detail.service_request_json as SimrsServiceRequest | null;
+        if (!serviceRequestJson?.subject?.reference || !serviceRequestJson?.encounter?.reference) {
+            return { success: false, message: "Missing patient or encounter reference in order data" };
+        }
+
+        const patientId = serviceRequestJson.subject.reference.split("/")[1];
+        const encounterId = serviceRequestJson.encounter.reference.split("/")[1];
+
+        try {
+            // Build ServiceRequest dari data di database
+            const serviceRequestPayload = SatuSehatService.buildServiceRequest({
+                organizationId: env.SATU_SEHAT_ORGANIZATION_ID,
+                accessionNumber: detail.accession_number,
+                // Include existing ServiceRequest ID if updating
+                serviceRequestId: detail.id_service_request_ss || undefined,
+                // Code (LOINC + KPTL)
+                loincCode: detail.loinc?.loinc_code || detail.loinc_code_alt || "",
+                loincDisplay: detail.loinc?.loinc_display || detail.loinc_display_alt || "",
+                kptlCode: detail.kptl_code || undefined,
+                kptlDisplay: detail.kptl_display || undefined,
+                codeText: detail.code_text || undefined,
+                // Order Detail (modality, AE title, contrast) - dari DB
+                modalityCode: detail.modality_code,
+                aeTitle: detail.ae_title,
+                contrastKfaCode: detail.contrast_code || undefined,
+                contrastKfaDisplay: detail.contrast_name_kfa || undefined,
+                // Subject & Encounter
+                patientId,
+                encounterId,
+                // Occurrence
+                occurrenceDateTime:
+                    detail.occurrence_datetime?.toISOString() || detail.schedule_date?.toISOString() || undefined,
+                // Requester (dokter yang merujuk - dari SIMRS)
+                requesterId: detail.id_requester_ss || "",
+                requesterDisplay: detail.requester_display || undefined,
+                // Performer (radiologist - dari RIS/DB)
+                performerId: detail.id_performer_ss,
+                performerDisplay: detail.performer_display,
+                // Reason (diagnosis)
+                reasonIcdCode: detail.reason_code || detail.diagnosis_code || undefined,
+                reasonIcdDisplay: detail.reason_display || detail.diagnosis_display || undefined,
+                // Supporting info - dari DB
+                observationId: detail.id_observation_ss || undefined,
+                procedureId: detail.id_procedure_ss || undefined,
+                allergyIntoleranceId: detail.id_allergy_intolerance_ss || undefined,
+                // Priority
+                priority: (detail.order_priority?.toLowerCase() as "routine" | "urgent" | "asap" | "stat") || "routine",
+            });
+
+            let satuSehatResponse;
+            let actionType: "created" | "updated";
+
+            // Check if ServiceRequest already exists - UPDATE instead of CREATE
+            if (detail.id_service_request_ss) {
+                // UPDATE existing ServiceRequest
+                satuSehatResponse = await SatuSehatService.putServiceRequest(
+                    detail.id_service_request_ss,
+                    serviceRequestPayload
+                );
+                actionType = "updated";
+            } else {
+                // CREATE new ServiceRequest
+                satuSehatResponse = await SatuSehatService.postServiceRequest(serviceRequestPayload);
+                actionType = "created";
+
+                // Simpan ServiceRequest ID ke database (hanya untuk create baru)
+                await db
+                    .update(detailOrderTable)
+                    .set({
+                        id_service_request_ss: satuSehatResponse.id,
+                        updated_at: new Date(),
+                    })
+                    .where(eq(detailOrderTable.id, detailId));
+            }
+
+            return {
+                success: true,
+                message: `ServiceRequest ${actionType} in Satu Sehat successfully`,
+                data: {
+                    detail_id: detailId,
+                    accession_number: detail.accession_number,
+                    service_request_id: satuSehatResponse.id,
+                },
+            };
+        } catch (error) {
+            return {
+                success: false,
+                message: error instanceof Error ? error.message : "Failed to send to Satu Sehat",
+            };
+        }
+    }
+
+    /**
+     * Push order to MWL (Modality Worklist)
+     * Data diambil dari database yang sudah di-update sebelumnya
+     */
+    static async pushToMWL(
+        orderId: string,
+        detailId: string,
+        mwlTarget: "orthanc" | "dcm4chee" | "both" = "dcm4chee"
+    ): Promise<{
+        success: boolean;
+        message: string;
+        data?: {
+            detail_id: string;
+            accession_number: string;
+            mwl_target: string;
+        };
+    }> {
+        // Get order and detail
+        const order = await OrderService.getOrderByIdRaw(orderId);
+        if (!order) {
+            return { success: false, message: "Order not found" };
+        }
+
+        const detail = order.details.find((d) => d.id === detailId);
+        if (!detail) {
+            return { success: false, message: "Order detail not found" };
+        }
+
+        // Validate required data
+        if (!detail.accession_number) {
+            return { success: false, message: "Missing accession number" };
+        }
+
+        if (!detail.modality_code) {
+            return { success: false, message: "Missing modality_code. Please update order detail first." };
+        }
+
+        if (!detail.ae_title) {
+            return { success: false, message: "Missing ae_title. Please update order detail first." };
+        }
+
+        try {
+            // Prepare MWL data dari database
+            const mwlData = {
+                patientId: order.patient_mrn || "",
+                patientName: order.patient_name || "",
+                patientBirthDate: order.patient_birth_date || "19000101",
+                patientSex: (order.patient_gender === "MALE" ? "M" : order.patient_gender === "FEMALE" ? "F" : "O") as "M" | "F" | "O",
+                accessionNumber: detail.accession_number,
+                requestedProcedure: detail.loinc?.loinc_display || detail.code_text || detail.loinc_display_alt || "Radiologic Examination",
+                modality: detail.modality_code,
+                stationAETitle: detail.ae_title,
+                scheduledDate: new Date(detail.schedule_date || detail.occurrence_datetime || new Date()),
+                scheduledStepId: `SPS-${detail.accession_number}`,
+                scheduledStepDescription: detail.loinc?.loinc_display || detail.code_text || detail.loinc_display_alt || "Radiologic Examination",
+                referringPhysician: detail.requester_display || order.practitioner?.name || undefined,
+            };
+
+            let lastResult: { success: boolean; error?: string } = { success: false, error: "No target selected" };
+
+            // Push to selected target
+            if (mwlTarget === "orthanc" || mwlTarget === "both") {
+                const orthancResult = await pushWorklistToOrthanc(mwlData);
+                lastResult = { success: orthancResult.success, error: orthancResult.error || undefined };
+                if (!orthancResult.success) {
+                    return {
+                        success: false,
+                        message: `Failed to push to Orthanc: ${orthancResult.error}`,
+                    };
+                }
+            }
+            
+            if (mwlTarget === "dcm4chee" || mwlTarget === "both") {
+                const dcm4cheeResult = await pushWorklistToDcm4chee(mwlData);
+                lastResult = { success: dcm4cheeResult.success, error: dcm4cheeResult.error || undefined };
+                if (!dcm4cheeResult.success) {
+                    return {
+                        success: false,
+                        message: `Failed to push to DCM4CHEE: ${dcm4cheeResult.error}`,
+                    };
+                }
+            }
+
+            return {
+                success: true,
+                message: `Order pushed to MWL (${mwlTarget}) successfully`,
+                data: {
+                    detail_id: detailId,
+                    accession_number: detail.accession_number,
+                    mwl_target: mwlTarget,
+                },
+            };
+        } catch (error) {
+            return {
+                success: false,
+                message: error instanceof Error ? error.message : "Failed to push to MWL",
+            };
+        }
+    }
+
+    /**
+     * @deprecated Use sendToSatuSehat and pushToMWL separately
+     * Send order detail to Satu Sehat and push to MWL in one flow
+     */
+    static async sendToSatuSehatAndPushMWL(
+        orderId: string,
+        detailId: string,
+        data: {
+            modality_code: string;
+            ae_title: string;
+            performer_id: string;
+            performer_name: string;
+            contrast_code?: string;
+            contrast_name?: string;
+            observation_id?: string;
+            procedure_id?: string;
+            allergy_intolerance_id?: string;
+            mwl_target?: "orthanc" | "dcm4chee" | "both";
+        }
+    ): Promise<{
+        success: boolean;
+        message: string;
+        data?: {
+            detail_id: string;
+            accession_number: string;
+            service_request_id: string;
+            mwl_push: {
+                success: boolean;
+                target: string;
+                error?: string;
+            };
+        };
+    }> {
+        // Get order and detail
+        const order = await OrderService.getOrderByIdRaw(orderId);
+        if (!order) {
+            return { success: false, message: "Order not found" };
+        }
+
+        const detail = order.details.find((d) => d.id === detailId);
+        if (!detail) {
+            return { success: false, message: "Order detail not found" };
+        }
+
+        // Validate required data
+        if (!detail.accession_number) {
+            return { success: false, message: "Missing accession number" };
+        }
+
+        if (!detail.schedule_date && !detail.occurrence_datetime) {
+            return { success: false, message: "Missing schedule date" };
+        }
+
+        // Get patient and encounter from service_request_json
+        const serviceRequestJson = detail.service_request_json as SimrsServiceRequest | null;
+        if (!serviceRequestJson?.subject?.reference || !serviceRequestJson?.encounter?.reference) {
+            return { success: false, message: "Missing patient or encounter reference in order data" };
+        }
+
+        const patientId = serviceRequestJson.subject.reference.split("/")[1];
+        const encounterId = serviceRequestJson.encounter.reference.split("/")[1];
+
+        try {
+            // ========== STEP 1: Update detail order dengan data lengkap ==========
+            await db
+                .update(detailOrderTable)
+                .set({
+                    modality_code: data.modality_code,
+                    ae_title: data.ae_title,
+                    id_performer_ss: data.performer_id,
+                    performer_display: data.performer_name,
+                    contrast_code: data.contrast_code || null,
+                    contrast_name_kfa: data.contrast_name || null,
+                    id_observation_ss: data.observation_id || null,
+                    id_procedure_ss: data.procedure_id || null,
+                    id_allergy_intolerance_ss: data.allergy_intolerance_id || null,
+                    updated_at: new Date(),
+                })
+                .where(eq(detailOrderTable.id, detailId));
+
+            // ========== STEP 2: Build ServiceRequest lengkap ==========
+            const serviceRequestPayload = SatuSehatService.buildServiceRequest({
+                organizationId: env.SATU_SEHAT_ORGANIZATION_ID,
+                accessionNumber: detail.accession_number,
+                // Code (LOINC + KPTL)
+                loincCode: detail.loinc?.loinc_code || detail.loinc_code_alt || "",
+                loincDisplay: detail.loinc?.loinc_display || detail.loinc_display_alt || "",
+                kptlCode: detail.kptl_code || undefined,
+                kptlDisplay: detail.kptl_display || undefined,
+                codeText: detail.code_text || undefined,
+                // Order Detail (modality, AE title, contrast)
+                modalityCode: data.modality_code,
+                aeTitle: data.ae_title,
+                contrastKfaCode: data.contrast_code || undefined,
+                contrastKfaDisplay: data.contrast_name || undefined,
+                // Subject & Encounter
+                patientId,
+                encounterId,
+                // Occurrence
+                occurrenceDateTime:
+                    detail.occurrence_datetime?.toISOString() || detail.schedule_date?.toISOString() || undefined,
+                // Requester (dokter yang merujuk - dari SIMRS)
+                requesterId: detail.id_requester_ss || "",
+                requesterDisplay: detail.requester_display || undefined,
+                // Performer (radiologist - dari RIS)
+                performerId: data.performer_id,
+                performerDisplay: data.performer_name,
+                // Reason (diagnosis)
+                reasonIcdCode: detail.reason_code || detail.diagnosis_code || undefined,
+                reasonIcdDisplay: detail.reason_display || detail.diagnosis_display || undefined,
+                // Supporting info
+                observationId: data.observation_id || undefined,
+                procedureId: data.procedure_id || undefined,
+                allergyIntoleranceId: data.allergy_intolerance_id || undefined,
+                // Priority
+                priority: (detail.order_priority?.toLowerCase() as "routine" | "urgent" | "asap" | "stat") || "routine",
+            });
+
+            // ========== STEP 3: POST ke Satu Sehat ==========
+            const satuSehatResponse = await SatuSehatService.postServiceRequest(serviceRequestPayload);
+
+            // ========== STEP 4: Simpan ServiceRequest ID ==========
+            await db
+                .update(detailOrderTable)
+                .set({
+                    id_service_request_ss: satuSehatResponse.id,
+                    updated_at: new Date(),
+                })
+                .where(eq(detailOrderTable.id, detailId));
+
+            // ========== STEP 5: Push ke MWL ==========
+            const mwlTarget = data.mwl_target || "dcm4chee";
+            let mwlResult: { success: boolean; error?: string } = { success: false, error: "MWL push skipped" };
+
+            // Prepare MWL data
+            const mwlData = {
+                patientId: order.patient_mrn || "",
+                patientName: order.patient_name || "",
+                patientBirthDate: order.patient_birth_date || "19000101",
+                patientSex: (order.patient_gender === "MALE" ? "M" : order.patient_gender === "FEMALE" ? "F" : "O") as "M" | "F" | "O",
+                accessionNumber: detail.accession_number,
+                requestedProcedure: detail.loinc?.loinc_display || detail.code_text || "Radiologic Examination",
+                modality: data.modality_code,
+                stationAETitle: data.ae_title,
+                scheduledDate: new Date(detail.schedule_date || detail.occurrence_datetime || new Date()),
+                scheduledStepId: `SPS-${detail.accession_number}`,
+                scheduledStepDescription: detail.loinc?.loinc_display || detail.code_text || "Radiologic Examination",
+                referringPhysician: detail.requester_display || order.practitioner?.name || undefined,
+            };
+
+            // Push to selected target
+            if (mwlTarget === "orthanc" || mwlTarget === "both") {
+                const orthancResult = await pushWorklistToOrthanc(mwlData);
+                mwlResult = { success: orthancResult.success, error: orthancResult.error || undefined };
+            }
+            
+            if (mwlTarget === "dcm4chee" || mwlTarget === "both") {
+                const dcm4cheeResult = await pushWorklistToDcm4chee(mwlData);
+                mwlResult = { success: dcm4cheeResult.success, error: dcm4cheeResult.error || undefined };
+            }
+
+            // ========== Return Success ==========
+            return {
+                success: true,
+                message: "Order sent to Satu Sehat and pushed to MWL successfully",
+                data: {
+                    detail_id: detailId,
+                    accession_number: detail.accession_number,
+                    service_request_id: satuSehatResponse.id,
+                    mwl_push: {
+                        success: mwlResult.success,
+                        target: mwlTarget,
+                        error: mwlResult.error,
+                    },
+                },
+            };
+        } catch (error) {
+            return {
+                success: false,
+                message: error instanceof Error ? error.message : "Failed to send to Satu Sehat",
+            };
+        }
+    }
+
+    /**
+     * @deprecated Use sendToSatuSehatAndPushMWL instead
+     * Complete order detail dengan data lengkap dan kirim ke Satu Sehat
+     */
+    static async completeOrderAndSendToSatuSehat(
+        orderId: string,
+        detailId: string,
+        data: {
+            modality_code: string;
+            ae_title: string;
+            performer_id: string;
+            performer_name: string;
+            contrast_code?: string;
+            contrast_name?: string;
+            observation_id?: string;
+            procedure_id?: string;
+            allergy_intolerance_id?: string;
+        }
+    ): Promise<{
+        success: boolean;
+        message: string;
+        data?: {
+            detail_id: string;
+            accession_number: string;
+            service_request_id: string;
+            service_request_url: string;
+        };
+    }> {
+        // Use new method but without MWL push
+        const result = await OrderService.sendToSatuSehatAndPushMWL(orderId, detailId, {
+            ...data,
+            mwl_target: undefined, // Will skip MWL
+        });
+
+        if (!result.success) {
+            return { success: false, message: result.message };
+        }
+
+        return {
+            success: true,
+            message: result.message,
+            data: {
+                detail_id: result.data!.detail_id,
+                accession_number: result.data!.accession_number,
+                service_request_id: result.data!.service_request_id,
+                service_request_url: `${env.SATU_SEHAT_BASE_URL}/ServiceRequest/${result.data!.service_request_id}`,
+            },
+        };
+    }
+
+    /**
      * Update order
      */
     static async updateOrder(orderId: string, data: UpdateOrderInput): Promise<FullOrderResponse | null> {
@@ -958,12 +1506,73 @@ export class OrderService {
     static async updateDetailOrder(detailId: string, data: UpdateDetailOrderInput): Promise<DetailOrderResponse | null> {
         // biome-ignore lint/suspicious/noExplicitAny: Drizzle typing issue with partial updates
         const updateData: any = {
-            ...data,
             updated_at: new Date(),
         };
 
+        // Schedule & Status
         if (data.schedule_date) {
             updateData.schedule_date = new Date(data.schedule_date);
+        }
+        if (data.order_priority) {
+            updateData.order_priority = data.order_priority;
+        }
+        if (data.order_status) {
+            updateData.order_status = data.order_status;
+        }
+        if (data.notes !== undefined) {
+            updateData.notes = data.notes;
+        }
+
+        // Handle diagnosis update - split into code and display
+        if (data.diagnosis) {
+            updateData.diagnosis_code = data.diagnosis.code || null;
+            updateData.diagnosis_display = data.diagnosis.display || null;
+        }
+
+        // Modality & Workstation
+        if (data.modality_code !== undefined) {
+            updateData.modality_code = data.modality_code;
+        }
+        if (data.ae_title !== undefined) {
+            updateData.ae_title = data.ae_title;
+        }
+
+        // Performer (Radiolog)
+        if (data.performer_id !== undefined) {
+            updateData.id_performer_ss = data.performer_id;
+        }
+        if (data.performer_name !== undefined) {
+            updateData.performer_display = data.performer_name;
+        }
+
+        // Contrast
+        if (data.contrast_code !== undefined) {
+            updateData.contrast_code = data.contrast_code;
+        }
+        if (data.contrast_name !== undefined) {
+            updateData.contrast_name_kfa = data.contrast_name;
+        }
+
+        // KPTL Code
+        if (data.kptl_code !== undefined) {
+            updateData.kptl_code = data.kptl_code;
+        }
+        if (data.kptl_display !== undefined) {
+            updateData.kptl_display = data.kptl_display;
+        }
+
+        // Satu Sehat IDs
+        if (data.id_service_request_ss !== undefined) {
+            updateData.id_service_request_ss = data.id_service_request_ss;
+        }
+        if (data.id_observation_ss !== undefined) {
+            updateData.id_observation_ss = data.id_observation_ss;
+        }
+        if (data.id_procedure_ss !== undefined) {
+            updateData.id_procedure_ss = data.id_procedure_ss;
+        }
+        if (data.id_allergy_intolerance_ss !== undefined) {
+            updateData.id_allergy_intolerance_ss = data.id_allergy_intolerance_ss;
         }
 
         const [detail] = await db

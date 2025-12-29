@@ -1,0 +1,8 @@
+{
+  "diagnosis": {
+    "code": "J18.0",
+    "display": "Bronchopneumonia, unspecified organism"
+  },
+  "order_status": "COMPLETED",
+  "notes": "Hasil foto thorax PA:\n- Tampak infiltrat pada lobus kanan bawah\n- Konsisten dengan bronchopneumonia\n- Tidak tampak efusi pleura\n- Cor dalam batas normal\n\nKesimpulan: Bronchopneumonia lobus kanan bawah"
+}

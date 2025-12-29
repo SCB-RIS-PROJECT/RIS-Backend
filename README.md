@@ -121,6 +121,14 @@ Swagger/OpenAPI documentation tersedia di:
 - `/docs` - Scalar API documentation
 - `/documentation` - OpenAPI JSON spec
 
+### Additional Documentation
+
+- **[DIAGNOSIS-API-USAGE.md](docs/DIAGNOSIS-API-USAGE.md)** - 📋 Panduan lengkap penggunaan API diagnosis
+- **[DIAGNOSIS-QUICK-REF.md](docs/DIAGNOSIS-QUICK-REF.md)** - ⚡ Quick reference untuk diagnosis API
+- **[POSTMAN-UPDATE-ORDER.md](docs/POSTMAN-UPDATE-ORDER.md)** - 📝 Panduan update order di Postman
+- **[POSTMAN-COMPLETE-ORDER.md](docs/POSTMAN-COMPLETE-ORDER.md)** - ✅ Complete order & send to Satu Sehat
+- **[API-INTEGRATION-SIMRS.md](docs/API-INTEGRATION-SIMRS.md)** - 🔗 Integrasi dengan SIMRS
+
 ## 🔧 Environment Variables
 
 Lihat file `.env.example` untuk daftar lengkap environment variables yang diperlukan.

@@ -1,0 +1,11 @@
+{
+  "modality_code": "CT",
+  "ae_title": "CT0001",
+  "performer_id": "10012572188",
+  "performer_name": "dr. Ahmad Radiologist, Sp.Rad",
+  "contrast_code": "91000928",
+  "contrast_name": "Barium Sulfate",
+  "observation_id": "6a1e6c6c-9f6f-4e09-b72a-3f8dcd8a7f32",
+  "procedure_id": "1f4b3e39-78a0-463f-bd62-82f792911800",
+  "allergy_intolerance_id": "94093c7e-066b-4081-b0a9-e68e20d888f0"
+}

@@ -567,4 +567,229 @@ orderController.openapi(
     }
 );
 
+// ==================== SEND TO SATU SEHAT (ServiceRequest Only) ====================
+orderController.openapi(
+    createRoute({
+        tags,
+        method: "post",
+        path: "/api/orders/{id}/details/{detailId}/send-to-satusehat",
+        summary: "Send ServiceRequest to Satu Sehat",
+        description: `**Kirim ServiceRequest ke Satu Sehat API**
+
+**Prerequisite:** Data sudah di-update via PATCH /api/orders/{id}/details/{detailId} dengan:
+- modality_code
+- ae_title  
+- performer_id (id_performer_ss)
+- performer_name (performer_display)
+- contrast_code, contrast_name (optional)
+
+**Flow:**
+1. Ambil data order detail dari database
+2. Validasi data lengkap (modality, performer, dll)
+3. Build ServiceRequest FHIR
+4. POST ke Satu Sehat /ServiceRequest
+5. Simpan ServiceRequest ID ke database
+6. Return response
+
+**Tidak ada request body** - Semua data diambil dari database.`,
+        middleware: [authMiddleware, permissionMiddleware("update:order")] as const,
+        request: {
+            params: detailOrderIdParamSchema,
+        },
+        responses: {
+            [HttpStatusCodes.OK]: jsonContent(
+                z.object({
+                    success: z.boolean(),
+                    message: z.string(),
+                    data: z.object({
+                        detail_id: z.string().uuid(),
+                        accession_number: z.string(),
+                        service_request_id: z.string(),
+                    }),
+                }),
+                "ServiceRequest sent to Satu Sehat successfully"
+            ),
+            [HttpStatusCodes.NOT_FOUND]: jsonContent(
+                createMessageObjectSchema("Order detail not found"),
+                "Order detail not found"
+            ),
+            [HttpStatusCodes.BAD_REQUEST]: jsonContent(
+                createMessageObjectSchema("Missing required data. Please update order detail first."),
+                "Invalid request - missing data"
+            ),
+            [HttpStatusCodes.UNAUTHORIZED]: jsonContent(
+                createMessageObjectSchema("Not authenticated"),
+                "User not authenticated"
+            ),
+            [HttpStatusCodes.FORBIDDEN]: jsonContent(
+                createMessageObjectSchema("Permission denied"),
+                "Insufficient permissions"
+            ),
+            [HttpStatusCodes.INTERNAL_SERVER_ERROR]: jsonContent(
+                createMessageObjectSchema("Failed to send to Satu Sehat"),
+                "Internal server error"
+            ),
+        },
+    }),
+    async (c) => {
+        try {
+            const { id, detailId } = c.req.valid("param");
+
+            const result = await OrderService.sendToSatuSehat(id, detailId);
+
+            if (!result.success) {
+                return c.json(
+                    {
+                        success: false,
+                        message: result.message,
+                    },
+                    HttpStatusCodes.BAD_REQUEST
+                );
+            }
+
+            if (!result.data) {
+                return c.json(
+                    {
+                        success: false,
+                        message: "Unexpected error: No data returned",
+                    },
+                    HttpStatusCodes.INTERNAL_SERVER_ERROR
+                );
+            }
+
+            return c.json(
+                {
+                    success: result.success,
+                    message: result.message,
+                    data: result.data,
+                },
+                HttpStatusCodes.OK
+            );
+        } catch (error) {
+            loggerPino.error(error);
+            return c.json(
+                {
+                    success: false,
+                    message: error instanceof Error ? error.message : "Failed to send to Satu Sehat",
+                },
+                HttpStatusCodes.INTERNAL_SERVER_ERROR
+            );
+        }
+    }
+);
+
+// ==================== PUSH TO MWL (Modality Worklist Only) ====================
+orderController.openapi(
+    createRoute({
+        tags,
+        method: "post",
+        path: "/api/orders/{id}/details/{detailId}/push-to-mwl",
+        summary: "Push order to Modality Worklist (MWL)",
+        description: `**Push order ke MWL (Orthanc atau DCM4CHEE)**
+
+**Prerequisite:** Data sudah di-update via PATCH /api/orders/{id}/details/{detailId} dengan:
+- modality_code
+- ae_title
+
+**Flow:**
+1. Ambil data order detail dari database
+2. Build MWL worklist item
+3. Push ke target MWL (Orthanc/DCM4CHEE/both)
+4. Return response
+
+**Request Body (optional):**
+- mwl_target: "orthanc" | "dcm4chee" | "both" (default: dcm4chee)`,
+        middleware: [authMiddleware, permissionMiddleware("update:order")] as const,
+        request: {
+            params: detailOrderIdParamSchema,
+            body: jsonContentRequired(
+                z.object({
+                    mwl_target: z.enum(["orthanc", "dcm4chee", "both"]).optional().default("dcm4chee"),
+                }),
+                "MWL target configuration"
+            ),
+        },
+        responses: {
+            [HttpStatusCodes.OK]: jsonContent(
+                z.object({
+                    success: z.boolean(),
+                    message: z.string(),
+                    data: z.object({
+                        detail_id: z.string().uuid(),
+                        accession_number: z.string(),
+                        mwl_target: z.string(),
+                    }),
+                }),
+                "Order pushed to MWL successfully"
+            ),
+            [HttpStatusCodes.NOT_FOUND]: jsonContent(
+                createMessageObjectSchema("Order detail not found"),
+                "Order detail not found"
+            ),
+            [HttpStatusCodes.BAD_REQUEST]: jsonContent(
+                createMessageObjectSchema("Missing required data (modality_code, ae_title)"),
+                "Invalid request - missing data"
+            ),
+            [HttpStatusCodes.UNAUTHORIZED]: jsonContent(
+                createMessageObjectSchema("Not authenticated"),
+                "User not authenticated"
+            ),
+            [HttpStatusCodes.FORBIDDEN]: jsonContent(
+                createMessageObjectSchema("Permission denied"),
+                "Insufficient permissions"
+            ),
+            [HttpStatusCodes.INTERNAL_SERVER_ERROR]: jsonContent(
+                createMessageObjectSchema("Failed to push to MWL"),
+                "Internal server error"
+            ),
+        },
+    }),
+    async (c) => {
+        try {
+            const { id, detailId } = c.req.valid("param");
+            const { mwl_target } = c.req.valid("json");
+
+            const result = await OrderService.pushToMWL(id, detailId, mwl_target || "dcm4chee");
+
+            if (!result.success) {
+                return c.json(
+                    {
+                        success: false,
+                        message: result.message,
+                    },
+                    HttpStatusCodes.BAD_REQUEST
+                );
+            }
+
+            if (!result.data) {
+                return c.json(
+                    {
+                        success: false,
+                        message: "Unexpected error: No data returned",
+                    },
+                    HttpStatusCodes.INTERNAL_SERVER_ERROR
+                );
+            }
+
+            return c.json(
+                {
+                    success: result.success,
+                    message: result.message,
+                    data: result.data,
+                },
+                HttpStatusCodes.OK
+            );
+        } catch (error) {
+            loggerPino.error(error);
+            return c.json(
+                {
+                    success: false,
+                    message: error instanceof Error ? error.message : "Failed to push to MWL",
+                },
+                HttpStatusCodes.INTERNAL_SERVER_ERROR
+            );
+        }
+    }
+);
+
 export default orderController;

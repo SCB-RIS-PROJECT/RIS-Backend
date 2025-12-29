@@ -182,7 +182,10 @@ export const detailOrderResponseSchema = z.object({
     schedule_date: z.string().datetime().nullable(),
     order_priority: z.enum(ORDER_PRIORITY).nullable(),
     order_status: z.enum(ORDER_STATUS).nullable(),
-    diagnosis: z.string().nullable(),
+    diagnosis: z.object({
+        code: z.string().nullable(),
+        display: z.string().nullable(),
+    }).nullable(),
     notes: z.string().nullable(),
     // Exam info from LOINC
     exam: z.object({
@@ -196,17 +199,34 @@ export const detailOrderResponseSchema = z.object({
         require_use_contrast: z.boolean(),
         contrast_name: z.string().nullable(),
     }).nullable(),
-    // Modality info
+    // Modality & Workstation info
     modality: z.object({
         id: z.string().uuid(),
         code: z.string(),
         name: z.string(),
+        ae_title: z.string().nullable(),
+    }).nullable(),
+    // Contrast info (from RIS update)
+    contrast: z.object({
+        code: z.string().nullable(),
+        name: z.string().nullable(),
+    }).nullable(),
+    // KPTL code info
+    kptl: z.object({
+        code: z.string().nullable(),
+        display: z.string().nullable(),
+    }).nullable(),
+    // Performer info (radiologist assigned from RIS)
+    performer: z.object({
+        id_ss: z.string().nullable(),
+        name: z.string().nullable(),
     }).nullable(),
     // Satu Sehat integration IDs (for tracking)
     satu_sehat: z.object({
         id_service_request: z.string().nullable(),
         id_observation: z.string().nullable(),
         id_procedure: z.string().nullable(),
+        id_allergy_intolerance: z.string().nullable(),
     }).nullable(),
     created_at: z.string().datetime(),
     updated_at: z.string().datetime().nullable(),
@@ -294,14 +314,42 @@ export type CreateOrderInput = z.infer<typeof createOrderSchema>;
 
 // ==================== Update Detail Order Schema ====================
 export const updateDetailOrderSchema = z.object({
-    schedule_date: z.string().datetime().optional(),
-    order_priority: z.enum(ORDER_PRIORITY).optional(),
-    order_status: z.enum(ORDER_STATUS).optional(),
-    diagnosis: z.string().optional(),
-    notes: z.string().optional(),
-    id_service_request_ss: z.string().max(255).optional(),
-    id_observation_ss: z.string().max(255).optional(),
-    id_procedure_ss: z.string().max(255).optional(),
+    // Schedule & Status
+    schedule_date: z.string().datetime().optional().describe("Tanggal jadwal pemeriksaan (ISO 8601)"),
+    order_priority: z.enum(ORDER_PRIORITY).optional().describe("Prioritas order: ROUTINE, URGENT, ASAP, STAT"),
+    order_status: z.enum(ORDER_STATUS).optional().describe("Status order: PENDING, SCHEDULED, IN_PROGRESS, COMPLETED, CANCELLED"),
+    
+    // Diagnosis (ICD-10)
+    diagnosis: z.object({
+        code: z.string().optional().describe("Kode ICD-10"),
+        display: z.string().optional().describe("Deskripsi diagnosis"),
+    }).optional().describe("Update diagnosis jika berbeda dari SIMRS"),
+    
+    // Notes
+    notes: z.string().optional().describe("Catatan tambahan"),
+    
+    // ========== Data yang perlu dilengkapi dari RIS ==========
+    // Modality & Workstation
+    modality_code: z.string().optional().describe("Kode modalitas DICOM (CT, MR, DX, CR, US, etc.)"),
+    ae_title: z.string().optional().describe("AE Title workstation DICOM"),
+    
+    // Performer (Radiolog)
+    performer_id: z.string().optional().describe("ID Satu Sehat Practitioner (radiolog)"),
+    performer_name: z.string().optional().describe("Nama radiolog yang akan melakukan pemeriksaan"),
+    
+    // Contrast (optional)
+    contrast_code: z.string().optional().describe("Kode KFA untuk kontras media"),
+    contrast_name: z.string().optional().describe("Nama kontras media (dari KFA)"),
+    
+    // KPTL Code (optional)
+    kptl_code: z.string().optional().describe("Kode KPTL (Klasifikasi Prosedur Tindakan Laboratorium)"),
+    kptl_display: z.string().optional().describe("Deskripsi KPTL"),
+    
+    // ========== Satu Sehat IDs (untuk tracking/referensi) ==========
+    id_service_request_ss: z.string().max(255).optional().describe("ID ServiceRequest dari Satu Sehat"),
+    id_observation_ss: z.string().max(255).optional().describe("ID Observation dari Satu Sehat"),
+    id_procedure_ss: z.string().max(255).optional().describe("ID Procedure dari Satu Sehat"),
+    id_allergy_intolerance_ss: z.string().max(255).optional().describe("ID AllergyIntolerance dari Satu Sehat"),
 });
 
 export type UpdateDetailOrderInput = z.infer<typeof updateDetailOrderSchema>;
@@ -369,3 +417,64 @@ export const satuSehatPushResponseSchema = z.object({
 });
 
 export type SatuSehatPushResponse = z.infer<typeof satuSehatPushResponseSchema>;
+
+// ==================== Complete Detail Order Schema ====================
+// Schema untuk melengkapi data order sebelum dikirim ke Satu Sehat
+export const completeDetailOrderSchema = z.object({
+    // Update data yang belum lengkap
+    modality_code: z.string().optional().describe("Modality code (e.g., DX, CT, MR)"),
+    ae_title: z.string().optional().describe("AE Title untuk workstation"),
+    contrast_code: z.string().optional().describe("KFA code untuk kontras"),
+    contrast_name: z.string().optional().describe("Nama kontras"),
+    performer_id: z.string().optional().describe("Practitioner ID untuk performer"),
+    performer_name: z.string().optional().describe("Nama performer"),
+    observation_id: z.string().optional().describe("Observation ID dari Satu Sehat"),
+    procedure_id: z.string().optional().describe("Procedure ID dari Satu Sehat"),
+    allergy_intolerance_id: z.string().optional().describe("AllergyIntolerance ID dari Satu Sehat"),
+});
+
+export type CompleteDetailOrderInput = z.infer<typeof completeDetailOrderSchema>;
+
+// ==================== Send to Satu Sehat Schema ====================
+// Schema untuk mengirim order ke Satu Sehat dan push ke MWL
+export const sendToSatuSehatSchema = z.object({
+    // Modality info (required)
+    modality_code: z.string().describe("Modality code DICOM (e.g., DX, CT, MR, US)"),
+    ae_title: z.string().describe("AE Title workstation tujuan"),
+    
+    // Performer (required)
+    performer_id: z.string().describe("Satu Sehat Practitioner ID untuk radiologist"),
+    performer_name: z.string().describe("Nama lengkap radiologist"),
+    
+    // Contrast (optional)
+    contrast_code: z.string().optional().describe("KFA code untuk kontras (jika pakai)"),
+    contrast_name: z.string().optional().describe("Nama kontras"),
+    
+    // Supporting info dari Satu Sehat (optional)
+    observation_id: z.string().optional().describe("Observation ID dari Satu Sehat"),
+    procedure_id: z.string().optional().describe("Procedure ID dari Satu Sehat"),
+    allergy_intolerance_id: z.string().optional().describe("AllergyIntolerance ID dari Satu Sehat"),
+    
+    // MWL target (optional, default dcm4chee)
+    mwl_target: z.enum(["orthanc", "dcm4chee", "both"]).optional().default("dcm4chee").describe("Target MWL server"),
+});
+
+export type SendToSatuSehatInput = z.infer<typeof sendToSatuSehatSchema>;
+
+// ==================== Send to Satu Sehat Response ====================
+export const sendToSatuSehatResponseSchema = z.object({
+    success: z.boolean(),
+    message: z.string(),
+    data: z.object({
+        detail_id: z.string().uuid(),
+        accession_number: z.string(),
+        service_request_id: z.string(),
+        mwl_push: z.object({
+            success: z.boolean(),
+            target: z.string(),
+            error: z.string().optional(),
+        }),
+    }).optional(),
+});
+
+export type SendToSatuSehatResponse = z.infer<typeof sendToSatuSehatResponseSchema>;

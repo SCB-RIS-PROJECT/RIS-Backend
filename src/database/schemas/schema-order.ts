@@ -69,6 +69,8 @@ export const detailOrderTable = pgTable(
         reason_code: varchar({ length: 50 }),
         reason_display: varchar({ length: 255 }),
         diagnosis: text("diagnosis"),
+        diagnosis_code: varchar({ length: 50 }),
+        diagnosis_display: varchar({ length: 255 }),
         notes: text("notes"),
         require_fasting: boolean("require_fasting").default(false),
         require_pregnancy_check: boolean("require_pregnancy_check").default(false),
