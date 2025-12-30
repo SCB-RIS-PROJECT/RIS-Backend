@@ -141,6 +141,60 @@ orderController.openapi(
     }
 );
 
+// ==================== GET ORDER BY ACCESSION NUMBER ====================
+orderController.openapi(
+    createRoute({
+        tags,
+        method: "get",
+        path: "/api/orders/by-accession/:accessionNumber",
+        summary: "Get order by Accession Number",
+        description: "Get a single order with all details by its Accession Number (ACSN)",
+        middleware: [authMiddleware, permissionMiddleware("read:order")] as const,
+        request: {
+            params: z.object({
+                accessionNumber: z.string().min(1).openapi({
+                    param: {
+                        name: "accessionNumber",
+                        in: "path",
+                    },
+                    example: "20251230001",
+                }),
+            }),
+        },
+        responses: {
+            [HttpStatusCodes.OK]: jsonContent(fullOrderResponseSchema, "Order retrieved successfully"),
+            [HttpStatusCodes.NOT_FOUND]: jsonContent(createMessageObjectSchema("Order not found"), "Order not found"),
+            [HttpStatusCodes.UNAUTHORIZED]: jsonContent(
+                createMessageObjectSchema("Not authenticated"),
+                "User not authenticated"
+            ),
+            [HttpStatusCodes.FORBIDDEN]: jsonContent(
+                createMessageObjectSchema("Permission denied"),
+                "Insufficient permissions"
+            ),
+            [HttpStatusCodes.INTERNAL_SERVER_ERROR]: jsonContent(
+                createMessageObjectSchema("Failed to fetch order"),
+                "Internal server error"
+            ),
+        },
+    }),
+    async (c) => {
+        try {
+            const { accessionNumber } = c.req.valid("param");
+            const order = await OrderService.getOrderByAccessionNumber(accessionNumber);
+
+            if (!order) {
+                return c.json({ message: "Order not found" }, HttpStatusCodes.NOT_FOUND);
+            }
+
+            return c.json(order, HttpStatusCodes.OK);
+        } catch (error) {
+            loggerPino.error(error);
+            return c.json({ message: "Failed to fetch order" }, HttpStatusCodes.INTERNAL_SERVER_ERROR);
+        }
+    }
+);
+
 // ==================== CREATE ORDER ====================
 orderController.openapi(
     createRoute({
@@ -813,6 +867,107 @@ orderController.openapi(
                 {
                     success: false,
                     message: error instanceof Error ? error.message : "Failed to push to MWL",
+                },
+                HttpStatusCodes.INTERNAL_SERVER_ERROR
+            );
+        }
+    }
+);
+
+// ==================== FETCH IMAGING STUDY FROM SATU SEHAT ====================
+orderController.openapi(
+    createRoute({
+        tags,
+        method: "post",
+        path: "/api/orders/fetch-imaging-study/:accessionNumber",
+        summary: "Fetch ImagingStudy from Satu Sehat by Accession Number",
+        description: `
+Fetch ImagingStudy data from Satu Sehat API using the Accession Number and save the ImagingStudy ID to the database.
+
+This endpoint will:
+1. Query Satu Sehat API: \`/ImagingStudy?identifier=http://sys-ids.kemkes.go.id/acsn/{Org_id}|{ACSN}\`
+2. Extract the ImagingStudy ID from the response
+3. Update the detail order record with the ImagingStudy ID
+
+**Returns:**
+- Success response with the saved ImagingStudy ID
+- Error message if not found or failed
+
+**Use Case:**
+- After radiology examination is completed and uploaded to PACS
+- To link the order with the actual ImagingStudy in Satu Sehat
+        `,
+        middleware: [authMiddleware, permissionMiddleware("update:order")],
+        request: {
+            params: z.object({
+                accessionNumber: z.string().min(1).openapi({
+                    param: {
+                        name: "accessionNumber",
+                        in: "path",
+                    },
+                    example: "20251230001",
+                }),
+            }),
+        },
+        responses: {
+            [HttpStatusCodes.OK]: jsonContent(
+                z.object({
+                    success: z.boolean(),
+                    message: z.string(),
+                    data: z.object({
+                        detail_id: z.string().uuid(),
+                        accession_number: z.string(),
+                        imaging_study_id: z.string(),
+                    }).optional(),
+                }),
+                "Successfully fetched ImagingStudy ID from Satu Sehat"
+            ),
+            [HttpStatusCodes.NOT_FOUND]: jsonContent(
+                z.object({
+                    success: z.boolean(),
+                    message: z.string(),
+                }),
+                "Accession number not found or ImagingStudy not found in Satu Sehat"
+            ),
+            [HttpStatusCodes.INTERNAL_SERVER_ERROR]: jsonContent(
+                z.object({
+                    success: z.boolean(),
+                    message: z.string(),
+                }),
+                "Failed to fetch ImagingStudy"
+            ),
+        },
+    }),
+    async (c) => {
+        try {
+            const { accessionNumber } = c.req.valid("param");
+
+            const result = await OrderService.fetchImagingStudyFromSatuSehat(accessionNumber);
+
+            if (!result.success) {
+                return c.json(
+                    {
+                        success: false,
+                        message: result.message,
+                    },
+                    HttpStatusCodes.NOT_FOUND
+                );
+            }
+
+            return c.json(
+                {
+                    success: result.success,
+                    message: result.message,
+                    data: result.data,
+                },
+                HttpStatusCodes.OK
+            );
+        } catch (error) {
+            loggerPino.error(error);
+            return c.json(
+                {
+                    success: false,
+                    message: error instanceof Error ? error.message : "Failed to fetch ImagingStudy",
                 },
                 HttpStatusCodes.INTERNAL_SERVER_ERROR
             );

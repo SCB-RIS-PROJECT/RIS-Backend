@@ -38,6 +38,7 @@ export const detailOrderTable = pgTable(
         id_order: uuid("id_order").references(() => orderTable.id),
         id_loinc: uuid("id_loinc").references(() => loincTable.id), // Nullable - optional reference untuk order dari SIMRS
         id_service_request_ss: varchar({ length: 255 }),
+        id_imaging_study_ss: varchar({ length: 255 }),
         id_observation_ss: varchar({ length: 255 }),
         id_procedure_ss: varchar({ length: 255 }),
         id_allergy_intolerance_ss: varchar({ length: 255 }),
@@ -86,6 +87,7 @@ export const detailOrderTable = pgTable(
         accessionNumberIdx: index("detail_order_accession_number_idx").on(table.accession_number),
         orderStatusIdx: index("detail_order_order_status_idx").on(table.order_status),
         serviceRequestSsIdx: index("detail_order_service_request_ss_idx").on(table.id_service_request_ss),
+        imagingStudySsIdx: index("detail_order_imaging_study_ss_idx").on(table.id_imaging_study_ss),
         observationSsIdx: index("detail_order_observation_ss_idx").on(table.id_observation_ss),
         procedureSsIdx: index("detail_order_procedure_ss_idx").on(table.id_procedure_ss),
         requesterSsIdx: index("detail_order_requester_ss_idx").on(table.id_requester_ss),

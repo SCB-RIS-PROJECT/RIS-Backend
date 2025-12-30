@@ -214,6 +214,7 @@ export class OrderService {
             performer: performerInfo,
             satu_sehat: {
                 id_service_request: detail.id_service_request_ss,
+                id_imaging_study: detail.id_imaging_study_ss,
                 id_observation: detail.id_observation_ss,
                 id_procedure: detail.id_procedure_ss,
                 id_allergy_intolerance: detail.id_allergy_intolerance_ss,
@@ -525,6 +526,25 @@ export class OrderService {
                 OrderService.formatDetailOrderResponse(detail, loinc, modality)
             ),
         };
+    }
+
+    /**
+     * Get order by Accession Number
+     */
+    static async getOrderByAccessionNumber(accessionNumber: string): Promise<FullOrderResponse | null> {
+        // First, find the detail order by accession number
+        const [detailOrder] = await db
+            .select()
+            .from(detailOrderTable)
+            .where(eq(detailOrderTable.accession_number, accessionNumber))
+            .limit(1);
+
+        if (!detailOrder || !detailOrder.id_order) {
+            return null;
+        }
+
+        // Then get the full order using the order ID
+        return OrderService.getOrderById(detailOrder.id_order);
     }
 
     /**
@@ -1893,5 +1913,100 @@ export class OrderService {
             message: `Pushed ${successCount}/${totalExpected} worklist items to MWL (${target})`,
         };
     }
-}
 
+    /**
+     * Fetch ImagingStudy from Satu Sehat by Accession Number
+     * and save the imaging_study_id to database
+     */
+    static async fetchImagingStudyFromSatuSehat(accessionNumber: string): Promise<{
+        success: boolean;
+        message: string;
+        data?: {
+            detail_id: string;
+            accession_number: string;
+            imaging_study_id: string;
+        };
+    }> {
+        try {
+            // Find detail order by accession number
+            const [detailOrder] = await db
+                .select()
+                .from(detailOrderTable)
+                .where(eq(detailOrderTable.accession_number, accessionNumber))
+                .limit(1);
+
+            if (!detailOrder) {
+                return {
+                    success: false,
+                    message: `Detail order with accession number ${accessionNumber} not found`,
+                };
+            }
+
+            // Get Satu Sehat token
+            const token = await SatuSehatService.getAccessToken();
+
+            // Query ImagingStudy from Satu Sehat
+            const identifier = `http://sys-ids.kemkes.go.id/acsn/${env.SATU_SEHAT_ORGANIZATION_ID}|${accessionNumber}`;
+            const url = `${env.SATU_SEHAT_BASE_URL}/ImagingStudy?identifier=${encodeURIComponent(identifier)}`;
+
+            const response = await fetch(url, {
+                method: "GET",
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                },
+            });
+
+            if (!response.ok) {
+                return {
+                    success: false,
+                    message: `Failed to fetch ImagingStudy from Satu Sehat: ${response.statusText}`,
+                };
+            }
+
+            const bundle = await response.json();
+
+            // Check if there are entries
+            if (!bundle.entry || bundle.entry.length === 0) {
+                return {
+                    success: false,
+                    message: `No ImagingStudy found for accession number ${accessionNumber}`,
+                };
+            }
+
+            // Get ImagingStudy ID from first entry
+            const imagingStudyId = bundle.entry[0].resource.id;
+
+            if (!imagingStudyId) {
+                return {
+                    success: false,
+                    message: "ImagingStudy ID not found in response",
+                };
+            }
+
+            // Update detail order with imaging_study_id
+            await db
+                .update(detailOrderTable)
+                .set({
+                    id_imaging_study_ss: imagingStudyId,
+                    updated_at: new Date(),
+                })
+                .where(eq(detailOrderTable.id, detailOrder.id));
+
+            return {
+                success: true,
+                message: "Successfully fetched and saved ImagingStudy ID",
+                data: {
+                    detail_id: detailOrder.id,
+                    accession_number: accessionNumber,
+                    imaging_study_id: imagingStudyId,
+                },
+            };
+        } catch (error) {
+            return {
+                success: false,
+                message: error instanceof Error ? error.message : "Failed to fetch ImagingStudy",
+            };
+        }
+    }
+}

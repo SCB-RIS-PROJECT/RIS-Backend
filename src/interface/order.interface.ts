@@ -224,6 +224,7 @@ export const detailOrderResponseSchema = z.object({
     // Satu Sehat integration IDs (for tracking)
     satu_sehat: z.object({
         id_service_request: z.string().nullable(),
+        id_imaging_study: z.string().nullable(),
         id_observation: z.string().nullable(),
         id_procedure: z.string().nullable(),
         id_allergy_intolerance: z.string().nullable(),
@@ -480,3 +481,21 @@ export const sendToSatuSehatResponseSchema = z.object({
 });
 
 export type SendToSatuSehatResponse = z.infer<typeof sendToSatuSehatResponseSchema>;
+// ==================== Fetch ImagingStudy from Satu Sehat ====================
+export const fetchImagingStudyParamSchema = z.object({
+    accessionNumber: z.string().min(1).describe("Accession Number untuk query ImagingStudy"),
+});
+
+export type FetchImagingStudyParam = z.infer<typeof fetchImagingStudyParamSchema>;
+
+export const fetchImagingStudyResponseSchema = z.object({
+    success: z.boolean(),
+    message: z.string(),
+    data: z.object({
+        detail_id: z.string().uuid(),
+        accession_number: z.string(),
+        imaging_study_id: z.string(),
+    }).optional(),
+});
+
+export type FetchImagingStudyResponse = z.infer<typeof fetchImagingStudyResponseSchema>;
