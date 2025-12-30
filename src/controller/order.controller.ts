@@ -249,8 +249,20 @@ orderController.openapi(
         tags,
         method: "patch",
         path: "/api/orders/{id}",
-        summary: "Update order",
-        description: "Update order main data (practitioner, encounter)",
+        summary: "Update order main data",
+        description: `Update informasi utama order (header level).
+
+**Field yang bisa diupdate:**
+- \`id_practitioner\`: UUID practitioner (dokter pengirim) - jika ingin mengganti dokter pengirim
+- \`id_encounter_ss\`: ID Encounter dari Satu Sehat - jika ada perubahan encounter
+
+**Use Cases:**
+- Mengganti dokter pengirim karena kesalahan input
+- Update encounter ID setelah ada perubahan di SIMRS
+- Koreksi data administratif order
+
+**Note:** Untuk update data pemeriksaan (status, jadwal, hasil, dll), gunakan PATCH /api/orders/{id}/details/{detailId}
+        `,
         middleware: [authMiddleware, permissionMiddleware("update:order")] as const,
         request: {
             params: orderIdParamSchema,
@@ -299,8 +311,76 @@ orderController.openapi(
         tags,
         method: "patch",
         path: "/api/orders/{id}/details/{detailId}",
-        summary: "Update order detail",
-        description: "Update order detail (status, schedule, diagnosis, notes, Satu Sehat IDs)",
+        summary: "Update order detail (pemeriksaan radiologi)",
+        description: `Update detail pemeriksaan radiologi. Endpoint ini digunakan di berbagai tahap workflow:
+
+**1. TAHAP PENJADWALAN (Scheduling)**
+\`\`\`json
+{
+  "schedule_date": "2025-12-30T10:00:00Z",
+  "order_status": "IN_QUEUE"
+}
+\`\`\`
+
+**2. TAHAP PERSIAPAN PEMERIKSAAN (Pre-Examination)**
+\`\`\`json
+{
+  "modality_code": "CT",
+  "ae_title": "CTScan0001",
+  "performer_id": "10012572188",
+  "performer_name": "dr. John Radiologist",
+  "order_status": "IN_PROGRESS"
+}
+\`\`\`
+
+**3. TAHAP HASIL & KESIMPULAN (Post-Examination)**
+\`\`\`json
+{
+  "observation_notes": "Left upper and middle lung zones show reticulonodular opacities.\\nThe left apical lung zone shows a cavitary lesion (active TB).\\nLeft apical pleural thickening\\nMild mediastinum widening is noted\\nNormal heart size.\\nFree costophrenic angles.",
+  "diagnostic_conclusion": "Suspicious of active pulmonary tuberculosis in the left upper lobe. Recommend clinical correlation and sputum examination.",
+  "diagnosis": {
+    "code": "A15.0",
+    "display": "Tuberculosis of lung"
+  },
+  "order_status": "FINAL"
+}
+\`\`\`
+
+**4. UPDATE CONTRAST & KPTL (Optional)**
+\`\`\`json
+{
+  "contrast_code": "92003638",
+  "contrast_name": "Iohexol injeksi 350 mg/ml (IV)",
+  "kptl_code": "3.13.9.1.01.01.001",
+  "kptl_display": "CT Scan Kepala dengan Kontras"
+}
+\`\`\`
+
+**Field yang bisa diupdate:**
+- \`schedule_date\`: Jadwal pemeriksaan (ISO 8601)
+- \`order_priority\`: Prioritas (ROUTINE, URGENT, ASAP, STAT)
+- \`order_status\`: Status (IN_REQUEST, IN_QUEUE, IN_PROGRESS, FINAL)
+- \`diagnosis\`: Diagnosis ICD-10 (code & display)
+- \`notes\`: Catatan umum
+- \`observation_notes\`: **Hasil pemeriksaan radiologi** (untuk Observation ke Satu Sehat)
+- \`diagnostic_conclusion\`: **Kesimpulan diagnosis** (untuk DiagnosticReport ke Satu Sehat)
+- \`modality_code\`: Kode modalitas DICOM (CT, MR, DX, CR, US, dll)
+- \`ae_title\`: AE Title workstation DICOM
+- \`performer_id\`: ID Practitioner radiolog (dari Satu Sehat)
+- \`performer_name\`: Nama radiolog
+- \`contrast_code\`: Kode KFA kontras
+- \`contrast_name\`: Nama kontras
+- \`kptl_code\`: Kode KPTL
+- \`kptl_display\`: Deskripsi KPTL
+
+**Workflow Integration:**
+1. **Setelah order dibuat** → Update modality & AE Title
+2. **Setelah jadwal ditentukan** → Update schedule_date & status
+3. **Sebelum pemeriksaan** → Update performer (radiolog)
+4. **Setelah pemeriksaan selesai** → Update observation_notes & diagnostic_conclusion
+5. **Setelah verifikasi** → Update status menjadi FINAL
+6. **Setelah semuanya lengkap** → Kirim ke Satu Sehat (ServiceRequest → Observation → DiagnosticReport)
+        `,
         middleware: [authMiddleware, permissionMiddleware("update:order")] as const,
         request: {
             params: detailOrderIdParamSchema,

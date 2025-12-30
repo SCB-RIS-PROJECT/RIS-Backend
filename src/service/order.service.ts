@@ -207,6 +207,8 @@ export class OrderService {
                 display: detail.diagnosis_display ?? null,
             } : null,
             notes: detail.notes,
+            observation_notes: detail.observation_notes,
+            diagnostic_conclusion: detail.diagnostic_conclusion,
             exam: exam,
             modality: modalityInfo,
             contrast: contrastInfo,
@@ -1611,6 +1613,12 @@ export class OrderService {
         }
         if (data.notes !== undefined) {
             updateData.notes = data.notes;
+        }
+        if (data.observation_notes !== undefined) {
+            updateData.observation_notes = data.observation_notes;
+        }
+        if (data.diagnostic_conclusion !== undefined) {
+            updateData.diagnostic_conclusion = data.diagnostic_conclusion;
         }
 
         // Handle diagnosis update - split into code and display

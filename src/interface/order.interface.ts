@@ -187,6 +187,8 @@ export const detailOrderResponseSchema = z.object({
         display: z.string().nullable(),
     }).nullable(),
     notes: z.string().nullable(),
+    observation_notes: z.string().nullable(),
+    diagnostic_conclusion: z.string().nullable(),
     // Exam info from LOINC
     exam: z.object({
         id: z.string().uuid(),
@@ -330,6 +332,10 @@ export const updateDetailOrderSchema = z.object({
     
     // Notes
     notes: z.string().optional().describe("Catatan tambahan"),
+    
+    // Observation & Diagnostic Report (untuk dikirim ke Satu Sehat)
+    observation_notes: z.string().optional().describe("Hasil pemeriksaan radiologi (valueString untuk Observation)"),
+    diagnostic_conclusion: z.string().optional().describe("Kesimpulan diagnosis (conclusion untuk DiagnosticReport)"),
     
     // ========== Data yang perlu dilengkapi dari RIS ==========
     // Modality & Workstation
