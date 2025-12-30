@@ -9,41 +9,49 @@ const commonModalities = [
     {
         code: "XR",
         name: "X-Ray",
+        aet: "XRAY_AET",
         description: "Radiografi konvensional / Foto Rontgen",
     },
     {
         code: "US",
         name: "Ultrasound",
+        aet: "US_AET",
         description: "Ultrasonografi / USG",
     },
     {
         code: "CT",
         name: "Computed Tomography",
+        aet: "CT_AET",
         description: "CT Scan",
     },
     {
         code: "MR",
         name: "Magnetic Resonance Imaging",
+        aet: "MR_AET",
         description: "MRI",
     },
     {
         code: "MG",
         name: "Mammography",
+        aet: "MG_AET",
         description: "Mammografi",
     },
     {
         code: "CR",
         name: "Computed Radiography",
+        aet: "CR_AET",
         description: "Radiografi Digital",
     },
     {
         code: "DX",
         name: "Digital Radiography",
+        aet: "DX_AET",
         description: "Radiografi Digital",
     },
     {
         code: "RF",
         name: "Radiofluoroscopy",
+        aet: "RF_AET",
         description: "Fluoroskopi",
     },
 ];
@@ -54,6 +62,7 @@ export function createModalityFactory(data?: Partial<ModalityInsert>): ModalityI
     return {
         code: data?.code ?? randomModality.code,
         name: data?.name ?? randomModality.name,
+        aet: data?.aet ?? randomModality.aet,
         description: data?.description ?? randomModality.description,
         is_active: data?.is_active ?? true,
         created_at: data?.created_at ?? new Date(),

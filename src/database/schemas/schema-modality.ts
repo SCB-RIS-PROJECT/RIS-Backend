@@ -6,6 +6,7 @@ export const modalityTable = pgTable(
         id: uuid("id").primaryKey().defaultRandom(),
         code: varchar({ length: 255 }).notNull().unique(),
         name: varchar({ length: 255 }).notNull(),
+        aet: varchar({ length: 255 }),
         description: text("description"),
         is_active: boolean("is_active").notNull().default(true),
         created_at: timestamp("created_at").notNull().defaultNow(),
