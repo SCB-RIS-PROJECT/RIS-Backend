@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, gte, type InferSelectModel, ilike, lte, or, type SQL } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, type InferSelectModel, ilike, lte, or, sql, type SQL } from "drizzle-orm";
 import db from "@/database/db";
 import { detailOrderTable, orderTable } from "@/database/schemas/schema-order";
 import { loincTable } from "@/database/schemas/schema-loinc";
@@ -263,16 +263,46 @@ export class OrderService {
             orderWhereConditions.push(lte(orderTable.created_at, new Date(date_to)));
         }
 
-        // Search by patient name, mrn, or practitioner name
+        // Search by patient name or mrn (from order fields or patient table)
         if (search) {
             const searchCondition = or(
+                ilike(orderTable.patient_name, `%${search}%`),
+                ilike(orderTable.patient_mrn, `%${search}%`),
                 ilike(patientTable.name, `%${search}%`),
-                ilike(patientTable.mrn, `%${search}%`),
-                ilike(practitionerTable.name, `%${search}%`)
+                ilike(patientTable.mrn, `%${search}%`)
             );
             if (searchCondition) {
                 orderWhereConditions.push(searchCondition);
             }
+        }
+
+        // Filter by order_status, order_priority, order_from (from detail_order)
+        // Use subquery to filter orders that have details matching the criteria
+        if (order_status || order_priority || order_from) {
+            const detailSubqueryConditions: SQL[] = [];
+            
+            if (order_status) {
+                detailSubqueryConditions.push(eq(detailOrderTable.order_status, order_status));
+            }
+            if (order_priority) {
+                detailSubqueryConditions.push(eq(detailOrderTable.order_priority, order_priority));
+            }
+            if (order_from) {
+                detailSubqueryConditions.push(eq(detailOrderTable.order_from, order_from));
+            }
+
+            // Add condition: order must have at least one detail matching the filters
+            const subquery = db
+                .select({ id: detailOrderTable.id_order })
+                .from(detailOrderTable)
+                .where(
+                    and(
+                        eq(detailOrderTable.id_order, orderTable.id),
+                        ...detailSubqueryConditions
+                    )
+                );
+
+            orderWhereConditions.push(sql`exists (${subquery})`);
         }
 
         const orderWhereClause = orderWhereConditions.length > 0 ? and(...orderWhereConditions) : undefined;
@@ -296,22 +326,10 @@ export class OrderService {
             .limit(per_page)
             .offset(offset);
 
-        // Get details for each order with filters
+        // Get details for each order (no filter here, show all details within filtered orders)
         const ordersWithDetails: FullOrderResponse[] = await Promise.all(
             orders.map(async ({ order, patient, createdBy }) => {
                 const detailWhereConditions: SQL[] = [eq(detailOrderTable.id_order, order.id)];
-
-                if (order_status) {
-                    detailWhereConditions.push(eq(detailOrderTable.order_status, order_status));
-                }
-
-                if (order_priority) {
-                    detailWhereConditions.push(eq(detailOrderTable.order_priority, order_priority));
-                }
-
-                if (order_from) {
-                    detailWhereConditions.push(eq(detailOrderTable.order_from, order_from));
-                }
 
                 const detailWhereClause = and(...detailWhereConditions);
 
