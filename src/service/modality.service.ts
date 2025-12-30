@@ -15,6 +15,7 @@ export class ModalityService {
             id: modality.id,
             code: modality.code,
             name: modality.name,
+            aet: modality.aet ?? null,
             description: modality.description,
             is_active: modality.is_active,
             created_at: modality.created_at.toISOString(),

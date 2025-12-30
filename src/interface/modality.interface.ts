@@ -5,6 +5,7 @@ export const modalityResponseSchema = z.object({
     id: z.string(),
     code: z.string(),
     name: z.string(),
+    aet: z.array(z.string()).nullable(),
     description: z.string().nullable(),
     is_active: z.boolean(),
     created_at: z.string(),
@@ -43,6 +44,7 @@ export type ModalityPaginationResponse = z.infer<typeof modalityPaginationRespon
 export const createModalitySchema = z.object({
     code: z.string().min(1).max(255),
     name: z.string().min(1).max(255),
+    aet: z.array(z.string()).optional(),
     description: z.string().optional(),
     is_active: z.boolean().default(true),
 });
@@ -53,6 +55,7 @@ export type CreateModalityInput = z.infer<typeof createModalitySchema>;
 export const updateModalitySchema = z.object({
     code: z.string().min(1).max(255).optional(),
     name: z.string().min(1).max(255).optional(),
+    aet: z.array(z.string()).optional(),
     description: z.string().optional(),
     is_active: z.boolean().optional(),
 });

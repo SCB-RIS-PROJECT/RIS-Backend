@@ -10,24 +10,42 @@ type ModalityInsert = InferInsertModel<typeof modalityTable>;
 // Modality yang umum digunakan di Indonesia (fokus pada XR, US, CT)
 const modalityData: ModalityInsert[] = [
     {
-        code: "XR",
+        code: "CR",
         name: "X-Ray",
-        description: "Radiografi konvensional menggunakan sinar-X untuk menghasilkan gambar struktur internal tubuh",
-        is_active: true,
-        created_at: new Date(),
-    },
-    {
-        code: "US",
-        name: "Ultrasound",
-        description:
-            "Ultrasonografi menggunakan gelombang suara frekuensi tinggi untuk menghasilkan gambar organ dalam",
+        aet: ["Xray0001", "Xray0002"],
+        description: "Pemeriksaan Xray",
         is_active: true,
         created_at: new Date(),
     },
     {
         code: "CT",
         name: "Computed Tomography",
-        description: "CT Scan menggunakan sinar-X dan komputer untuk menghasilkan gambar potongan melintang tubuh",
+        aet: ["CTScan0001", "CTScan0002"],
+        description: "Pemeriksaan CT Scan",
+        is_active: true,
+        created_at: new Date(),
+    },
+    {
+        code: "US",
+        name: "Ultrasound",
+        aet: ["USG0001", "USG0002"],
+        description: "Pemeriksan USG",
+        is_active: true,
+        created_at: new Date(),
+    },
+    {
+        code: "US",
+        name: "Ultrasound",
+        aet: ["Echocardio0001", "Echocardio0002"],
+        description: "Pemeriksan Echocardio",
+        is_active: true,
+        created_at: new Date(),
+    },
+    {
+        code: "PX",
+        name: "Computed Tomography",
+        aet: ["Panoramic0001", "Panoramic0002"],
+        description: "Pemeriksaan Panoramic",
         is_active: true,
         created_at: new Date(),
     },
