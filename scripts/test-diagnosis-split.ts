@@ -5,7 +5,7 @@
 
 import env from "@/config/env";
 
-const BASE_URL = env.APP_URL || "http://localhost:3000";
+const BASE_URL = `http://localhost:${env.PORT}` || "http://localhost:3000";
 const AUTH_TOKEN = "YOUR_AUTH_TOKEN_HERE"; // Replace with actual token
 
 interface TestResult {
@@ -88,7 +88,7 @@ async function testCreateOrderWithDiagnosis() {
         results.push({
             name: "Create Order with Diagnosis",
             success: false,
-            message: error.message
+            message: error instanceof Error ? error.message : String(error)
         });
         console.log("❌ Error:", error);
         return null;
@@ -145,7 +145,7 @@ async function testGetOrder(orderId: string) {
         results.push({
             name: "Get Order - Verify Diagnosis Format",
             success: false,
-            message: error.message
+            message: error instanceof Error ? error.message : String(error)
         });
         console.log("❌ Error:", error);
         return null;
@@ -210,7 +210,7 @@ async function testUpdateDiagnosis(orderId: string, detailId: string) {
         results.push({
             name: "Update Diagnosis from RIS",
             success: false,
-            message: error.message
+            message: error instanceof Error ? error.message : String(error)
         });
         console.log("❌ Error:", error);
         return null;
@@ -271,7 +271,7 @@ async function testUpdateWithoutDiagnosis(orderId: string, detailId: string) {
         results.push({
             name: "Update Without Changing Diagnosis",
             success: false,
-            message: error.message
+            message: error instanceof Error ? error.message : String(error)
         });
         console.log("❌ Error:", error);
         return null;
