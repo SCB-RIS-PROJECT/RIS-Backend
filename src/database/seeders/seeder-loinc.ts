@@ -26,7 +26,7 @@ export async function seedLoinc() {
         console.log("🌱 Seeding LOINC data...");
 
         // Get modality IDs
-        const xrModalityId = await getModalityIdByCode("XR");
+        const xrModalityId = await getModalityIdByCode("CR");
         const usModalityId = await getModalityIdByCode("US");
         const ctModalityId = await getModalityIdByCode("CT");
 
