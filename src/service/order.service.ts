@@ -325,16 +325,50 @@ export class OrderService {
                     performers: Array<{ id_ss: string; name: string }>;
                 } | null = null;
 
-                if (serviceRequestJson) {
-                    practitioners = {
-                        requester: serviceRequestJson.requester ? {
+                if (serviceRequestJson || firstDetail) {
+                    // Get requester from service_request_json OR from detail fields
+                    let requester: { id_ss: string; name: string } | null = null;
+                    if (firstDetail?.id_requester_ss) {
+                        requester = {
+                            id_ss: firstDetail.id_requester_ss,
+                            name: firstDetail.requester_display || "",
+                        };
+                    } else if (serviceRequestJson?.requester) {
+                        requester = {
                             id_ss: serviceRequestJson.requester.reference?.split("/")[1] || "",
                             name: serviceRequestJson.requester.display || "",
-                        } : null,
-                        performers: serviceRequestJson.performer?.map(p => ({
-                            id_ss: p.reference?.split("/")[1] || "",
-                            name: p.display || "",
-                        })) || [],
+                        };
+                    }
+
+                    // Get performers - combine from service_request_json AND from detail fields (id_performer_ss)
+                    const performersSet = new Map<string, { id_ss: string; name: string }>();
+                    
+                    // Add performers from service_request_json
+                    if (serviceRequestJson?.performer) {
+                        for (const p of serviceRequestJson.performer) {
+                            const id = p.reference?.split("/")[1] || "";
+                            if (id) {
+                                performersSet.set(id, {
+                                    id_ss: id,
+                                    name: p.display || "",
+                                });
+                            }
+                        }
+                    }
+                    
+                    // Add/update performers from detail fields (takes precedence - data from RIS)
+                    for (const { detail } of details) {
+                        if (detail.id_performer_ss) {
+                            performersSet.set(detail.id_performer_ss, {
+                                id_ss: detail.id_performer_ss,
+                                name: detail.performer_display || "",
+                            });
+                        }
+                    }
+
+                    practitioners = {
+                        requester,
+                        performers: Array.from(performersSet.values()),
                     };
                 }
 
