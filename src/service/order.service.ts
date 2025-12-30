@@ -186,6 +186,15 @@ export class OrderService {
             name: detail.performer_display ?? null,
         } : null;
 
+        // Check if order can be pushed to MWL
+        // Requirements: ServiceRequest sent to Satu Sehat + Required MWL data complete
+        const canPushToMwl = Boolean(
+            detail.id_service_request_ss && // ServiceRequest sudah dikirim
+            detail.accession_number && // Accession number exists
+            detail.modality_code && // Modality code exists
+            detail.ae_title // AE Title exists
+        );
+
         return {
             id: detail.id,
             accession_number: detail.accession_number ?? null,
@@ -209,6 +218,7 @@ export class OrderService {
                 id_procedure: detail.id_procedure_ss,
                 id_allergy_intolerance: detail.id_allergy_intolerance_ss,
             },
+            can_push_to_mwl: canPushToMwl,
             created_at: detail.created_at.toISOString(),
             updated_at: detail.updated_at?.toISOString() || null,
         };

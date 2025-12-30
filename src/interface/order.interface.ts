@@ -228,6 +228,8 @@ export const detailOrderResponseSchema = z.object({
         id_procedure: z.string().nullable(),
         id_allergy_intolerance: z.string().nullable(),
     }).nullable(),
+    // Flag to indicate if order can be pushed to MWL
+    can_push_to_mwl: z.boolean(),
     created_at: z.string().datetime(),
     updated_at: z.string().datetime().nullable(),
 });
