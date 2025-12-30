@@ -31,9 +31,37 @@ orderController.openapi(
         tags,
         method: "get",
         path: "/api/orders",
-        summary: "Get all orders",
-        description:
-            "Get paginated list of orders with optional filters (patient, practitioner, status, priority, date range)",
+        summary: "Get all orders with filters and search",
+        description: `
+Get paginated list of orders with comprehensive filtering and search capabilities.
+
+**Search Parameter:**
+- \`search\`: Search by patient name or MRN (case-insensitive, partial match)
+
+**Filter Parameters:**
+- \`order_status\`: Filter by order status (IN_REQUEST, IN_QUEUE, IN_PROGRESS, FINAL)
+- \`order_priority\`: Filter by priority (ROUTINE, URGENT, STAT)
+- \`order_from\`: Filter by source (INTERNAL, EXTERNAL)
+- \`id_patient\`: Filter by specific patient ID
+- \`id_practitioner\`: Filter by specific practitioner ID
+- \`date_from\`: Filter orders from this date (ISO 8601 format)
+- \`date_to\`: Filter orders until this date (ISO 8601 format)
+
+**Pagination:**
+- \`page\`: Page number (default: 1)
+- \`per_page\`: Items per page (max: 100, default: 10)
+- \`sort\`: Sort by field (created_at, updated_at)
+- \`dir\`: Sort direction (asc, desc)
+
+**Examples:**
+- Search: \`?search=budi\`
+- Filter by status: \`?order_status=IN_QUEUE\`
+- Combined: \`?search=john&order_status=IN_PROGRESS&date_from=2025-12-01T00:00:00Z\`
+
+**Note:** 
+- Status filters will only show orders that have at least one detail matching the criteria
+- Orders without details will not appear when using status/priority/from filters
+        `,
         middleware: [authMiddleware, permissionMiddleware("read:order")] as const,
         request: {
             query: orderQuerySchema,
