@@ -40,6 +40,7 @@ export class RolePermissionService {
             .set({
                 name: data.name,
                 description: data.description,
+                updated_at: new Date(),
             })
             .where(eq(roleTable.id, roleId))
             .returning();
@@ -85,6 +86,7 @@ export class RolePermissionService {
             .set({
                 name: data.name,
                 description: data.description,
+                updated_at: new Date(),
             })
             .where(eq(permissionTable.id, permissionId))
             .returning();
