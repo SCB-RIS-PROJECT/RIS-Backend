@@ -219,11 +219,10 @@ export const ORDER_FROM = ["INTERNAL", "EXTERNAL"] as const;
 export const orderFromEnum = pgEnum("order_from", ORDER_FROM);
 
 export const ORDER_STATUS = [
-    "PENDING", // Baru dibuat, belum dikonfirmasi
-    "CONFIRMED", // Sudah dikonfirmasi
+    "IN_REQUEST", // Data masuk dari SIMRS
+    "IN_QUEUE", // Data dikirim ke MWL, masuk antrian
     "IN_PROGRESS", // Sedang dilakukan pemeriksaan
-    "COMPLETED", // Pemeriksaan selesai
-    "CANCELLED", // Dibatalkan
+    "FINAL", // Pemeriksaan selesai/final
 ] as const;
 
 export const orderStatusEnum = pgEnum("order_status", ORDER_STATUS);

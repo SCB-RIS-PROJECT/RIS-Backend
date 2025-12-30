@@ -50,6 +50,13 @@
       "when": 1765602333150,
       "tag": "0006_dear_cyclops",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1767070836455,
+      "tag": "0007_dry_vanisher",
+      "breakpoints": true
     }
   ]
 }

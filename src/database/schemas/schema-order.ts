@@ -51,7 +51,7 @@ export const detailOrderTable = pgTable(
         schedule_date: timestamp("schedule_date").defaultNow(),
         occurrence_datetime: timestamp("occurrence_datetime"),
         order_priority: orderPriorityEnum("order_priority").default("ROUTINE"),
-        order_status: orderStatusEnum("order_status").default("PENDING"),
+        order_status: orderStatusEnum("order_status").default("IN_REQUEST"),
         order_from: orderFromEnum("order_from").default("INTERNAL"),
         fhir_status: varchar({ length: 50 }).default("active"),
         fhir_intent: varchar({ length: 50 }).default("original-order"),

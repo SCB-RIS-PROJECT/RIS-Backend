@@ -317,7 +317,7 @@ export const updateDetailOrderSchema = z.object({
     // Schedule & Status
     schedule_date: z.string().datetime().optional().describe("Tanggal jadwal pemeriksaan (ISO 8601)"),
     order_priority: z.enum(ORDER_PRIORITY).optional().describe("Prioritas order: ROUTINE, URGENT, ASAP, STAT"),
-    order_status: z.enum(ORDER_STATUS).optional().describe("Status order: PENDING, SCHEDULED, IN_PROGRESS, COMPLETED, CANCELLED"),
+    order_status: z.enum(ORDER_STATUS).optional().describe("Status order: IN_REQUEST, IN_QUEUE, IN_PROGRESS, FINAL"),
     
     // Diagnosis (ICD-10)
     diagnosis: z.object({

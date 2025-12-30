@@ -833,7 +833,7 @@ export class OrderService {
                     occurrence_datetime: detailData.ccurence_date_time ? new Date(detailData.ccurence_date_time) : new Date(),
                     order_priority: detailData.order_priority || "ROUTINE",
                     order_from: "EXTERNAL" as const,
-                    order_status: "PENDING" as const,
+                    order_status: "IN_REQUEST" as const,
                     fhir_status: "active",
                     fhir_intent: "original-order",
                     order_category_code: "363679005",
@@ -1165,6 +1165,7 @@ export class OrderService {
             detail_id: string;
             accession_number: string;
             mwl_target: string;
+            order_status: string;
         };
     }> {
         // Get order and detail
@@ -1233,6 +1234,12 @@ export class OrderService {
                 }
             }
 
+            // Update status to IN_QUEUE after successful MWL push
+            await db
+                .update(detailOrderTable)
+                .set({ order_status: "IN_QUEUE" })
+                .where(eq(detailOrderTable.id, detailId));
+
             return {
                 success: true,
                 message: `Order pushed to MWL (${mwlTarget}) successfully`,
@@ -1240,6 +1247,7 @@ export class OrderService {
                     detail_id: detailId,
                     accession_number: detail.accession_number,
                     mwl_target: mwlTarget,
+                    order_status: "IN_QUEUE",
                 },
             };
         } catch (error) {
