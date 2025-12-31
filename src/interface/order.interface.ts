@@ -505,3 +505,25 @@ export const fetchImagingStudyResponseSchema = z.object({
 });
 
 export type FetchImagingStudyResponse = z.infer<typeof fetchImagingStudyResponseSchema>;
+
+// ==================== Finalize Order Detail ====================
+export const finalizeOrderDetailSchema = z.object({
+    observation_notes: z.string().min(1).describe("Hasil pemeriksaan radiologi"),
+    diagnostic_conclusion: z.string().min(1).describe("Kesimpulan diagnosis"),
+});
+
+export type FinalizeOrderDetailInput = z.infer<typeof finalizeOrderDetailSchema>;
+
+export const finalizeOrderDetailResponseSchema = z.object({
+    success: z.boolean(),
+    message: z.string(),
+    data: z.object({
+        detail_id: z.string().uuid(),
+        order_status: z.string(),
+        observation_id: z.string().optional().describe("ID Observation dari Satu Sehat (jika ada encounter)"),
+        diagnostic_report_id: z.string().optional().describe("ID DiagnosticReport dari Satu Sehat (jika ada encounter)"),
+        sent_to_satusehat: z.boolean().describe("Apakah dikirim ke Satu Sehat"),
+    }),
+});
+
+export type FinalizeOrderDetailResponse = z.infer<typeof finalizeOrderDetailResponseSchema>;

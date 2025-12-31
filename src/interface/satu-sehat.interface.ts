@@ -348,3 +348,257 @@ export interface ServiceRequestParams {
     procedureId?: string;
     allergyIntoleranceId?: string;
 }
+
+// ==================== FHIR Observation ====================
+export interface FHIRObservationParams {
+    // Organization & Identifier
+    organizationId: string;
+    observationIdentifier: string; // Internal observation ID
+
+    // Patient
+    patientId: string;
+    patientName: string;
+
+    // Encounter
+    encounterId: string;
+
+    // Code (LOINC)
+    loincCode: string;
+    loincDisplay: string;
+
+    // Performer (Radiologist)
+    performerId: string;
+    performerDisplay: string;
+
+    // Times
+    effectiveDateTime: Date;
+    issuedDateTime: Date;
+
+    // Result
+    valueString: string; // Observation notes/hasil pemeriksaan
+
+    // References
+    serviceRequestId: string;
+    imagingStudyId?: string;
+}
+
+export interface FHIRObservation {
+    resourceType: "Observation";
+    identifier: Array<{
+        system: string;
+        value: string;
+    }>;
+    status: "final";
+    category: Array<{
+        coding: Array<{
+            system: string;
+            code: string;
+            display: string;
+        }>;
+    }>;
+    code: {
+        coding: Array<{
+            system: string;
+            code: string;
+            display: string;
+        }>;
+    };
+    subject: {
+        reference: string;
+        display: string;
+    };
+    encounter: {
+        reference: string;
+    };
+    effectiveDateTime: string;
+    issued: string;
+    performer: Array<{
+        reference: string;
+        display: string;
+    }>;
+    valueString: string;
+    basedOn: Array<{
+        reference: string;
+    }>;
+    derivedFrom?: Array<{
+        reference: string;
+    }>;
+}
+
+export interface FHIRObservationResponse {
+    resourceType: "Observation";
+    id: string;
+    meta: {
+        lastUpdated: string;
+        versionId: string;
+    };
+    identifier: Array<{
+        system: string;
+        value: string;
+    }>;
+    status: string;
+    category: Array<{
+        coding: Array<{
+            system: string;
+            code: string;
+            display: string;
+        }>;
+    }>;
+    code: {
+        coding: Array<{
+            system: string;
+            code: string;
+            display: string;
+        }>;
+    };
+    subject: {
+        reference: string;
+        display: string;
+    };
+    encounter: {
+        reference: string;
+    };
+    effectiveDateTime: string;
+    issued: string;
+    performer: Array<{
+        reference: string;
+        display: string;
+    }>;
+    valueString: string;
+    basedOn: Array<{
+        reference: string;
+    }>;
+    derivedFrom?: Array<{
+        reference: string;
+    }>;
+}
+
+// ==================== FHIR DiagnosticReport ====================
+export interface FHIRDiagnosticReportParams {
+    // Organization & Identifier
+    organizationId: string;
+    diagnosticReportIdentifier: string; // Internal diagnostic report ID
+
+    // Patient
+    patientId: string;
+
+    // Encounter
+    encounterId: string;
+
+    // Code (LOINC)
+    loincCode: string;
+    loincDisplay: string;
+
+    // Performer (Radiologist + Organization)
+    performerId: string;
+    performerDisplay: string;
+
+    // Times
+    effectiveDateTime: Date;
+    issuedDateTime: Date;
+
+    // Conclusion
+    conclusion: string;
+
+    // References
+    serviceRequestId: string;
+    imagingStudyId?: string;
+    observationId: string; // Required - hasil dari POST Observation sebelumnya
+}
+
+export interface FHIRDiagnosticReport {
+    resourceType: "DiagnosticReport";
+    identifier: Array<{
+        system: string;
+        use: string;
+        value: string;
+    }>;
+    status: "final";
+    category: Array<{
+        coding: Array<{
+            system: string;
+            code: string;
+            display: string;
+        }>;
+    }>;
+    code: {
+        coding: Array<{
+            system: string;
+            code: string;
+            display: string;
+        }>;
+    };
+    subject: {
+        reference: string;
+    };
+    encounter: {
+        reference: string;
+    };
+    effectiveDateTime: string;
+    issued: string;
+    performer: Array<{
+        reference: string;
+        display?: string;
+    }>;
+    imagingStudy?: Array<{
+        reference: string;
+    }>;
+    result: Array<{
+        reference: string;
+    }>;
+    basedOn: Array<{
+        reference: string;
+    }>;
+    conclusion: string;
+}
+
+export interface FHIRDiagnosticReportResponse {
+    resourceType: "DiagnosticReport";
+    id: string;
+    meta: {
+        lastUpdated: string;
+        versionId: string;
+    };
+    identifier: Array<{
+        system: string;
+        use: string;
+        value: string;
+    }>;
+    status: string;
+    category: Array<{
+        coding: Array<{
+            system: string;
+            code: string;
+            display: string;
+        }>;
+    }>;
+    code: {
+        coding: Array<{
+            system: string;
+            code: string;
+            display: string;
+        }>;
+    };
+    subject: {
+        reference: string;
+    };
+    encounter: {
+        reference: string;
+    };
+    effectiveDateTime: string;
+    issued: string;
+    performer: Array<{
+        reference: string;
+        display?: string;
+    }>;
+    imagingStudy?: Array<{
+        reference: string;
+    }>;
+    result: Array<{
+        reference: string;
+    }>;
+    basedOn: Array<{
+        reference: string;
+    }>;
+    conclusion: string;
+}

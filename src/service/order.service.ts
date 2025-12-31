@@ -18,12 +18,14 @@ import type {
     SimrsServiceRequest,
     UpdateDetailOrderInput,
     UpdateOrderInput,
+    FinalizeOrderDetailInput,
 } from "@/interface/order.interface";
 import { pushWorklistToOrthanc, type MWLWorklistItem } from "@/lib/orthanc-mwl";
 import { pushWorklistToDcm4chee, type DCM4CHEEMWLItem } from "@/lib/dcm4chee-mwl";
 import { generateAccessionNumber } from "@/lib/utils";
 import { SatuSehatService } from "@/service/satu-sehat.service";
 import env from "@/config/env";
+import { loggerPino } from "@/config/log";
 
 // MWL Target types
 export type MWLTarget = "orthanc" | "dcm4chee" | "both";
@@ -2014,6 +2016,179 @@ export class OrderService {
             return {
                 success: false,
                 message: error instanceof Error ? error.message : "Failed to fetch ImagingStudy",
+            };
+        }
+    }
+
+    /**
+     * Finalize order detail - set status to FINAL and optionally send Observation + DiagnosticReport to Satu Sehat
+     */
+    static async finalizeOrderDetail(
+        orderId: string,
+        detailId: string,
+        input: FinalizeOrderDetailInput
+    ): Promise<{
+        success: boolean;
+        message: string;
+        data?: {
+            detail_id: string;
+            order_status: string;
+            observation_id?: string;
+            diagnostic_report_id?: string;
+            sent_to_satusehat: boolean;
+        };
+    }> {
+        try {
+            // 1. Get order and detail
+            const [order] = await db
+                .select()
+                .from(orderTable)
+                .where(eq(orderTable.id, orderId))
+                .limit(1);
+
+            if (!order) {
+                return {
+                    success: false,
+                    message: "Order not found",
+                };
+            }
+
+            const [detail] = await db
+                .select()
+                .from(detailOrderTable)
+                .where(and(eq(detailOrderTable.id, detailId), eq(detailOrderTable.id_order, orderId)))
+                .limit(1);
+
+            if (!detail) {
+                return {
+                    success: false,
+                    message: "Order detail not found",
+                };
+            }
+
+            // 2. Validate status (must be IN_PROGRESS)
+            if (detail.order_status !== "IN_PROGRESS") {
+                return {
+                    success: false,
+                    message: `Cannot finalize order with status ${detail.order_status}. Order must be IN_PROGRESS.`,
+                };
+            }
+
+            // 3. Validate required data
+            if (!detail.id_service_request_ss) {
+                return {
+                    success: false,
+                    message: "ServiceRequest ID not found. Order must be sent to Satu Sehat first.",
+                };
+            }
+
+            if (!detail.id_performer_ss || !detail.performer_display) {
+                return {
+                    success: false,
+                    message: "Performer information not found. Please complete order first.",
+                };
+            }
+
+            // 4. Update status to FINAL and save observation notes
+            await db
+                .update(detailOrderTable)
+                .set({
+                    order_status: "FINAL",
+                    observation_notes: input.observation_notes,
+                    diagnostic_conclusion: input.diagnostic_conclusion,
+                    updated_at: new Date(),
+                })
+                .where(eq(detailOrderTable.id, detailId));
+
+            let observationId: string | undefined;
+            let diagnosticReportId: string | undefined;
+            let sentToSatuSehat = false;
+
+            // 5. Check if encounter exists - if yes, send to Satu Sehat
+            if (order.id_encounter_ss) {
+                loggerPino.info(`[Finalize] Order has encounter ${order.id_encounter_ss}, sending to Satu Sehat...`);
+
+                const now = new Date();
+
+                // 5a. Build and POST Observation
+                const observation = SatuSehatService.buildObservation({
+                    organizationId: env.SATU_SEHAT_ORGANIZATION_ID,
+                    observationIdentifier: `OBS-${detailId}`,
+                    patientId: order.id_patient ?? "",
+                    patientName: order.patient_name ?? "Unknown",
+                    encounterId: order.id_encounter_ss,
+                    loincCode: detail.loinc_code_alt ?? "",
+                    loincDisplay: detail.loinc_display_alt ?? "",
+                    performerId: detail.id_performer_ss,
+                    performerDisplay: detail.performer_display,
+                    effectiveDateTime: now,
+                    issuedDateTime: now,
+                    valueString: input.observation_notes,
+                    serviceRequestId: detail.id_service_request_ss,
+                    imagingStudyId: detail.id_imaging_study_ss ?? undefined,
+                });
+
+                const observationResponse = await SatuSehatService.postObservation(observation);
+                observationId = observationResponse.id;
+
+                loggerPino.info(`[Finalize] Observation posted successfully: ${observationId}`);
+
+                // 5b. Build and POST DiagnosticReport
+                const diagnosticReport = SatuSehatService.buildDiagnosticReport({
+                    organizationId: env.SATU_SEHAT_ORGANIZATION_ID,
+                    diagnosticReportIdentifier: `DR-${detailId}`,
+                    patientId: order.id_patient ?? "",
+                    encounterId: order.id_encounter_ss,
+                    loincCode: detail.loinc_code_alt ?? "",
+                    loincDisplay: detail.loinc_display_alt ?? "",
+                    performerId: detail.id_performer_ss,
+                    performerDisplay: detail.performer_display,
+                    effectiveDateTime: now,
+                    issuedDateTime: now,
+                    conclusion: input.diagnostic_conclusion,
+                    serviceRequestId: detail.id_service_request_ss,
+                    imagingStudyId: detail.id_imaging_study_ss ?? undefined,
+                    observationId: observationId,
+                });
+
+                const diagnosticReportResponse = await SatuSehatService.postDiagnosticReport(diagnosticReport);
+                diagnosticReportId = diagnosticReportResponse.id;
+
+                loggerPino.info(`[Finalize] DiagnosticReport posted successfully: ${diagnosticReportId}`);
+
+                // 5c. Save IDs to database
+                await db
+                    .update(detailOrderTable)
+                    .set({
+                        id_observation_ss: observationId,
+                        id_diagnostic_report_ss: diagnosticReportId,
+                        updated_at: new Date(),
+                    })
+                    .where(eq(detailOrderTable.id, detailId));
+
+                sentToSatuSehat = true;
+            } else {
+                loggerPino.info(`[Finalize] Order has no encounter, skipping Satu Sehat submission`);
+            }
+
+            return {
+                success: true,
+                message: sentToSatuSehat
+                    ? "Order finalized and sent to Satu Sehat successfully"
+                    : "Order finalized (no encounter, not sent to Satu Sehat)",
+                data: {
+                    detail_id: detailId,
+                    order_status: "FINAL",
+                    observation_id: observationId,
+                    diagnostic_report_id: diagnosticReportId,
+                    sent_to_satusehat: sentToSatuSehat,
+                },
+            };
+        } catch (error) {
+            loggerPino.error(error);
+            return {
+                success: false,
+                message: error instanceof Error ? error.message : "Failed to finalize order",
             };
         }
     }

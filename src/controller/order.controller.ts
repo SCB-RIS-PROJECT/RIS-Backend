@@ -16,6 +16,8 @@ import {
     detailOrderResponseSchema,
     orderCreationSuccessSchema,
     mwlPushResponseSchema,
+    finalizeOrderDetailSchema,
+    finalizeOrderDetailResponseSchema,
 } from "@/interface/order.interface";
 import { authMiddleware } from "@/middleware/auth.middleware";
 import { permissionMiddleware } from "@/middleware/role-permission.middleware";
@@ -1048,6 +1050,115 @@ This endpoint will:
                 {
                     success: false,
                     message: error instanceof Error ? error.message : "Failed to fetch ImagingStudy",
+                },
+                HttpStatusCodes.INTERNAL_SERVER_ERROR
+            );
+        }
+    }
+);
+
+// ==================== FINALIZE ORDER DETAIL ====================
+orderController.openapi(
+    createRoute({
+        tags,
+        method: "post",
+        path: "/api/orders/{id}/details/{detailId}/finalize",
+        summary: "Finalize order detail and send to Satu Sehat (if encounter exists)",
+        description: `
+Finalize order detail by:
+1. Setting status to FINAL
+2. Saving observation notes and diagnostic conclusion
+3. **IF encounter exists**: Send Observation and DiagnosticReport to Satu Sehat
+4. **IF no encounter**: Only save data locally
+
+**Prerequisites:**
+- Order detail must be in IN_PROGRESS status
+- ServiceRequest must already be sent to Satu Sehat
+- Performer information must be complete
+
+**Flow:**
+- Check if order has \`id_encounter_ss\`
+- **With encounter**: POST Observation → POST DiagnosticReport → Save IDs to DB
+- **Without encounter**: Only update DB locally
+
+**Response:**
+- \`sent_to_satusehat\`: true if encounter exists and data sent
+- \`observation_id\` and \`diagnostic_report_id\`: Only present if sent to Satu Sehat
+
+**Use Case:**
+Call this endpoint when radiology examination is completed and final report is ready.
+        `,
+        middleware: [authMiddleware, permissionMiddleware("update:order")] as const,
+        request: {
+            params: detailOrderIdParamSchema,
+            body: jsonContentRequired(finalizeOrderDetailSchema, "Finalization data"),
+        },
+        responses: {
+            [HttpStatusCodes.OK]: jsonContent(finalizeOrderDetailResponseSchema, "Order finalized successfully"),
+            [HttpStatusCodes.BAD_REQUEST]: jsonContent(
+                createMessageObjectSchema("Invalid status or missing data"),
+                "Bad request"
+            ),
+            [HttpStatusCodes.NOT_FOUND]: jsonContent(
+                createMessageObjectSchema("Order or detail not found"),
+                "Not found"
+            ),
+            [HttpStatusCodes.UNAUTHORIZED]: jsonContent(
+                createMessageObjectSchema("Not authenticated"),
+                "User not authenticated"
+            ),
+            [HttpStatusCodes.FORBIDDEN]: jsonContent(
+                createMessageObjectSchema("Permission denied"),
+                "Insufficient permissions"
+            ),
+            [HttpStatusCodes.INTERNAL_SERVER_ERROR]: jsonContent(
+                createMessageObjectSchema("Failed to finalize order"),
+                "Internal server error"
+            ),
+        },
+    }),
+    async (c) => {
+        try {
+            const { id: orderId, detailId } = c.req.valid("param");
+            const input = c.req.valid("json");
+
+            const result = await OrderService.finalizeOrderDetail(orderId, detailId, input);
+
+            if (!result.success) {
+                const statusCode =
+                    result.message.includes("not found")
+                        ? HttpStatusCodes.NOT_FOUND
+                        : HttpStatusCodes.BAD_REQUEST;
+
+                return c.json(
+                    {
+                        success: false,
+                        message: result.message,
+                        // Jangan kirim data jika gagal
+                    },
+                    statusCode
+                );
+            }
+
+            // Selalu isi data pada response sukses
+            return c.json(
+                {
+                    success: true,
+                    message: result.message,
+                    data: result.data ?? {
+                        detail_id: detailId,
+                        order_status: "FINAL",
+                        sent_to_satusehat: false,
+                    },
+                },
+                HttpStatusCodes.OK
+            );
+        } catch (error) {
+            loggerPino.error(error);
+            return c.json(
+                {
+                    success: false,
+                    message: error instanceof Error ? error.message : "Failed to finalize order",
                 },
                 HttpStatusCodes.INTERNAL_SERVER_ERROR
             );

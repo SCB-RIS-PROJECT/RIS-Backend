@@ -7,6 +7,12 @@ import type {
     FHIREncounterResponse,
     FHIRServiceRequest,
     FHIRServiceRequestResponse,
+    FHIRObservation,
+    FHIRObservationResponse,
+    FHIRObservationParams,
+    FHIRDiagnosticReport,
+    FHIRDiagnosticReportResponse,
+    FHIRDiagnosticReportParams,
     IHSPatientBundle,
     IHSPractitionerBundle,
     ServiceRequestParams,
@@ -31,7 +37,7 @@ export class SatuSehatService {
      * Token Lifecycle:
      * - Expires in: 14399 seconds (~4 hours) from Satu Sehat
      * - Cached with 30 second buffer to prevent edge cases
-     * - Actual cache duration: ~3h 59m 30s
+     * - Actual cache duration: ~3h 59m 30s`
      * 
      * Why 30 second buffer?
      * - Prevents edge cases where token expires during API call
@@ -420,6 +426,202 @@ export class SatuSehatService {
         }
 
         const data = (await response.json()) as FHIRServiceRequestResponse;
+        return data;
+    }
+
+    /**
+     * Build FHIR Observation object for Satu Sehat
+     */
+    static buildObservation(params: FHIRObservationParams): FHIRObservation {
+        const observation: FHIRObservation = {
+            resourceType: "Observation",
+            identifier: [
+                {
+                    system: `http://sys-ids.kemkes.go.id/observation/${params.organizationId}`,
+                    value: params.observationIdentifier,
+                },
+            ],
+            status: "final",
+            category: [
+                {
+                    coding: [
+                        {
+                            system: "http://terminology.hl7.org/CodeSystem/observation-category",
+                            code: "imaging",
+                            display: "Imaging",
+                        },
+                    ],
+                },
+            ],
+            code: {
+                coding: [
+                    {
+                        system: "http://loinc.org",
+                        code: params.loincCode,
+                        display: params.loincDisplay,
+                    },
+                ],
+            },
+            subject: {
+                reference: `Patient/${params.patientId}`,
+                display: params.patientName,
+            },
+            encounter: {
+                reference: `Encounter/${params.encounterId}`,
+            },
+            effectiveDateTime: params.effectiveDateTime.toISOString(),
+            issued: params.issuedDateTime.toISOString(),
+            performer: [
+                {
+                    reference: `Practitioner/${params.performerId}`,
+                    display: params.performerDisplay,
+                },
+            ],
+            valueString: params.valueString,
+            basedOn: [
+                {
+                    reference: `ServiceRequest/${params.serviceRequestId}`,
+                },
+            ],
+        };
+
+        // Optional: derivedFrom (ImagingStudy)
+        if (params.imagingStudyId) {
+            observation.derivedFrom = [
+                {
+                    reference: `ImagingStudy/${params.imagingStudyId}`,
+                },
+            ];
+        }
+
+        return observation;
+    }
+
+    /**
+     * Post Observation to Satu Sehat API
+     */
+    static async postObservation(observation: FHIRObservation): Promise<FHIRObservationResponse> {
+        const token = await SatuSehatService.getAccessToken();
+
+        const url = `${env.SATU_SEHAT_BASE_URL}/Observation`;
+
+        const response = await fetch(url, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(observation),
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Failed to post Observation: ${response.statusText} - ${errorText}`);
+        }
+
+        const data = (await response.json()) as FHIRObservationResponse;
+        return data;
+    }
+
+    /**
+     * Build FHIR DiagnosticReport object for Satu Sehat
+     */
+    static buildDiagnosticReport(params: FHIRDiagnosticReportParams): FHIRDiagnosticReport {
+        const diagnosticReport: FHIRDiagnosticReport = {
+            resourceType: "DiagnosticReport",
+            identifier: [
+                {
+                    system: `http://sys-ids.kemkes.go.id/diagnostic/${params.organizationId}/rad`,
+                    use: "official",
+                    value: params.diagnosticReportIdentifier,
+                },
+            ],
+            status: "final",
+            category: [
+                {
+                    coding: [
+                        {
+                            system: "http://terminology.hl7.org/CodeSystem/v2-0074",
+                            code: "RAD",
+                            display: "Radiology",
+                        },
+                    ],
+                },
+            ],
+            code: {
+                coding: [
+                    {
+                        system: "http://loinc.org",
+                        code: params.loincCode,
+                        display: params.loincDisplay,
+                    },
+                ],
+            },
+            subject: {
+                reference: `Patient/${params.patientId}`,
+            },
+            encounter: {
+                reference: `Encounter/${params.encounterId}`,
+            },
+            effectiveDateTime: params.effectiveDateTime.toISOString(),
+            issued: params.issuedDateTime.toISOString(),
+            performer: [
+                {
+                    reference: `Practitioner/${params.performerId}`,
+                    display: params.performerDisplay,
+                },
+                {
+                    reference: `Organization/${params.organizationId}`,
+                },
+            ],
+            result: [
+                {
+                    reference: `Observation/${params.observationId}`,
+                },
+            ],
+            basedOn: [
+                {
+                    reference: `ServiceRequest/${params.serviceRequestId}`,
+                },
+            ],
+            conclusion: params.conclusion,
+        };
+
+        // Optional: imagingStudy
+        if (params.imagingStudyId) {
+            diagnosticReport.imagingStudy = [
+                {
+                    reference: `ImagingStudy/${params.imagingStudyId}`,
+                },
+            ];
+        }
+
+        return diagnosticReport;
+    }
+
+    /**
+     * Post DiagnosticReport to Satu Sehat API
+     */
+    static async postDiagnosticReport(diagnosticReport: FHIRDiagnosticReport): Promise<FHIRDiagnosticReportResponse> {
+        const token = await SatuSehatService.getAccessToken();
+
+        const url = `${env.SATU_SEHAT_BASE_URL}/DiagnosticReport`;
+
+        const response = await fetch(url, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(diagnosticReport),
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Failed to post DiagnosticReport: ${response.statusText} - ${errorText}`);
+        }
+
+        const data = (await response.json()) as FHIRDiagnosticReportResponse;
         return data;
     }
 }
