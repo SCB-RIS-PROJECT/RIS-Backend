@@ -1,6 +1,7 @@
 // biome-ignore-all lint/correctness/noUnusedPrivateClassMembers: <because service>
 
 import env from "@/config/env";
+import { loggerPino } from "@/config/log";
 import type {
     FHIREncounter,
     FHIREncounterResponse,
@@ -16,20 +17,43 @@ export class SatuSehatService {
     private static tokenCache: {
         token: string | null;
         expiresAt: number;
+        lastRefreshed: number;
     } = {
         token: null,
         expiresAt: 0,
+        lastRefreshed: 0,
     };
 
     /**
      * Get access token from Satu Sehat API
-     * Token is cached for 1 hour to avoid unnecessary requests
+     * Token is cached and automatically refreshed before expiry
+     * 
+     * Token Lifecycle:
+     * - Expires in: 14399 seconds (~4 hours) from Satu Sehat
+     * - Cached with 30 second buffer to prevent edge cases
+     * - Actual cache duration: ~3h 59m 30s
+     * 
+     * Why 30 second buffer?
+     * - Prevents edge cases where token expires during API call
+     * - Minimizes unnecessary token refreshes
+     * - Maximizes token usage time (99.8% of token lifetime)
      */
     static async getAccessToken(): Promise<string> {
-        // Check if we have a valid cached token
         const now = Date.now();
+        
+        // Check if we have a valid cached token
         if (SatuSehatService.tokenCache.token && SatuSehatService.tokenCache.expiresAt > now) {
+            const remainingSeconds = Math.floor((SatuSehatService.tokenCache.expiresAt - now) / 1000);
+            const remainingMinutes = Math.floor(remainingSeconds / 60);
+            loggerPino.debug(`[SatuSehat] Using cached token (${remainingMinutes}m ${remainingSeconds % 60}s remaining)`);
             return SatuSehatService.tokenCache.token;
+        }
+
+        // Log token refresh
+        if (SatuSehatService.tokenCache.token) {
+            loggerPino.info("[SatuSehat] Token expired, requesting new token...");
+        } else {
+            loggerPino.info("[SatuSehat] No cached token, requesting initial token...");
         }
 
         // Request new token
@@ -48,16 +72,57 @@ export class SatuSehatService {
         });
 
         if (!response.ok) {
+            const errorText = await response.text();
+            loggerPino.error(`[SatuSehat] Failed to get access token: ${response.statusText} - ${errorText}`);
             throw new Error(`Failed to get access token: ${response.statusText}`);
         }
 
         const data = (await response.json()) as SatuSehatTokenResponse;
 
-        // Cache token (subtract 60 seconds as buffer)
+        // Calculate expiry time with minimal buffer for maximum utilization
+        const expiresInSeconds = Number.parseInt(data.expires_in, 10);
+        const bufferSeconds = 30; // Reduced from 60s to maximize token usage
+        const effectiveExpirySeconds = expiresInSeconds - bufferSeconds;
+
+        // Cache token
         SatuSehatService.tokenCache.token = data.access_token;
-        SatuSehatService.tokenCache.expiresAt = now + (Number.parseInt(data.expires_in, 10) - 60) * 1000;
+        SatuSehatService.tokenCache.expiresAt = now + effectiveExpirySeconds * 1000;
+        SatuSehatService.tokenCache.lastRefreshed = now;
+
+        const expiryMinutes = Math.floor(effectiveExpirySeconds / 60);
+        const expiryHours = Math.floor(expiryMinutes / 60);
+        const remainingMinutes = expiryMinutes % 60;
+
+        loggerPino.info(
+            `[SatuSehat] New token cached - expires in ${expiryHours}h ${remainingMinutes}m (${effectiveExpirySeconds}s, raw: ${expiresInSeconds}s)`
+        );
 
         return data.access_token;
+    }
+
+    /**
+     * Get token cache info (for monitoring/debugging)
+     */
+    static getTokenCacheInfo(): {
+        hasToken: boolean;
+        isValid: boolean;
+        expiresAt: number | null;
+        lastRefreshed: number | null;
+        remainingSeconds: number | null;
+    } {
+        const now = Date.now();
+        const hasToken = !!SatuSehatService.tokenCache.token;
+        const isValid = hasToken && SatuSehatService.tokenCache.expiresAt > now;
+        
+        return {
+            hasToken,
+            isValid,
+            expiresAt: hasToken ? SatuSehatService.tokenCache.expiresAt : null,
+            lastRefreshed: hasToken ? SatuSehatService.tokenCache.lastRefreshed : null,
+            remainingSeconds: isValid 
+                ? Math.floor((SatuSehatService.tokenCache.expiresAt - now) / 1000)
+                : null,
+        };
     }
 
     /**
