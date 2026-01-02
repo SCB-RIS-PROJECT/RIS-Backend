@@ -18,7 +18,11 @@ export const permissionMiddleware = (permission: string) => {
         if (!userId) {
             return c.json(
                 {
+                    content: {
+                        data: null,
+                    },
                     message: "Not authenticated",
+                    errors: [],
                 },
                 HttpStatusCodes.UNAUTHORIZED
             );
@@ -29,7 +33,11 @@ export const permissionMiddleware = (permission: string) => {
         if (!hasPermission) {
             return c.json(
                 {
+                    content: {
+                        data: null,
+                    },
                     message: `Permission denied. Required permission: ${permission}`,
+                    errors: [],
                 },
                 HttpStatusCodes.FORBIDDEN
             );
@@ -54,7 +62,11 @@ export const roleMiddleware = (role: string) => {
         if (!userId) {
             return c.json(
                 {
+                    content: {
+                        data: null,
+                    },
                     message: "Not authenticated",
+                    errors: [],
                 },
                 HttpStatusCodes.UNAUTHORIZED
             );
@@ -65,7 +77,11 @@ export const roleMiddleware = (role: string) => {
         if (!hasRole) {
             return c.json(
                 {
+                    content: {
+                        data: null,
+                    },
                     message: `Access denied. Required role: ${role}`,
+                    errors: [],
                 },
                 HttpStatusCodes.FORBIDDEN
             );
@@ -90,7 +106,11 @@ export const permissionAnyMiddleware = (permissions: string[]) => {
         if (!userId) {
             return c.json(
                 {
+                    content: {
+                        data: null,
+                    },
                     message: "Not authenticated",
+                    errors: [],
                 },
                 HttpStatusCodes.UNAUTHORIZED
             );
@@ -102,7 +122,11 @@ export const permissionAnyMiddleware = (permissions: string[]) => {
         if (!hasAnyPermission) {
             return c.json(
                 {
+                    content: {
+                        data: null,
+                    },
                     message: `Permission denied. Required any of: ${permissions.join(", ")}`,
+                    errors: [],
                 },
                 HttpStatusCodes.FORBIDDEN
             );
@@ -127,7 +151,11 @@ export const permissionAllMiddleware = (permissions: string[]) => {
         if (!userId) {
             return c.json(
                 {
+                    content: {
+                        data: null,
+                    },
                     message: "Not authenticated",
+                    errors: [],
                 },
                 HttpStatusCodes.UNAUTHORIZED
             );
@@ -139,7 +167,11 @@ export const permissionAllMiddleware = (permissions: string[]) => {
         if (!hasAllPermissions) {
             return c.json(
                 {
+                    content: {
+                        data: null,
+                    },
                     message: `Permission denied. Required all of: ${permissions.join(", ")}`,
+                    errors: [],
                 },
                 HttpStatusCodes.FORBIDDEN
             );

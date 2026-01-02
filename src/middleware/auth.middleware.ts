@@ -10,7 +10,11 @@ export const authMiddleware = createMiddleware<AppBindings>(async (c, next) => {
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
         return c.json(
             {
+                content: {
+                    data: null,
+                },
                 message: "Not authenticated",
+                errors: [],
             },
             HttpStatusCodes.UNAUTHORIZED
         );
@@ -23,7 +27,11 @@ export const authMiddleware = createMiddleware<AppBindings>(async (c, next) => {
     if (!payload) {
         return c.json(
             {
+                content: {
+                    data: null,
+                },
                 message: "Invalid or expired token",
+                errors: [],
             },
             HttpStatusCodes.UNAUTHORIZED
         );
@@ -34,7 +42,11 @@ export const authMiddleware = createMiddleware<AppBindings>(async (c, next) => {
     if (!userResponse.status || !userResponse.data) {
         return c.json(
             {
+                content: {
+                    data: null,
+                },
                 message: "User not found",
+                errors: [],
             },
             HttpStatusCodes.NOT_FOUND
         );
