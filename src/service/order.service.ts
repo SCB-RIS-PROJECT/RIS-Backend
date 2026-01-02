@@ -26,6 +26,13 @@ import { generateAccessionNumber } from "@/lib/utils";
 import { SatuSehatService } from "@/service/satu-sehat.service";
 import env from "@/config/env";
 import { loggerPino } from "@/config/log";
+import type { ServiceResponse } from "@/entities/Service";
+import { 
+    INTERNAL_SERVER_ERROR_SERVICE_RESPONSE, 
+    INVALID_ID_SERVICE_RESPONSE,
+    NotFoundWithMessage,
+} from "@/entities/Service";
+import type { PagedList } from "@/entities/Query";
 
 // MWL Target types
 export type MWLTarget = "orthanc" | "dcm4chee" | "both";
@@ -232,7 +239,16 @@ export class OrderService {
     /**
      * Get all orders with pagination
      */
-    static async getAllOrders(query: OrderQuery): Promise<OrderPaginationResponse> {
+    static async getAllOrders(query: OrderQuery): Promise<ServiceResponse<OrderPaginationResponse>> {
+        try {
+            return await this._getAllOrdersInternal(query);
+        } catch (err) {
+            console.error(`OrderService.getAllOrders: ${err}`);
+            return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
+        }
+    }
+
+    private static async _getAllOrdersInternal(query: OrderQuery): Promise<ServiceResponse<OrderPaginationResponse>> {
         const {
             page,
             per_page,
@@ -424,14 +440,17 @@ export class OrderService {
         const totalPages = Math.ceil(total / per_page);
 
         return {
-            data: ordersWithDetails,
-            meta: {
-                total,
-                page,
-                per_page,
-                total_pages: totalPages,
-                has_next_page: page < totalPages,
-                has_prev_page: page > 1,
+            status: true,
+            data: {
+                data: ordersWithDetails,
+                meta: {
+                    total,
+                    page,
+                    per_page,
+                    total_pages: totalPages,
+                    has_next_page: page < totalPages,
+                    has_prev_page: page > 1,
+                },
             },
         };
     }
@@ -439,22 +458,23 @@ export class OrderService {
     /**
      * Get order by ID
      */
-    static async getOrderById(orderId: string): Promise<FullOrderResponse | null> {
-        const result = await db
-            .select({
-                order: orderTable,
-                patient: patientTable,
-                createdBy: userTable,
-            })
-            .from(orderTable)
-            .leftJoin(patientTable, eq(orderTable.id_patient, patientTable.id))
-            .leftJoin(userTable, eq(orderTable.id_created_by, userTable.id))
-            .where(eq(orderTable.id, orderId))
-            .limit(1);
+    static async getOrderById(orderId: string): Promise<ServiceResponse<FullOrderResponse>> {
+        try {
+            const result = await db
+                .select({
+                    order: orderTable,
+                    patient: patientTable,
+                    createdBy: userTable,
+                })
+                .from(orderTable)
+                .leftJoin(patientTable, eq(orderTable.id_patient, patientTable.id))
+                .leftJoin(userTable, eq(orderTable.id_created_by, userTable.id))
+                .where(eq(orderTable.id, orderId))
+                .limit(1);
 
-        if (result.length === 0) return null;
+            if (result.length === 0) return INVALID_ID_SERVICE_RESPONSE;
 
-        const { order, createdBy } = result[0];
+            const { order, createdBy } = result[0];
 
         // Get order details
         const details = await db
@@ -524,31 +544,45 @@ export class OrderService {
             };
         }
 
-        return {
+        const orderData = {
             ...OrderService.formatOrderResponse(order, practitioners, createdBy),
             details: details.map(({ detail, loinc, modality }) =>
                 OrderService.formatDetailOrderResponse(detail, loinc, modality)
             ),
         };
+
+        return {
+            status: true,
+            data: orderData,
+        };
+        } catch (err) {
+            console.error(`OrderService.getOrderById: ${err}`);
+            return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
+        }
     }
 
     /**
      * Get order by Accession Number
      */
-    static async getOrderByAccessionNumber(accessionNumber: string): Promise<FullOrderResponse | null> {
-        // First, find the detail order by accession number
-        const [detailOrder] = await db
-            .select()
-            .from(detailOrderTable)
-            .where(eq(detailOrderTable.accession_number, accessionNumber))
-            .limit(1);
+    static async getOrderByAccessionNumber(accessionNumber: string): Promise<ServiceResponse<FullOrderResponse>> {
+        try {
+            // First, find the detail order by accession number
+            const [detailOrder] = await db
+                .select()
+                .from(detailOrderTable)
+                .where(eq(detailOrderTable.accession_number, accessionNumber))
+                .limit(1);
 
-        if (!detailOrder || !detailOrder.id_order) {
-            return null;
+            if (!detailOrder || !detailOrder.id_order) {
+                return NotFoundWithMessage("Order with this accession number not found");
+            }
+
+            // Then get the full order using the order ID
+            return await OrderService.getOrderById(detailOrder.id_order);
+        } catch (err) {
+            console.error(`OrderService.getOrderByAccessionNumber: ${err}`);
+            return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
         }
-
-        // Then get the full order using the order ID
-        return OrderService.getOrderById(detailOrder.id_order);
     }
 
     /**
@@ -788,9 +822,10 @@ export class OrderService {
      * 5. Return order with details
      * Note: Satu Sehat will be sent later after RIS completes the order
      */
-    static async createOrder(data: CreateOrderInput, userId: string): Promise<FullOrderResponse> {
-        // Extract patient and practitioner info from first detail
-        let id_patient_ss: string | null = null;
+    static async createOrder(data: CreateOrderInput, userId: string): Promise<ServiceResponse<FullOrderResponse>> {
+        try {
+            // Extract patient and practitioner info from first detail
+            let id_patient_ss: string | null = null;
         let id_encounter_ss: string | null = null;
         let patient_name: string | null = null;
         let patient_mrn: string | null = null;
@@ -951,8 +986,17 @@ export class OrderService {
         await db.insert(detailOrderTable).values(detailsToInsert);
 
         // Return created order with details
-        const createdOrder = await OrderService.getOrderById(order.id);
-        return createdOrder!;
+        const createdOrderResponse = await OrderService.getOrderById(order.id);
+        
+        if (!createdOrderResponse.status || !createdOrderResponse.data) {
+            return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
+        }
+        
+        return createdOrderResponse;
+        } catch (err) {
+            console.error(`OrderService.createOrder: ${err}`);
+            return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
+        }
     }
 
     /**
@@ -963,16 +1007,27 @@ export class OrderService {
         data: CreateOrderInput, 
         userId: string
     ): Promise<OrderCreationSuccess> {
-        // Create order (no Satu Sehat send)
-        await OrderService.createOrder(data, userId);
+        try {
+            const result = await OrderService.createOrder(data, userId);
 
-        // Return simple success message only
-        const response: OrderCreationSuccess = {
-            success: true,
-            message: "Order created successfully",
-        };
+            if (!result.status) {
+                return {
+                    success: false,
+                    message: result.err?.message || "Failed to create order",
+                };
+            }
 
-        return response;
+            return {
+                success: true,
+                message: "Order created successfully",
+            };
+        } catch (err) {
+            console.error(`OrderService.createOrderForSimrs: ${err}`);
+            return {
+                success: false,
+                message: "Failed to create order",
+            };
+        }
     }
 
     /**
@@ -1056,11 +1111,15 @@ export class OrderService {
                 // Send to Satu Sehat
                 const response = await SatuSehatService.postServiceRequest(serviceRequestPayload);
 
+                if (!response.status || !response.data) {
+                    throw new Error(response.err?.message || "Failed to create ServiceRequest");
+                }
+
                 // Update detail with ServiceRequest ID
                 await db
                     .update(detailOrderTable)
                     .set({ 
-                        id_service_request_ss: response.id,
+                        id_service_request_ss: response.data.id,
                         updated_at: new Date(),
                     })
                     .where(eq(detailOrderTable.id, detail.id));
@@ -1069,7 +1128,7 @@ export class OrderService {
                     detailId: detail.id,
                     accessionNumber: detail.accession_number || "",
                     success: true,
-                    id_service_request_ss: response.id,
+                    id_service_request_ss: response.data.id,
                 });
             } catch (error) {
                 results.push({
@@ -1209,14 +1268,22 @@ export class OrderService {
                 satuSehatResponse = await SatuSehatService.postServiceRequest(serviceRequestPayload);
                 actionType = "created";
 
+                if (!satuSehatResponse.status || !satuSehatResponse.data) {
+                    throw new Error(satuSehatResponse.err?.message || "Failed to create ServiceRequest");
+                }
+
                 // Simpan ServiceRequest ID ke database (hanya untuk create baru)
                 await db
                     .update(detailOrderTable)
                     .set({
-                        id_service_request_ss: satuSehatResponse.id,
+                        id_service_request_ss: satuSehatResponse.data.id,
                         updated_at: new Date(),
                     })
                     .where(eq(detailOrderTable.id, detailId));
+            }
+
+            if (!satuSehatResponse.status || !satuSehatResponse.data) {
+                throw new Error(satuSehatResponse.err?.message || "Failed to process ServiceRequest");
             }
 
             return {
@@ -1225,7 +1292,7 @@ export class OrderService {
                 data: {
                     detail_id: detailId,
                     accession_number: detail.accession_number,
-                    service_request_id: satuSehatResponse.id,
+                    service_request_id: satuSehatResponse.data.id,
                 },
             };
         } catch (error) {
@@ -1465,11 +1532,15 @@ export class OrderService {
             // ========== STEP 3: POST ke Satu Sehat ==========
             const satuSehatResponse = await SatuSehatService.postServiceRequest(serviceRequestPayload);
 
+            if (!satuSehatResponse.status || !satuSehatResponse.data) {
+                throw new Error(satuSehatResponse.err?.message || "Failed to create ServiceRequest");
+            }
+
             // ========== STEP 4: Simpan ServiceRequest ID ==========
             await db
                 .update(detailOrderTable)
                 .set({
-                    id_service_request_ss: satuSehatResponse.id,
+                    id_service_request_ss: satuSehatResponse.data.id,
                     updated_at: new Date(),
                 })
                 .where(eq(detailOrderTable.id, detailId));
@@ -1512,7 +1583,7 @@ export class OrderService {
                 data: {
                     detail_id: detailId,
                     accession_number: detail.accession_number,
-                    service_request_id: satuSehatResponse.id,
+                    service_request_id: satuSehatResponse.data.id,
                     mwl_push: {
                         success: mwlResult.success,
                         target: mwlTarget,
@@ -1581,17 +1652,28 @@ export class OrderService {
     /**
      * Update order
      */
-    static async updateOrder(orderId: string, data: UpdateOrderInput): Promise<FullOrderResponse | null> {
-        const updateData: Partial<InferSelectModel<typeof orderTable>> = {
-            ...data,
-            updated_at: new Date(),
-        };
+    static async updateOrder(orderId: string, data: UpdateOrderInput): Promise<ServiceResponse<FullOrderResponse>> {
+        try {
+            const updateData: Partial<InferSelectModel<typeof orderTable>> = {
+                ...data,
+                updated_at: new Date(),
+            };
 
-        const [order] = await db.update(orderTable).set(updateData).where(eq(orderTable.id, orderId)).returning();
+            const [order] = await db
+                .update(orderTable)
+                .set(updateData)
+                .where(eq(orderTable.id, orderId))
+                .returning();
 
-        if (!order) return null;
+            if (!order) return INVALID_ID_SERVICE_RESPONSE;
 
-        return OrderService.getOrderById(orderId);
+            const orderResponse = await OrderService.getOrderById(orderId);
+
+            return orderResponse;
+        } catch (err) {
+            console.error(`OrderService.updateOrder: ${err}`);
+            return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
+        }
     }
 
     /**
@@ -1705,14 +1787,26 @@ export class OrderService {
     /**
      * Delete order (cascade delete details)
      */
-    static async deleteOrder(orderId: string): Promise<boolean> {
-        // Delete details first
-        await db.delete(detailOrderTable).where(eq(detailOrderTable.id_order, orderId));
+    static async deleteOrder(orderId: string): Promise<ServiceResponse<{ deletedCount: number }>> {
+        try {
+            // Delete details first
+            await db.delete(detailOrderTable).where(eq(detailOrderTable.id_order, orderId));
 
-        // Delete order
-        const result = await db.delete(orderTable).where(eq(orderTable.id, orderId)).returning();
+            // Delete order
+            const result = await db.delete(orderTable).where(eq(orderTable.id, orderId)).returning();
 
-        return result.length > 0;
+            if (result.length === 0) {
+                return INVALID_ID_SERVICE_RESPONSE;
+            }
+
+            return {
+                status: true,
+                data: { deletedCount: result.length },
+            };
+        } catch (err) {
+            console.error(`OrderService.deleteOrder: ${err}`);
+            return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
+        }
     }
 
     /**
@@ -2129,7 +2223,12 @@ export class OrderService {
                 });
 
                 const observationResponse = await SatuSehatService.postObservation(observation);
-                observationId = observationResponse.id;
+                
+                if (!observationResponse.status || !observationResponse.data) {
+                    throw new Error(observationResponse.err?.message || "Failed to create Observation");
+                }
+                
+                observationId = observationResponse.data.id;
 
                 loggerPino.info(`[Finalize] Observation posted successfully: ${observationId}`);
 
@@ -2152,7 +2251,12 @@ export class OrderService {
                 });
 
                 const diagnosticReportResponse = await SatuSehatService.postDiagnosticReport(diagnosticReport);
-                diagnosticReportId = diagnosticReportResponse.id;
+                
+                if (!diagnosticReportResponse.status || !diagnosticReportResponse.data) {
+                    throw new Error(diagnosticReportResponse.err?.message || "Failed to create DiagnosticReport");
+                }
+                
+                diagnosticReportId = diagnosticReportResponse.data.id;
 
                 loggerPino.info(`[Finalize] DiagnosticReport posted successfully: ${diagnosticReportId}`);
 
