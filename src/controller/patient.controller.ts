@@ -1,10 +1,12 @@
-import { createRoute } from "@hono/zod-openapi";
+import { createRoute, z } from "@hono/zod-openapi";
 import * as HttpStatusCodes from "stoker/http-status-codes";
 import { jsonContent, jsonContentRequired } from "stoker/openapi/helpers";
 import { createErrorSchema, createMessageObjectSchema } from "stoker/openapi/schemas";
 import createRouter from "@/config/create-router";
 import {
     createPatientSchema,
+    patientApiResponseSchema,
+    patientErrorResponseSchema,
     patientIdParamSchema,
     patientPaginationResponseSchema,
     patientQuerySchema,
@@ -14,6 +16,11 @@ import {
 import { authMiddleware } from "@/middleware/auth.middleware";
 import { permissionMiddleware } from "@/middleware/role-permission.middleware";
 import { PatientService } from "@/service/patient.service";
+import {
+    response_success,
+    response_created,
+    handleServiceErrorWithResponse,
+} from "@/utils/response.utils";
 
 const patientController = createRouter();
 
@@ -45,8 +52,13 @@ patientController.openapi(
     }),
     async (c) => {
         const query = c.req.valid("query");
-        const result = await PatientService.getAllPatients(query);
-        return c.json(result, HttpStatusCodes.OK);
+        const serviceResponse = await PatientService.getAllPatients(query);
+
+        if (!serviceResponse.status) {
+            return handleServiceErrorWithResponse(c, serviceResponse);
+        }
+
+        return response_success(c, serviceResponse.data, "Successfully fetched all Patients!");
     }
 );
 
@@ -63,9 +75,9 @@ patientController.openapi(
             params: patientIdParamSchema,
         },
         responses: {
-            [HttpStatusCodes.OK]: jsonContent(patientResponseSchema, "Patient retrieved successfully"),
+            [HttpStatusCodes.OK]: jsonContent(patientApiResponseSchema, "Patient retrieved successfully"),
             [HttpStatusCodes.NOT_FOUND]: jsonContent(
-                createMessageObjectSchema("Patient not found"),
+                patientErrorResponseSchema,
                 "Patient does not exist"
             ),
             [HttpStatusCodes.UNAUTHORIZED]: jsonContent(
@@ -80,18 +92,13 @@ patientController.openapi(
     }),
     async (c) => {
         const { id } = c.req.valid("param");
-        const patient = await PatientService.getPatientById(id);
+        const serviceResponse = await PatientService.getPatientById(id);
 
-        if (!patient) {
-            return c.json(
-                {
-                    message: "Patient not found",
-                },
-                HttpStatusCodes.NOT_FOUND
-            );
+        if (!serviceResponse.status) {
+            return handleServiceErrorWithResponse(c, serviceResponse);
         }
 
-        return c.json(patient, HttpStatusCodes.OK);
+        return response_success(c, serviceResponse.data, "Successfully fetched Patient!");
     }
 );
 
@@ -108,7 +115,7 @@ patientController.openapi(
             body: jsonContentRequired(createPatientSchema, "Patient data"),
         },
         responses: {
-            [HttpStatusCodes.CREATED]: jsonContent(patientResponseSchema, "Patient created successfully"),
+            [HttpStatusCodes.CREATED]: jsonContent(patientApiResponseSchema, "Patient created successfully"),
             [HttpStatusCodes.UNAUTHORIZED]: jsonContent(
                 createMessageObjectSchema("Not authenticated"),
                 "User not authenticated"
@@ -125,8 +132,13 @@ patientController.openapi(
     }),
     async (c) => {
         const data = c.req.valid("json");
-        const patient = await PatientService.createPatient(data);
-        return c.json(patient, HttpStatusCodes.CREATED);
+        const serviceResponse = await PatientService.createPatient(data);
+
+        if (!serviceResponse.status) {
+            return handleServiceErrorWithResponse(c, serviceResponse);
+        }
+
+        return response_created(c, serviceResponse.data, "Successfully created Patient!");
     }
 );
 
@@ -144,9 +156,9 @@ patientController.openapi(
             body: jsonContentRequired(updatePatientSchema, "Patient update data"),
         },
         responses: {
-            [HttpStatusCodes.OK]: jsonContent(patientResponseSchema, "Patient updated successfully"),
+            [HttpStatusCodes.OK]: jsonContent(patientApiResponseSchema, "Patient updated successfully"),
             [HttpStatusCodes.NOT_FOUND]: jsonContent(
-                createMessageObjectSchema("Patient not found"),
+                patientErrorResponseSchema,
                 "Patient does not exist"
             ),
             [HttpStatusCodes.UNAUTHORIZED]: jsonContent(
@@ -167,18 +179,13 @@ patientController.openapi(
         const { id } = c.req.valid("param");
         const data = c.req.valid("json");
 
-        const patient = await PatientService.updatePatient(id, data);
+        const serviceResponse = await PatientService.updatePatient(id, data);
 
-        if (!patient) {
-            return c.json(
-                {
-                    message: "Patient not found",
-                },
-                HttpStatusCodes.NOT_FOUND
-            );
+        if (!serviceResponse.status) {
+            return handleServiceErrorWithResponse(c, serviceResponse);
         }
 
-        return c.json(patient, HttpStatusCodes.OK);
+        return response_success(c, serviceResponse.data, "Successfully updated Patient!");
     }
 );
 
@@ -196,11 +203,11 @@ patientController.openapi(
         },
         responses: {
             [HttpStatusCodes.OK]: jsonContent(
-                createMessageObjectSchema("Patient deleted successfully"),
-                "Patient deleted"
+                patientApiResponseSchema.extend({ data: z.null() }),
+                "Patient successfully deleted"
             ),
             [HttpStatusCodes.NOT_FOUND]: jsonContent(
-                createMessageObjectSchema("Patient not found"),
+                patientErrorResponseSchema,
                 "Patient does not exist"
             ),
             [HttpStatusCodes.UNAUTHORIZED]: jsonContent(
@@ -215,23 +222,13 @@ patientController.openapi(
     }),
     async (c) => {
         const { id } = c.req.valid("param");
-        const deleted = await PatientService.deletePatient(id);
+        const serviceResponse = await PatientService.deletePatient(id);
 
-        if (!deleted) {
-            return c.json(
-                {
-                    message: "Patient not found",
-                },
-                HttpStatusCodes.NOT_FOUND
-            );
+        if (!serviceResponse.status) {
+            return handleServiceErrorWithResponse(c, serviceResponse);
         }
 
-        return c.json(
-            {
-                message: "Patient deleted successfully",
-            },
-            HttpStatusCodes.OK
-        );
+        return response_success(c, serviceResponse.data, "Successfully deleted Patient!");
     }
 );
 
