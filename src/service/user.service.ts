@@ -10,6 +10,12 @@ import type {
 } from "@/interface/user.interface";
 import { hashPassword } from "@/lib/crypto";
 import { RolePermissionService } from "@/service/role-permission.service";
+import type { ServiceResponse } from "@/entities/Service";
+import { 
+    INTERNAL_SERVER_ERROR_SERVICE_RESPONSE, 
+    INVALID_ID_SERVICE_RESPONSE 
+} from "@/entities/Service";
+import type { PagedList } from "@/entities/Query";
 
 export class UserService {
     static async attachRolesAndPermissions(
@@ -30,98 +36,155 @@ export class UserService {
         };
     }
 
-    static async getUserWithPagination(params: PaginationParams): Promise<UserPaginationResponse> {
-        const page = params.page || 1;
-        const perPage = params.per_page || 10;
-        const offset = (page - 1) * perPage;
+    static async getUserWithPagination(params: PaginationParams): Promise<ServiceResponse<PagedList<UserWithRolesAndPermissions[]>>> {
+        try {
+            const page = params.page || 1;
+            const perPage = params.per_page || 10;
+            const offset = (page - 1) * perPage;
 
-        // Build where conditions
-        const whereConditions = params.search
-            ? or(ilike(userTable.name, `%${params.search}%`), ilike(userTable.email, `%${params.search}%`))
-            : undefined;
+            // Build where conditions
+            const whereConditions = params.search
+                ? or(ilike(userTable.name, `%${params.search}%`), ilike(userTable.email, `%${params.search}%`))
+                : undefined;
 
-        // Get users
-        const users = await db
-            .select()
-            .from(userTable)
-            .where(whereConditions)
-            .limit(perPage)
-            .offset(offset)
-            .orderBy(userTable.created_at);
+            // Get users
+            const users = await db
+                .select()
+                .from(userTable)
+                .where(whereConditions)
+                .limit(perPage)
+                .offset(offset)
+                .orderBy(userTable.created_at);
 
-        // Get total count
-        const [{ total }] = await db.select({ total: count() }).from(userTable).where(whereConditions);
+            // Get total count
+            const [{ total }] = await db.select({ total: count() }).from(userTable).where(whereConditions);
 
-        // Attach roles and permissions to each user
-        const usersWithRolesAndPermissions = await Promise.all(
-            users.map((user) => UserService.attachRolesAndPermissions(user))
-        );
+            // Attach roles and permissions to each user
+            const usersWithRolesAndPermissions = await Promise.all(
+                users.map((user) => UserService.attachRolesAndPermissions(user))
+            );
 
-        const totalPages = Math.ceil(total / perPage);
+            const totalPages = Math.ceil(total / perPage);
 
-        return {
-            data: usersWithRolesAndPermissions,
-            meta: {
-                total,
-                page,
-                per_page: perPage,
-                total_pages: totalPages,
-                has_next_page: page < totalPages,
-                has_prev_page: page > 1,
-            },
-        };
+            return {
+                status: true,
+                data: {
+                    entries: usersWithRolesAndPermissions,
+                    totalData: total,
+                    totalPage: totalPages,
+                },
+            };
+        } catch (err) {
+            console.error(`UserService.getUserWithPagination: ${err}`);
+            return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
+        }
     }
 
-    static async getUserById(userId: string): Promise<UserWithRolesAndPermissions | null> {
-        const [user] = await db.select().from(userTable).where(eq(userTable.id, userId)).limit(1);
+    static async getUserById(userId: string): Promise<ServiceResponse<UserWithRolesAndPermissions>> {
+        try {
+            const [user] = await db.select().from(userTable).where(eq(userTable.id, userId)).limit(1);
 
-        if (!user) return null;
+            if (!user) return INVALID_ID_SERVICE_RESPONSE;
 
-        return UserService.attachRolesAndPermissions(user);
+            const userWithRoles = await UserService.attachRolesAndPermissions(user);
+
+            return {
+                status: true,
+                data: userWithRoles,
+            };
+        } catch (err) {
+            console.error(`UserService.getUserById: ${err}`);
+            return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
+        }
     }
 
-    static async getUserByEmail(email: string): Promise<UserWithRolesAndPermissions | null> {
-        const [user] = await db.select().from(userTable).where(eq(userTable.email, email)).limit(1);
+    static async getUserByEmail(email: string): Promise<ServiceResponse<UserWithRolesAndPermissions | null>> {
+        try {
+            const [user] = await db.select().from(userTable).where(eq(userTable.email, email)).limit(1);
 
-        if (!user) return null;
+            if (!user) {
+                return {
+                    status: true,
+                    data: null,
+                };
+            }
 
-        return UserService.attachRolesAndPermissions(user);
+            const userWithRoles = await UserService.attachRolesAndPermissions(user);
+
+            return {
+                status: true,
+                data: userWithRoles,
+            };
+        } catch (err) {
+            console.error(`UserService.getUserByEmail: ${err}`);
+            return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
+        }
     }
 
-    static async createUser(data: CreateUserInput): Promise<UserWithRolesAndPermissions> {
-        const hashedPassword = await hashPassword(data.password);
+    static async createUser(data: CreateUserInput): Promise<ServiceResponse<UserWithRolesAndPermissions>> {
+        try {
+            const hashedPassword = await hashPassword(data.password);
 
-        const [user] = await db
-            .insert(userTable)
-            .values({
-                name: data.name,
-                email: data.email,
-                password: hashedPassword,
-                avatar: data.avatar || null,
-            })
-            .returning();
+            const [user] = await db
+                .insert(userTable)
+                .values({
+                    name: data.name,
+                    email: data.email,
+                    password: hashedPassword,
+                    avatar: data.avatar || null,
+                })
+                .returning();
 
-        return UserService.attachRolesAndPermissions(user);
+            const userWithRoles = await UserService.attachRolesAndPermissions(user);
+
+            return {
+                status: true,
+                data: userWithRoles,
+            };
+        } catch (err) {
+            console.error(`UserService.createUser: ${err}`);
+            return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
+        }
     }
 
-    static async updateUser(userId: string, data: UpdateUserInput): Promise<UserWithRolesAndPermissions | null> {
-        const updateData: Partial<InferSelectModel<typeof userTable>> = {
-            updated_at: new Date(),
-        };
+    static async updateUser(userId: string, data: UpdateUserInput): Promise<ServiceResponse<UserWithRolesAndPermissions>> {
+        try {
+            const updateData: Partial<InferSelectModel<typeof userTable>> = {
+                updated_at: new Date(),
+            };
 
-        if (data.name !== undefined) updateData.name = data.name;
-        if (data.email !== undefined) updateData.email = data.email;
-        if (data.password !== undefined) updateData.password = await hashPassword(data.password);
-        if (data.avatar !== undefined) updateData.avatar = data.avatar;
+            if (data.name !== undefined) updateData.name = data.name;
+            if (data.email !== undefined) updateData.email = data.email;
+            if (data.password !== undefined) updateData.password = await hashPassword(data.password);
+            if (data.avatar !== undefined) updateData.avatar = data.avatar;
 
-        const [user] = await db.update(userTable).set(updateData).where(eq(userTable.id, userId)).returning();
+            const [user] = await db.update(userTable).set(updateData).where(eq(userTable.id, userId)).returning();
 
-        if (!user) return null;
+            if (!user) return INVALID_ID_SERVICE_RESPONSE;
 
-        return UserService.attachRolesAndPermissions(user);
+            const userWithRoles = await UserService.attachRolesAndPermissions(user);
+
+            return {
+                status: true,
+                data: userWithRoles,
+            };
+        } catch (err) {
+            console.error(`UserService.updateUser: ${err}`);
+            return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
+        }
     }
 
-    static async deleteUser(userId: string): Promise<void> {
-        await db.delete(userTable).where(eq(userTable.id, userId));
+    static async deleteUser(userId: string): Promise<ServiceResponse<{ deletedCount: number }>> {
+        try {
+            const result = await db.delete(userTable).where(eq(userTable.id, userId));
+
+            return {
+                status: true,
+                data: { deletedCount: 1 },
+            };
+        } catch (err) {
+            console.error(`UserService.deleteUser: ${err}`);
+            return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
+        }
     }
 }
