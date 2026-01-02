@@ -105,14 +105,30 @@ export const practitionerPaginationResponseSchema = z.object({
     }).optional(),
 });
 
-// Single practitioner response with API wrapper
-export const practitionerApiResponseSchema = z.object({
-    data: practitionerResponseSchema,
+// ==================== Practitioner API Response Schemas (HTTP Wrapper) ====================
+// Full HTTP response for pagination
+export const practitionerPaginationApiResponseSchema = z.object({
+    content: practitionerPaginationResponseSchema,
+    message: z.string(),
+    errors: z.array(z.unknown()),
 });
 
-// Error response with API wrapper
+// Full HTTP response for single practitioner
+export const practitionerApiResponseSchema = z.object({
+    content: z.object({
+        data: practitionerResponseSchema,
+    }),
+    message: z.string(),
+    errors: z.array(z.unknown()),
+});
+
+// Error response
 export const practitionerErrorResponseSchema = z.object({
-    data: z.null(),
+    content: z.object({
+        data: z.null(),
+    }),
+    message: z.string(),
+    errors: z.array(z.unknown()),
 });
 
 // Path params

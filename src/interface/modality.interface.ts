@@ -40,6 +40,32 @@ export const modalityPaginationResponseSchema = z.object({
 
 export type ModalityPaginationResponse = z.infer<typeof modalityPaginationResponseSchema>;
 
+// ==================== Modality API Response Schemas (HTTP Wrapper) ====================
+// Full HTTP response for pagination
+export const modalityPaginationApiResponseSchema = z.object({
+    content: modalityPaginationResponseSchema,
+    message: z.string(),
+    errors: z.array(z.unknown()),
+});
+
+// Full HTTP response for single modality
+export const modalityApiResponseSchema = z.object({
+    content: z.object({
+        data: modalityResponseSchema,
+    }),
+    message: z.string(),
+    errors: z.array(z.unknown()),
+});
+
+// Error response
+export const modalityErrorResponseSchema = z.object({
+    content: z.object({
+        data: z.null(),
+    }),
+    message: z.string(),
+    errors: z.array(z.unknown()),
+});
+
 // ==================== Create Modality Schema ====================
 export const createModalitySchema = z.object({
     code: z.string().min(1).max(255),

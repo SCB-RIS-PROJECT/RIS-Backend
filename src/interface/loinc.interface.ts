@@ -50,13 +50,30 @@ export const loincPaginationResponseSchema = z.object({
 
 export type LoincPaginationResponse = z.infer<typeof loincPaginationResponseSchema>;
 
-// ==================== LOINC API Response Schemas ====================
-export const loincApiResponseSchema = z.object({
-    data: loincResponseSchema,
+// ==================== LOINC API Response Schemas (HTTP Wrapper) ====================
+// Full HTTP response for pagination
+export const loincPaginationApiResponseSchema = z.object({
+    content: loincPaginationResponseSchema,
+    message: z.string(),
+    errors: z.array(z.unknown()),
 });
 
+// Full HTTP response for single loinc
+export const loincApiResponseSchema = z.object({
+    content: z.object({
+        data: loincResponseSchema,
+    }),
+    message: z.string(),
+    errors: z.array(z.unknown()),
+});
+
+// Error response
 export const loincErrorResponseSchema = z.object({
-    data: z.null(),
+    content: z.object({
+        data: z.null(),
+    }),
+    message: z.string(),
+    errors: z.array(z.unknown()),
 });
 
 // ==================== Create LOINC Schema ====================

@@ -8,6 +8,7 @@ import {
     patientApiResponseSchema,
     patientErrorResponseSchema,
     patientIdParamSchema,
+    patientPaginationApiResponseSchema,
     patientPaginationResponseSchema,
     patientQuerySchema,
     patientResponseSchema,
@@ -39,7 +40,7 @@ patientController.openapi(
             query: patientQuerySchema,
         },
         responses: {
-            [HttpStatusCodes.OK]: jsonContent(patientPaginationResponseSchema, "Patients retrieved successfully"),
+            [HttpStatusCodes.OK]: jsonContent(patientPaginationApiResponseSchema, "Patients retrieved successfully"),
             [HttpStatusCodes.UNAUTHORIZED]: jsonContent(
                 createMessageObjectSchema("Not authenticated"),
                 "User not authenticated"

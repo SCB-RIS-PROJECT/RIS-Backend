@@ -8,8 +8,7 @@ import {
     createPractitionerSchema,
     practitionerApiResponseSchema,
     practitionerErrorResponseSchema,
-    practitionerIdParamSchema,
-    practitionerPaginationResponseSchema,
+    practitionerIdParamSchema,    practitionerPaginationApiResponseSchema,    practitionerPaginationResponseSchema,
     practitionerQuerySchema,
     practitionerResponseSchema,
     updatePractitionerSchema,
@@ -36,7 +35,7 @@ const getAllPractitioners = createRoute({
         query: practitionerQuerySchema,
     },
     responses: {
-        [HttpStatusCode.OK]: jsonContent(practitionerPaginationResponseSchema, "Practitioners retrieved successfully"),
+        [HttpStatusCode.OK]: jsonContent(practitionerPaginationApiResponseSchema, "Practitioners retrieved successfully"),
         [HttpStatusCode.UNAUTHORIZED]: jsonContent(createErrorSchema(practitionerQuerySchema), "Unauthorized"),
         [HttpStatusCode.FORBIDDEN]: jsonContent(createErrorSchema(practitionerQuerySchema), "Forbidden"),
     },

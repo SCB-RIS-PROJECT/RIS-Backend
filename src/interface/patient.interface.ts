@@ -100,14 +100,30 @@ export const patientPaginationResponseSchema = z.object({
     }).optional(),
 });
 
-// Single patient response with API wrapper
-export const patientApiResponseSchema = z.object({
-    data: patientResponseSchema,
+// ==================== Patient API Response Schemas (HTTP Wrapper) ====================
+// Full HTTP response for pagination
+export const patientPaginationApiResponseSchema = z.object({
+    content: patientPaginationResponseSchema,
+    message: z.string(),
+    errors: z.array(z.unknown()),
 });
 
-// Error response with API wrapper
+// Full HTTP response for single patient
+export const patientApiResponseSchema = z.object({
+    content: z.object({
+        data: patientResponseSchema,
+    }),
+    message: z.string(),
+    errors: z.array(z.unknown()),
+});
+
+// Error response
 export const patientErrorResponseSchema = z.object({
-    data: z.null(),
+    content: z.object({
+        data: z.null(),
+    }),
+    message: z.string(),
+    errors: z.array(z.unknown()),
 });
 
 // Path params

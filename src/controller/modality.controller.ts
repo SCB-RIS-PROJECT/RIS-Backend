@@ -7,6 +7,7 @@ import { loggerPino } from "@/config/log";
 import {
     createModalitySchema,
     modalityIdParamSchema,
+    modalityPaginationApiResponseSchema,
     modalityPaginationResponseSchema,
     modalityQuerySchema,
     modalityResponseSchema,
@@ -38,7 +39,7 @@ modalityController.openapi(
             query: modalityQuerySchema,
         },
         responses: {
-            [HttpStatusCodes.OK]: jsonContent(modalityPaginationResponseSchema, "Modalities retrieved successfully"),
+            [HttpStatusCodes.OK]: jsonContent(modalityPaginationApiResponseSchema, "Modalities retrieved successfully"),
             [HttpStatusCodes.UNAUTHORIZED]: jsonContent(
                 createMessageObjectSchema("Not authenticated"),
                 "User not authenticated"

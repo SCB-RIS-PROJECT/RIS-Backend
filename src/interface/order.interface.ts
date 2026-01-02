@@ -279,13 +279,30 @@ export const orderPaginationResponseSchema = z.object({
 
 export type OrderPaginationResponse = z.infer<typeof orderPaginationResponseSchema>;
 
-// ==================== Order API Response Schemas ====================
-export const fullOrderApiResponseSchema = z.object({
-    data: fullOrderResponseSchema,
+// ==================== Order API Response Schemas (HTTP Wrapper) ====================
+// Full HTTP response for pagination
+export const orderPaginationApiResponseSchema = z.object({
+    content: orderPaginationResponseSchema,
+    message: z.string(),
+    errors: z.array(z.unknown()),
 });
 
+// Full HTTP response for single order
+export const fullOrderApiResponseSchema = z.object({
+    content: z.object({
+        data: fullOrderResponseSchema,
+    }),
+    message: z.string(),
+    errors: z.array(z.unknown()),
+});
+
+// Error response
 export const orderErrorResponseSchema = z.object({
-    data: z.null(),
+    content: z.object({
+        data: z.null(),
+    }),
+    message: z.string(),
+    errors: z.array(z.unknown()),
 });
 
 // ==================== Create Detail Order Item Schema (from SIMRS) ====================

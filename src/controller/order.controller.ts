@@ -17,6 +17,7 @@ import {
     orderCreationSuccessSchema,
     orderErrorResponseSchema,
     orderIdParamSchema,
+    orderPaginationApiResponseSchema,
     orderPaginationResponseSchema,
     orderQuerySchema,
     updateDetailOrderSchema,
@@ -73,7 +74,7 @@ Get paginated list of orders with comprehensive filtering and search capabilitie
             query: orderQuerySchema,
         },
         responses: {
-            [HttpStatusCodes.OK]: jsonContent(orderPaginationResponseSchema, "Orders retrieved successfully"),
+            [HttpStatusCodes.OK]: jsonContent(orderPaginationApiResponseSchema, "Orders retrieved successfully"),
             [HttpStatusCodes.UNAUTHORIZED]: jsonContent(
                 createMessageObjectSchema("Not authenticated"),
                 "User not authenticated"

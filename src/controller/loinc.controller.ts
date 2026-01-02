@@ -8,8 +8,7 @@ import {
     createLoincSchema,
     loincApiResponseSchema,
     loincErrorResponseSchema,
-    loincIdParamSchema,
-    loincPaginationResponseSchema,
+    loincIdParamSchema,    loincPaginationApiResponseSchema,    loincPaginationResponseSchema,
     loincQuerySchema,
     loincResponseSchema,
     updateLoincSchema,
@@ -41,7 +40,7 @@ loincController.openapi(
             query: loincQuerySchema,
         },
         responses: {
-            [HttpStatusCodes.OK]: jsonContent(loincPaginationResponseSchema, "LOINC codes retrieved successfully"),
+            [HttpStatusCodes.OK]: jsonContent(loincPaginationApiResponseSchema, "LOINC codes retrieved successfully"),
             [HttpStatusCodes.UNAUTHORIZED]: jsonContent(
                 createMessageObjectSchema("Not authenticated"),
                 "User not authenticated"
