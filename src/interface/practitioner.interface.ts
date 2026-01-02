@@ -90,9 +90,11 @@ export const practitionerQuerySchema = z.object({
     dir: z.enum(["asc", "desc"]).default("desc"),
 });
 
-// Practitioner pagination response
+// Practitioner pagination response with API wrapper
 export const practitionerPaginationResponseSchema = z.object({
     data: z.array(practitionerResponseSchema),
+    message: z.string(),
+    code: z.number(),
     meta: z.object({
         total: z.number(),
         page: z.number(),
@@ -100,7 +102,21 @@ export const practitionerPaginationResponseSchema = z.object({
         total_pages: z.number(),
         has_next_page: z.boolean(),
         has_prev_page: z.boolean(),
-    }),
+    }).optional(),
+});
+
+// Single practitioner response with API wrapper
+export const practitionerApiResponseSchema = z.object({
+    data: practitionerResponseSchema,
+    message: z.string(),
+    code: z.number(),
+});
+
+// Error response with API wrapper
+export const practitionerErrorResponseSchema = z.object({
+    data: z.null(),
+    message: z.string(),
+    code: z.number(),
 });
 
 // Path params

@@ -3,11 +3,16 @@ import db from "@/database/db";
 import { practitionerTable } from "@/database/schemas/schema-practitioner";
 import type {
     CreatePractitionerInput,
-    PractitionerPaginationResponse,
     PractitionerQuery,
     PractitionerResponse,
     UpdatePractitionerInput,
 } from "@/interface/practitioner.interface";
+import type { FilteringQueryV2, PagedList } from "@/entities/Query";
+import {
+    type ServiceResponse,
+    INTERNAL_SERVER_ERROR_SERVICE_RESPONSE,
+    INVALID_ID_SERVICE_RESPONSE,
+} from "@/entities/Service";
 
 export class PractitionerService {
     static formatPractitionerResponse(practitioner: InferSelectModel<typeof practitionerTable>): PractitionerResponse {
@@ -41,123 +46,159 @@ export class PractitionerService {
         };
     }
 
-    static async getAllPractitioners(query: PractitionerQuery): Promise<PractitionerPaginationResponse> {
-        const { page, per_page, search, profession, active, sort, dir } = query;
-        const offset = (page - 1) * per_page;
+    static async getAllPractitioners(query: PractitionerQuery): Promise<ServiceResponse<PagedList<PractitionerResponse[]>>> {
+        try {
+            const { page, per_page, search, profession, active, sort, dir } = query;
+            const offset = (page - 1) * per_page;
 
-        // Build where conditions
-        const whereConditions: SQL[] = [];
+            // Build where conditions
+            const whereConditions: SQL[] = [];
 
-        if (search) {
-            const searchCondition = or(
-                ilike(practitionerTable.name, `%${search}%`),
-                ilike(practitionerTable.nik, `%${search}%`),
-                ilike(practitionerTable.phone, `%${search}%`),
-                ilike(practitionerTable.email, `%${search}%`)
-            );
-            if (searchCondition) {
-                whereConditions.push(searchCondition);
+            if (search) {
+                const searchCondition = or(
+                    ilike(practitionerTable.name, `%${search}%`),
+                    ilike(practitionerTable.nik, `%${search}%`),
+                    ilike(practitionerTable.phone, `%${search}%`),
+                    ilike(practitionerTable.email, `%${search}%`)
+                );
+                if (searchCondition) {
+                    whereConditions.push(searchCondition);
+                }
             }
+
+            if (profession) {
+                whereConditions.push(eq(practitionerTable.profession, profession));
+            }
+
+            if (active !== undefined) {
+                whereConditions.push(eq(practitionerTable.active, active));
+            }
+
+            const whereClause = whereConditions.length > 0 ? and(...whereConditions) : undefined;
+
+            // Determine sort order
+            const sortColumn = practitionerTable[sort];
+            const orderBy = dir === "asc" ? asc(sortColumn) : desc(sortColumn);
+
+            // Get practitioners
+            const practitioners = await db
+                .select()
+                .from(practitionerTable)
+                .where(whereClause)
+                .orderBy(orderBy)
+                .limit(per_page)
+                .offset(offset);
+
+            // Get total count
+            const [{ total }] = await db.select({ total: count() }).from(practitionerTable).where(whereClause);
+
+            const totalPages = Math.ceil(total / per_page);
+
+            return {
+                status: true,
+                data: {
+                    entries: practitioners.map((practitioner) => PractitionerService.formatPractitionerResponse(practitioner)),
+                    totalData: total,
+                    totalPage: totalPages,
+                },
+            };
+        } catch (err) {
+            console.error(`PractitionerService.getAllPractitioners: ${err}`);
+            return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
         }
-
-        if (profession) {
-            whereConditions.push(eq(practitionerTable.profession, profession));
-        }
-
-        if (active !== undefined) {
-            whereConditions.push(eq(practitionerTable.active, active));
-        }
-
-        const whereClause = whereConditions.length > 0 ? and(...whereConditions) : undefined;
-
-        // Determine sort order
-        const sortColumn = practitionerTable[sort];
-        const orderBy = dir === "asc" ? asc(sortColumn) : desc(sortColumn);
-
-        // Get practitioners
-        const practitioners = await db
-            .select()
-            .from(practitionerTable)
-            .where(whereClause)
-            .orderBy(orderBy)
-            .limit(per_page)
-            .offset(offset);
-
-        // Get total count
-        const [{ total }] = await db.select({ total: count() }).from(practitionerTable).where(whereClause);
-
-        const totalPages = Math.ceil(total / per_page);
-
-        return {
-            data: practitioners.map((practitioner) => PractitionerService.formatPractitionerResponse(practitioner)),
-            meta: {
-                total,
-                page,
-                per_page,
-                total_pages: totalPages,
-                has_next_page: page < totalPages,
-                has_prev_page: page > 1,
-            },
-        };
     }
 
-    static async getPractitionerById(practitionerId: string): Promise<PractitionerResponse | null> {
-        const [practitioner] = await db
-            .select()
-            .from(practitionerTable)
-            .where(eq(practitionerTable.id, practitionerId))
-            .limit(1);
+    static async getPractitionerById(practitionerId: string): Promise<ServiceResponse<PractitionerResponse>> {
+        try {
+            const [practitioner] = await db
+                .select()
+                .from(practitionerTable)
+                .where(eq(practitionerTable.id, practitionerId))
+                .limit(1);
 
-        if (!practitioner) return null;
+            if (!practitioner) return INVALID_ID_SERVICE_RESPONSE;
 
-        return PractitionerService.formatPractitionerResponse(practitioner);
+            return {
+                status: true,
+                data: PractitionerService.formatPractitionerResponse(practitioner),
+            };
+        } catch (err) {
+            console.error(`PractitionerService.getPractitionerById: ${err}`);
+            return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
+        }
     }
 
-    static async createPractitioner(data: CreatePractitionerInput): Promise<PractitionerResponse> {
-        const [practitioner] = await db
-            .insert(practitionerTable)
-            .values({
-                ...data,
-                birth_date: new Date(data.birth_date),
-                ihs_last_sync: data.ihs_last_sync ? new Date(data.ihs_last_sync) : null,
-            })
-            .returning();
+    static async createPractitioner(data: CreatePractitionerInput): Promise<ServiceResponse<PractitionerResponse>> {
+        try {
+            const [practitioner] = await db
+                .insert(practitionerTable)
+                .values({
+                    ...data,
+                    birth_date: new Date(data.birth_date),
+                    ihs_last_sync: data.ihs_last_sync ? new Date(data.ihs_last_sync) : null,
+                })
+                .returning();
 
-        return PractitionerService.formatPractitionerResponse(practitioner);
+            return {
+                status: true,
+                data: PractitionerService.formatPractitionerResponse(practitioner),
+            };
+        } catch (err) {
+            console.error(`PractitionerService.createPractitioner: ${err}`);
+            return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
+        }
     }
 
     static async updatePractitioner(
         practitionerId: string,
         data: UpdatePractitionerInput
-    ): Promise<PractitionerResponse | null> {
-        // biome-ignore lint/suspicious/noExplicitAny: Drizzle typing issue with partial updates
-        const updateData: any = {
-            ...data,
-            updated_at: new Date(),
-        };
+    ): Promise<ServiceResponse<PractitionerResponse>> {
+        try {
+            // biome-ignore lint/suspicious/noExplicitAny: Drizzle typing issue with partial updates
+            const updateData: any = {
+                ...data,
+                updated_at: new Date(),
+            };
 
-        if (data.birth_date) {
-            updateData.birth_date = new Date(data.birth_date);
+            if (data.birth_date) {
+                updateData.birth_date = new Date(data.birth_date);
+            }
+
+            if (data.ihs_last_sync) {
+                updateData.ihs_last_sync = new Date(data.ihs_last_sync);
+            }
+
+            const [practitioner] = await db
+                .update(practitionerTable)
+                .set(updateData)
+                .where(eq(practitionerTable.id, practitionerId))
+                .returning();
+
+            if (!practitioner) return INVALID_ID_SERVICE_RESPONSE;
+
+            return {
+                status: true,
+                data: PractitionerService.formatPractitionerResponse(practitioner),
+            };
+        } catch (err) {
+            console.error(`PractitionerService.updatePractitioner: ${err}`);
+            return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
         }
-
-        if (data.ihs_last_sync) {
-            updateData.ihs_last_sync = new Date(data.ihs_last_sync);
-        }
-
-        const [practitioner] = await db
-            .update(practitionerTable)
-            .set(updateData)
-            .where(eq(practitionerTable.id, practitionerId))
-            .returning();
-
-        if (!practitioner) return null;
-
-        return PractitionerService.formatPractitionerResponse(practitioner);
     }
 
-    static async deletePractitioner(practitionerId: string): Promise<boolean> {
-        const result = await db.delete(practitionerTable).where(eq(practitionerTable.id, practitionerId)).returning();
+    static async deletePractitioner(practitionerId: string): Promise<ServiceResponse<{ deletedCount: number }>> {
+        try {
+            const result = await db.delete(practitionerTable).where(eq(practitionerTable.id, practitionerId)).returning();
 
-        return result.length > 0;
+            if (result.length === 0) return INVALID_ID_SERVICE_RESPONSE;
+
+            return {
+                status: true,
+                data: { deletedCount: result.length },
+            };
+        } catch (err) {
+            console.error(`PractitionerService.deletePractitioner: ${err}`);
+            return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
+        }
     }
 }
