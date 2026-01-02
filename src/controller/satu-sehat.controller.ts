@@ -8,6 +8,12 @@ import { ihsPatientBundleSchema, ihsPractitionerBundleSchema, nikParamSchema } f
 import { authMiddleware } from "@/middleware/auth.middleware";
 import { permissionMiddleware } from "@/middleware/role-permission.middleware";
 import { SatuSehatService } from "@/service/satu-sehat.service";
+import { createResponse } from "@/lib/utils";
+import { 
+    response_success,
+    response_not_found, 
+    handleServiceErrorWithResponse 
+} from "@/utils/response.utils";
 
 const satuSehatController = createRouter();
 
@@ -58,20 +64,19 @@ satuSehatController.openapi(
         },
     }),
     async (c) => {
-        try {
-            const { nik } = c.req.valid("param");
+        const { nik } = c.req.valid("param");
 
-            const data = await SatuSehatService.getIHSPatientByNIK(nik);
+        const serviceResponse = await SatuSehatService.getIHSPatientByNIK(nik);
 
-            if (!data.entry || data.entry.length === 0) {
-                return c.json({ message: "Patient not found in IHS" }, HttpStatusCodes.NOT_FOUND);
-            }
-
-            return c.json(data, HttpStatusCodes.OK);
-        } catch (error) {
-            loggerPino.error(error);
-            return c.json({ message: "Failed to fetch IHS Patient data" }, HttpStatusCodes.INTERNAL_SERVER_ERROR);
+        if (!serviceResponse.status) {
+            return handleServiceErrorWithResponse(c, serviceResponse);
         }
+
+        if (!serviceResponse.data || !serviceResponse.data.entry || serviceResponse.data.entry.length === 0) {
+            return response_not_found(c, "Patient not found in IHS");
+        }
+
+        return response_success(c, serviceResponse.data, "Successfully fetched IHS Patient!");
     }
 );
 
@@ -112,20 +117,19 @@ satuSehatController.openapi(
         },
     }),
     async (c) => {
-        try {
-            const { nik } = c.req.valid("param");
+        const { nik } = c.req.valid("param");
 
-            const data = await SatuSehatService.getIHSPractitionerByNIK(nik);
+        const serviceResponse = await SatuSehatService.getIHSPractitionerByNIK(nik);
 
-            if (!data.entry || data.entry.length === 0) {
-                return c.json({ message: "Practitioner not found in IHS" }, HttpStatusCodes.NOT_FOUND);
-            }
-
-            return c.json(data, HttpStatusCodes.OK);
-        } catch (error) {
-            loggerPino.error(error);
-            return c.json({ message: "Failed to fetch IHS Practitioner data" }, HttpStatusCodes.INTERNAL_SERVER_ERROR);
+        if (!serviceResponse.status) {
+            return handleServiceErrorWithResponse(c, serviceResponse);
         }
+
+        if (!serviceResponse.data || !serviceResponse.data.entry || serviceResponse.data.entry.length === 0) {
+            return response_not_found(c, "Practitioner not found in IHS");
+        }
+
+        return response_success(c, serviceResponse.data, "Successfully fetched IHS Practitioner!");
     }
 );
 
@@ -154,6 +158,7 @@ This endpoint is useful for:
         middleware: [authMiddleware, permissionMiddleware("read:satu_sehat")] as const,
         responses: {
             [HttpStatusCodes.OK]: jsonContent(tokenCacheInfoSchema, "Token cache info retrieved successfully"),
+            [HttpStatusCodes.INTERNAL_SERVER_ERROR]: jsonContent(tokenCacheInfoSchema, "Failed to get token info"),
             [HttpStatusCodes.UNAUTHORIZED]: jsonContent(
                 createMessageObjectSchema("Not authenticated"),
                 "User not authenticated"
@@ -182,7 +187,18 @@ This endpoint is useful for:
             return c.json(response, HttpStatusCodes.OK);
         } catch (error) {
             loggerPino.error(error);
-            return c.json({ message: "Failed to get token info" }, HttpStatusCodes.INTERNAL_SERVER_ERROR);
+            return c.json(
+                {
+                    hasToken: false,
+                    isValid: false,
+                    expiresAt: null,
+                    lastRefreshed: null,
+                    remainingSeconds: null,
+                    expiresAtFormatted: null,
+                    lastRefreshedFormatted: null,
+                },
+                HttpStatusCodes.INTERNAL_SERVER_ERROR
+            );
         }
     }
 );

@@ -18,6 +18,8 @@ import type {
     ServiceRequestParams,
     SatuSehatTokenResponse,
 } from "@/interface/satu-sehat.interface";
+import type { ServiceResponse } from "@/entities/Service";
+import { INTERNAL_SERVER_ERROR_SERVICE_RESPONSE } from "@/entities/Service";
 
 export class SatuSehatService {
     private static tokenCache: {
@@ -134,75 +136,122 @@ export class SatuSehatService {
     /**
      * Get IHS Patient by NIK from Satu Sehat API
      */
-    static async getIHSPatientByNIK(nik: string): Promise<IHSPatientBundle> {
-        const token = await SatuSehatService.getAccessToken();
+    static async getIHSPatientByNIK(nik: string): Promise<ServiceResponse<IHSPatientBundle>> {
+        try {
+            const token = await SatuSehatService.getAccessToken();
 
-        const url = `${env.SATU_SEHAT_BASE_URL}/Patient?identifier=https://fhir.kemkes.go.id/id/nik|${nik}`;
+            const url = `${env.SATU_SEHAT_BASE_URL}/Patient?identifier=https://fhir.kemkes.go.id/id/nik|${nik}`;
 
-        const response = await fetch(url, {
-            method: "GET",
-            headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json",
-            },
-        });
+            const response = await fetch(url, {
+                method: "GET",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                },
+            });
 
-        if (!response.ok) {
-            throw new Error(`Failed to get IHS Patient: ${response.statusText}`);
+            if (!response.ok) {
+                const errorText = await response.text();
+                loggerPino.error(`[SatuSehat] Failed to get IHS Patient: ${response.statusText} - ${errorText}`);
+                return {
+                    status: false,
+                    err: {
+                        message: `Failed to get IHS Patient: ${response.statusText}`,
+                        code: response.status,
+                    },
+                };
+            }
+
+            const data = (await response.json()) as IHSPatientBundle;
+            return {
+                status: true,
+                data,
+            };
+        } catch (err) {
+            console.error(`SatuSehatService.getIHSPatientByNIK: ${err}`);
+            return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
         }
-
-        const data = (await response.json()) as IHSPatientBundle;
-        return data;
     }
 
     /**
      * Get IHS Practitioner by NIK from Satu Sehat API
      */
-    static async getIHSPractitionerByNIK(nik: string): Promise<IHSPractitionerBundle> {
-        const token = await SatuSehatService.getAccessToken();
+    static async getIHSPractitionerByNIK(nik: string): Promise<ServiceResponse<IHSPractitionerBundle>> {
+        try {
+            const token = await SatuSehatService.getAccessToken();
 
-        const url = `${env.SATU_SEHAT_BASE_URL}/Practitioner?identifier=https://fhir.kemkes.go.id/id/nik|${nik}`;
+            const url = `${env.SATU_SEHAT_BASE_URL}/Practitioner?identifier=https://fhir.kemkes.go.id/id/nik|${nik}`;
 
-        const response = await fetch(url, {
-            method: "GET",
-            headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json",
-            },
-        });
+            const response = await fetch(url, {
+                method: "GET",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                },
+            });
 
-        if (!response.ok) {
-            throw new Error(`Failed to get IHS Practitioner: ${response.statusText}`);
+            if (!response.ok) {
+                const errorText = await response.text();
+                loggerPino.error(`[SatuSehat] Failed to get IHS Practitioner: ${response.statusText} - ${errorText}`);
+                return {
+                    status: false,
+                    err: {
+                        message: `Failed to get IHS Practitioner: ${response.statusText}`,
+                        code: response.status,
+                    },
+                };
+            }
+
+            const data = (await response.json()) as IHSPractitionerBundle;
+            return {
+                status: true,
+                data,
+            };
+        } catch (err) {
+            console.error(`SatuSehatService.getIHSPractitionerByNIK: ${err}`);
+            return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
         }
-
-        const data = (await response.json()) as IHSPractitionerBundle;
-        return data;
     }
 
     /**
      * Post Encounter to Satu Sehat API
      */
-    static async postEncounter(encounterData: FHIREncounter): Promise<FHIREncounterResponse> {
-        const token = await SatuSehatService.getAccessToken();
+    static async postEncounter(encounterData: FHIREncounter): Promise<ServiceResponse<FHIREncounterResponse>> {
+        try {
+            const token = await SatuSehatService.getAccessToken();
 
-        const url = `${env.SATU_SEHAT_BASE_URL}/Encounter`;
+            const url = `${env.SATU_SEHAT_BASE_URL}/Encounter`;
 
-        const response = await fetch(url, {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(encounterData),
-        });
+            const response = await fetch(url, {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(encounterData),
+            });
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Failed to post Encounter: ${response.statusText} - ${errorText}`);
+            if (!response.ok) {
+                const errorText = await response.text();
+                loggerPino.error(`[SatuSehat] Failed to post Encounter: ${response.statusText} - ${errorText}`);
+                return {
+                    status: false,
+                    err: {
+                        message: `Failed to post Encounter: ${response.statusText}`,
+                        code: response.status,
+                    },
+                };
+            }
+
+            const data = (await response.json()) as FHIREncounterResponse;
+            return {
+                status: true,
+                data,
+            };
+        } catch (err) {
+            console.error(`SatuSehatService.postEncounter: ${err}`);
+            return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
         }
-
-        const data = (await response.json()) as FHIREncounterResponse;
-        return data;
     }
 
     /**
@@ -377,27 +426,42 @@ export class SatuSehatService {
     /**
      * Post ServiceRequest to Satu Sehat API
      */
-    static async postServiceRequest(serviceRequest: FHIRServiceRequest): Promise<FHIRServiceRequestResponse> {
-        const token = await SatuSehatService.getAccessToken();
+    static async postServiceRequest(serviceRequest: FHIRServiceRequest): Promise<ServiceResponse<FHIRServiceRequestResponse>> {
+        try {
+            const token = await SatuSehatService.getAccessToken();
 
-        const url = `${env.SATU_SEHAT_BASE_URL}/ServiceRequest`;
+            const url = `${env.SATU_SEHAT_BASE_URL}/ServiceRequest`;
 
-        const response = await fetch(url, {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(serviceRequest),
-        });
+            const response = await fetch(url, {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(serviceRequest),
+            });
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Failed to post ServiceRequest: ${response.statusText} - ${errorText}`);
+            if (!response.ok) {
+                const errorText = await response.text();
+                loggerPino.error(`[SatuSehat] Failed to post ServiceRequest: ${response.statusText} - ${errorText}`);
+                return {
+                    status: false,
+                    err: {
+                        message: `Failed to post ServiceRequest: ${response.statusText}`,
+                        code: response.status,
+                    },
+                };
+            }
+
+            const data = (await response.json()) as FHIRServiceRequestResponse;
+            return {
+                status: true,
+                data,
+            };
+        } catch (err) {
+            console.error(`SatuSehatService.postServiceRequest: ${err}`);
+            return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
         }
-
-        const data = (await response.json()) as FHIRServiceRequestResponse;
-        return data;
     }
 
     /**
@@ -406,27 +470,42 @@ export class SatuSehatService {
     static async putServiceRequest(
         serviceRequestId: string,
         serviceRequest: FHIRServiceRequest
-    ): Promise<FHIRServiceRequestResponse> {
-        const token = await SatuSehatService.getAccessToken();
+    ): Promise<ServiceResponse<FHIRServiceRequestResponse>> {
+        try {
+            const token = await SatuSehatService.getAccessToken();
 
-        const url = `${env.SATU_SEHAT_BASE_URL}/ServiceRequest/${serviceRequestId}`;
+            const url = `${env.SATU_SEHAT_BASE_URL}/ServiceRequest/${serviceRequestId}`;
 
-        const response = await fetch(url, {
-            method: "PUT",
-            headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ ...serviceRequest, id: serviceRequestId }),
-        });
+            const response = await fetch(url, {
+                method: "PUT",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ ...serviceRequest, id: serviceRequestId }),
+            });
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Failed to update ServiceRequest: ${response.statusText} - ${errorText}`);
+            if (!response.ok) {
+                const errorText = await response.text();
+                loggerPino.error(`[SatuSehat] Failed to update ServiceRequest: ${response.statusText} - ${errorText}`);
+                return {
+                    status: false,
+                    err: {
+                        message: `Failed to update ServiceRequest: ${response.statusText}`,
+                        code: response.status,
+                    },
+                };
+            }
+
+            const data = (await response.json()) as FHIRServiceRequestResponse;
+            return {
+                status: true,
+                data,
+            };
+        } catch (err) {
+            console.error(`SatuSehatService.putServiceRequest: ${err}`);
+            return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
         }
-
-        const data = (await response.json()) as FHIRServiceRequestResponse;
-        return data;
     }
 
     /**
@@ -500,27 +579,42 @@ export class SatuSehatService {
     /**
      * Post Observation to Satu Sehat API
      */
-    static async postObservation(observation: FHIRObservation): Promise<FHIRObservationResponse> {
-        const token = await SatuSehatService.getAccessToken();
+    static async postObservation(observation: FHIRObservation): Promise<ServiceResponse<FHIRObservationResponse>> {
+        try {
+            const token = await SatuSehatService.getAccessToken();
 
-        const url = `${env.SATU_SEHAT_BASE_URL}/Observation`;
+            const url = `${env.SATU_SEHAT_BASE_URL}/Observation`;
 
-        const response = await fetch(url, {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(observation),
-        });
+            const response = await fetch(url, {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(observation),
+            });
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Failed to post Observation: ${response.statusText} - ${errorText}`);
+            if (!response.ok) {
+                const errorText = await response.text();
+                loggerPino.error(`[SatuSehat] Failed to post Observation: ${response.statusText} - ${errorText}`);
+                return {
+                    status: false,
+                    err: {
+                        message: `Failed to post Observation: ${response.statusText}`,
+                        code: response.status,
+                    },
+                };
+            }
+
+            const data = (await response.json()) as FHIRObservationResponse;
+            return {
+                status: true,
+                data,
+            };
+        } catch (err) {
+            console.error(`SatuSehatService.postObservation: ${err}`);
+            return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
         }
-
-        const data = (await response.json()) as FHIRObservationResponse;
-        return data;
     }
 
     /**
@@ -602,26 +696,41 @@ export class SatuSehatService {
     /**
      * Post DiagnosticReport to Satu Sehat API
      */
-    static async postDiagnosticReport(diagnosticReport: FHIRDiagnosticReport): Promise<FHIRDiagnosticReportResponse> {
-        const token = await SatuSehatService.getAccessToken();
+    static async postDiagnosticReport(diagnosticReport: FHIRDiagnosticReport): Promise<ServiceResponse<FHIRDiagnosticReportResponse>> {
+        try {
+            const token = await SatuSehatService.getAccessToken();
 
-        const url = `${env.SATU_SEHAT_BASE_URL}/DiagnosticReport`;
+            const url = `${env.SATU_SEHAT_BASE_URL}/DiagnosticReport`;
 
-        const response = await fetch(url, {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(diagnosticReport),
-        });
+            const response = await fetch(url, {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(diagnosticReport),
+            });
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Failed to post DiagnosticReport: ${response.statusText} - ${errorText}`);
+            if (!response.ok) {
+                const errorText = await response.text();
+                loggerPino.error(`[SatuSehat] Failed to post DiagnosticReport: ${response.statusText} - ${errorText}`);
+                return {
+                    status: false,
+                    err: {
+                        message: `Failed to post DiagnosticReport: ${response.statusText}`,
+                        code: response.status,
+                    },
+                };
+            }
+
+            const data = (await response.json()) as FHIRDiagnosticReportResponse;
+            return {
+                status: true,
+                data,
+            };
+        } catch (err) {
+            console.error(`SatuSehatService.postDiagnosticReport: ${err}`);
+            return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
         }
-
-        const data = (await response.json()) as FHIRDiagnosticReportResponse;
-        return data;
     }
 }
