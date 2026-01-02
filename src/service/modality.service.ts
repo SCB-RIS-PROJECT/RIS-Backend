@@ -3,11 +3,16 @@ import db from "@/database/db";
 import { modalityTable } from "@/database/schemas/schema-modality";
 import type {
     CreateModalityInput,
-    ModalityPaginationResponse,
     ModalityQuery,
     ModalityResponse,
     UpdateModalityInput,
 } from "@/interface/modality.interface";
+import type { PagedList } from "@/entities/Query";
+import {
+    type ServiceResponse,
+    INTERNAL_SERVER_ERROR_SERVICE_RESPONSE,
+    INVALID_ID_SERVICE_RESPONSE,
+} from "@/entities/Service";
 
 export class ModalityService {
     static formatModalityResponse(modality: InferSelectModel<typeof modalityTable>): ModalityResponse {
@@ -23,94 +28,130 @@ export class ModalityService {
         };
     }
 
-    static async getAllModalities(query: ModalityQuery): Promise<ModalityPaginationResponse> {
-        const { page, per_page, search, sort, dir } = query;
-        const offset = (page - 1) * per_page;
+    static async getAllModalities(query: ModalityQuery): Promise<ServiceResponse<PagedList<ModalityResponse[]>>> {
+        try {
+            const { page, per_page, search, sort, dir } = query;
+            const offset = (page - 1) * per_page;
 
-        // Build where conditions
-        const whereConditions: SQL[] = [];
-        if (search) {
-            const searchCondition = or(
-                ilike(modalityTable.code, `%${search}%`),
-                ilike(modalityTable.name, `%${search}%`)
-            );
-            if (searchCondition) {
-                whereConditions.push(searchCondition);
+            // Build where conditions
+            const whereConditions: SQL[] = [];
+            if (search) {
+                const searchCondition = or(
+                    ilike(modalityTable.code, `%${search}%`),
+                    ilike(modalityTable.name, `%${search}%`)
+                );
+                if (searchCondition) {
+                    whereConditions.push(searchCondition);
+                }
             }
+
+            const whereClause = whereConditions.length > 0 ? and(...whereConditions) : undefined;
+
+            // Determine sort order
+            const sortColumn = modalityTable[sort];
+            const orderBy = dir === "asc" ? asc(sortColumn) : desc(sortColumn);
+
+            // Get modalities
+            const modalities = await db
+                .select()
+                .from(modalityTable)
+                .where(whereClause)
+                .orderBy(orderBy)
+                .limit(per_page)
+                .offset(offset);
+
+            // Get total count
+            const [{ total }] = await db.select({ total: count() }).from(modalityTable).where(whereClause);
+
+            const totalPages = Math.ceil(total / per_page);
+
+            return {
+                status: true,
+                data: {
+                    entries: modalities.map((modality) => ModalityService.formatModalityResponse(modality)),
+                    totalData: total,
+                    totalPage: totalPages,
+                },
+            };
+        } catch (err) {
+            console.error(`ModalityService.getAllModalities: ${err}`);
+            return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
         }
-
-        const whereClause = whereConditions.length > 0 ? and(...whereConditions) : undefined;
-
-        // Determine sort order
-        const sortColumn = modalityTable[sort];
-        const orderBy = dir === "asc" ? asc(sortColumn) : desc(sortColumn);
-
-        // Get modalities
-        const modalities = await db
-            .select()
-            .from(modalityTable)
-            .where(whereClause)
-            .orderBy(orderBy)
-            .limit(per_page)
-            .offset(offset);
-
-        // Get total count
-        const [{ total }] = await db.select({ total: count() }).from(modalityTable).where(whereClause);
-
-        const totalPages = Math.ceil(total / per_page);
-
-        return {
-            data: modalities.map((modality) => ModalityService.formatModalityResponse(modality)),
-            meta: {
-                total,
-                page,
-                per_page,
-                total_pages: totalPages,
-                has_next_page: page < totalPages,
-                has_prev_page: page > 1,
-            },
-        };
     }
 
-    static async getModalityById(modalityId: string): Promise<ModalityResponse | null> {
-        const [modality] = await db.select().from(modalityTable).where(eq(modalityTable.id, modalityId)).limit(1);
+    static async getModalityById(modalityId: string): Promise<ServiceResponse<ModalityResponse>> {
+        try {
+            const [modality] = await db.select().from(modalityTable).where(eq(modalityTable.id, modalityId)).limit(1);
 
-        if (!modality) return null;
+            if (!modality) return INVALID_ID_SERVICE_RESPONSE;
 
-        return ModalityService.formatModalityResponse(modality);
+            return {
+                status: true,
+                data: ModalityService.formatModalityResponse(modality),
+            };
+        } catch (err) {
+            console.error(`ModalityService.getModalityById: ${err}`);
+            return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
+        }
     }
 
-    static async createModality(data: CreateModalityInput): Promise<ModalityResponse> {
-        const [modality] = await db
-            .insert(modalityTable)
-            .values({
+    static async createModality(data: CreateModalityInput): Promise<ServiceResponse<ModalityResponse>> {
+        try {
+            const [modality] = await db
+                .insert(modalityTable)
+                .values({
+                    ...data,
+                })
+                .returning();
+
+            return {
+                status: true,
+                data: ModalityService.formatModalityResponse(modality),
+            };
+        } catch (err) {
+            console.error(`ModalityService.createModality: ${err}`);
+            return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
+        }
+    }
+
+    static async updateModality(modalityId: string, data: UpdateModalityInput): Promise<ServiceResponse<ModalityResponse>> {
+        try {
+            const updateData: Partial<InferSelectModel<typeof modalityTable>> = {
                 ...data,
-            })
-            .returning();
+                updated_at: new Date(),
+            };
 
-        return ModalityService.formatModalityResponse(modality);
+            const [modality] = await db
+                .update(modalityTable)
+                .set(updateData)
+                .where(eq(modalityTable.id, modalityId))
+                .returning();
+
+            if (!modality) return INVALID_ID_SERVICE_RESPONSE;
+
+            return {
+                status: true,
+                data: ModalityService.formatModalityResponse(modality),
+            };
+        } catch (err) {
+            console.error(`ModalityService.updateModality: ${err}`);
+            return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
+        }
     }
 
-    static async updateModality(modalityId: string, data: UpdateModalityInput): Promise<ModalityResponse | null> {
-        const updateData: Partial<InferSelectModel<typeof modalityTable>> = {
-            ...data,
-            updated_at: new Date(),
-        };
+    static async deleteModality(modalityId: string): Promise<ServiceResponse<{ deletedCount: number }>> {
+        try {
+            const result = await db.delete(modalityTable).where(eq(modalityTable.id, modalityId)).returning();
 
-        const [modality] = await db
-            .update(modalityTable)
-            .set(updateData)
-            .where(eq(modalityTable.id, modalityId))
-            .returning();
+            if (result.length === 0) return INVALID_ID_SERVICE_RESPONSE;
 
-        if (!modality) return null;
-
-        return ModalityService.formatModalityResponse(modality);
-    }
-
-    static async deleteModality(modalityId: string): Promise<boolean> {
-        const result = await db.delete(modalityTable).where(eq(modalityTable.id, modalityId)).returning();
-
-        return result.length > 0;
+            return {
+                status: true,
+                data: { deletedCount: result.length },
+            };
+        } catch (err) {
+            console.error(`ModalityService.deleteModality: ${err}`);
+            return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
+        }
     }
 }
