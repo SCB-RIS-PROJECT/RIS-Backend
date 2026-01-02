@@ -6,6 +6,8 @@ import createRouter from "@/config/create-router";
 import { loggerPino } from "@/config/log";
 import {
     createPractitionerSchema,
+    practitionerApiResponseSchema,
+    practitionerErrorResponseSchema,
     practitionerIdParamSchema,
     practitionerPaginationResponseSchema,
     practitionerQuerySchema,
@@ -15,6 +17,11 @@ import {
 import { authMiddleware } from "@/middleware/auth.middleware";
 import { permissionMiddleware } from "@/middleware/role-permission.middleware";
 import { PractitionerService } from "@/service/practitioner.service";
+import {
+    response_success,
+    response_created,
+    handleServiceErrorWithResponse,
+} from "@/utils/response.utils";
 
 const tags = ["Practitioner"];
 
@@ -46,8 +53,8 @@ const getPractitionerById = createRoute({
         params: practitionerIdParamSchema,
     },
     responses: {
-        [HttpStatusCode.OK]: jsonContent(practitionerResponseSchema, "Practitioner retrieved successfully"),
-        [HttpStatusCode.NOT_FOUND]: jsonContent(createMessageObjectSchema("Practitioner not found"), "Not found"),
+        [HttpStatusCode.OK]: jsonContent(practitionerApiResponseSchema, "Practitioner retrieved successfully"),
+        [HttpStatusCode.NOT_FOUND]: jsonContent(practitionerErrorResponseSchema, "Not found"),
         [HttpStatusCode.UNAUTHORIZED]: jsonContent(createErrorSchema(practitionerIdParamSchema), "Unauthorized"),
         [HttpStatusCode.FORBIDDEN]: jsonContent(createErrorSchema(practitionerIdParamSchema), "Forbidden"),
     },
@@ -64,7 +71,7 @@ const createPractitioner = createRoute({
         body: jsonContentRequired(createPractitionerSchema, "Practitioner data"),
     },
     responses: {
-        [HttpStatusCode.CREATED]: jsonContent(practitionerResponseSchema, "Practitioner created successfully"),
+        [HttpStatusCode.CREATED]: jsonContent(practitionerApiResponseSchema, "Practitioner created successfully"),
         [HttpStatusCode.UNPROCESSABLE_ENTITY]: jsonContent(
             createErrorSchema(createPractitionerSchema),
             "Validation error"
@@ -86,8 +93,8 @@ const updatePractitioner = createRoute({
         body: jsonContentRequired(updatePractitionerSchema, "Practitioner update data"),
     },
     responses: {
-        [HttpStatusCode.OK]: jsonContent(practitionerResponseSchema, "Practitioner updated successfully"),
-        [HttpStatusCode.NOT_FOUND]: jsonContent(createMessageObjectSchema("Practitioner not found"), "Not found"),
+        [HttpStatusCode.OK]: jsonContent(practitionerApiResponseSchema, "Practitioner updated successfully"),
+        [HttpStatusCode.NOT_FOUND]: jsonContent(practitionerErrorResponseSchema, "Not found"),
         [HttpStatusCode.UNPROCESSABLE_ENTITY]: jsonContent(
             createErrorSchema(updatePractitionerSchema),
             "Validation error"
@@ -119,52 +126,65 @@ const deletePractitioner = createRoute({
 const practitionerController = createRouter()
     .openapi(getAllPractitioners, async (c) => {
         const query = c.req.valid("query");
-        const result = await PractitionerService.getAllPractitioners(query);
-        loggerPino.debug(result);
-        return c.json(result, HttpStatusCode.OK);
+        const serviceResponse = await PractitionerService.getAllPractitioners(query);
+
+        if (!serviceResponse.status) {
+            return handleServiceErrorWithResponse(c, serviceResponse);
+        }
+
+        loggerPino.debug(serviceResponse.data);
+        return response_success(c, serviceResponse.data, "Successfully fetched all Practitioners!");
     })
     .openapi(getPractitionerById, async (c) => {
         const { id } = c.req.valid("param");
-        const practitioner = await PractitionerService.getPractitionerById(id);
+        const serviceResponse = await PractitionerService.getPractitionerById(id);
 
-        if (!practitioner) {
-            loggerPino.debug({ message: "Practitioner not found" });
-            return c.json({ message: "Practitioner not found" }, HttpStatusCode.NOT_FOUND);
+        if (!serviceResponse.status) {
+            return handleServiceErrorWithResponse(c, serviceResponse);
         }
 
-        loggerPino.debug(practitioner.name);
-        return c.json(practitioner, HttpStatusCode.OK);
+        if (serviceResponse.data) {
+            loggerPino.debug(serviceResponse.data.name);
+        }
+        return response_success(c, serviceResponse.data, "Successfully fetched Practitioner!");
     })
     .openapi(createPractitioner, async (c) => {
         const data = c.req.valid("json");
-        const practitioner = await PractitionerService.createPractitioner(data);
-        loggerPino.debug(practitioner.name);
-        return c.json(practitioner, HttpStatusCode.CREATED);
+        const serviceResponse = await PractitionerService.createPractitioner(data);
+
+        if (!serviceResponse.status) {
+            return handleServiceErrorWithResponse(c, serviceResponse);
+        }
+
+        if (serviceResponse.data) {
+            loggerPino.debug(serviceResponse.data.name);
+        }
+        return response_created(c, serviceResponse.data, "Successfully created Practitioner!");
     })
     .openapi(updatePractitioner, async (c) => {
         const { id } = c.req.valid("param");
         const data = c.req.valid("json");
-        const practitioner = await PractitionerService.updatePractitioner(id, data);
+        const serviceResponse = await PractitionerService.updatePractitioner(id, data);
 
-        if (!practitioner) {
-            loggerPino.debug({ message: "Practitioner not found" });
-            return c.json({ message: "Practitioner not found" }, HttpStatusCode.NOT_FOUND);
+        if (!serviceResponse.status) {
+            return handleServiceErrorWithResponse(c, serviceResponse);
         }
 
-        loggerPino.debug(practitioner.name);
-        return c.json(practitioner, HttpStatusCode.OK);
+        if (serviceResponse.data) {
+            loggerPino.debug(serviceResponse.data.name);
+        }
+        return response_success(c, serviceResponse.data, "Successfully updated Practitioner!");
     })
     .openapi(deletePractitioner, async (c) => {
         const { id } = c.req.valid("param");
-        const deleted = await PractitionerService.deletePractitioner(id);
+        const serviceResponse = await PractitionerService.deletePractitioner(id);
 
-        if (!deleted) {
-            loggerPino.debug({ message: "Practitioner not found" });
-            return c.json({ message: "Practitioner not found" }, HttpStatusCode.NOT_FOUND);
+        if (!serviceResponse.status) {
+            return handleServiceErrorWithResponse(c, serviceResponse);
         }
 
         loggerPino.debug({ message: "Practitioner deleted successfully" });
-        return c.json({ message: "Practitioner deleted successfully" }, HttpStatusCode.OK);
+        return response_success(c, serviceResponse.data, "Successfully deleted Practitioner!");
     });
 
 export default practitionerController;
