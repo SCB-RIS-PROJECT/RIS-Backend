@@ -85,9 +85,11 @@ export const patientQuerySchema = z.object({
     dir: z.enum(["asc", "desc"]).default("desc"),
 });
 
-// Patient pagination response
+// Patient pagination response with API wrapper
 export const patientPaginationResponseSchema = z.object({
     data: z.array(patientResponseSchema),
+    message: z.string(),
+    code: z.number(),
     meta: z.object({
         total: z.number(),
         page: z.number(),
@@ -95,7 +97,21 @@ export const patientPaginationResponseSchema = z.object({
         total_pages: z.number(),
         has_next_page: z.boolean(),
         has_prev_page: z.boolean(),
-    }),
+    }).optional(),
+});
+
+// Single patient response with API wrapper
+export const patientApiResponseSchema = z.object({
+    data: patientResponseSchema,
+    message: z.string(),
+    code: z.number(),
+});
+
+// Error response with API wrapper
+export const patientErrorResponseSchema = z.object({
+    data: z.null(),
+    message: z.string(),
+    code: z.number(),
 });
 
 // Path params

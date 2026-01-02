@@ -3,11 +3,17 @@ import db from "@/database/db";
 import { patientTable } from "@/database/schemas/schema-patient";
 import type {
     CreatePatientInput,
-    PatientPaginationResponse,
     PatientQuery,
     PatientResponse,
     UpdatePatientInput,
 } from "@/interface/patient.interface";
+import type { FilteringQueryV2, PagedList } from "@/entities/Query";
+import {
+    type ServiceResponse,
+    INTERNAL_SERVER_ERROR_SERVICE_RESPONSE,
+    INVALID_ID_SERVICE_RESPONSE,
+    BadRequestWithMessage,
+} from "@/entities/Service";
 
 export class PatientService {
     static formatPatientResponse(patient: InferSelectModel<typeof patientTable>): PatientResponse {
@@ -63,112 +69,148 @@ export class PatientService {
         return `${year}${month}${sequence}`;
     }
 
-    static async getAllPatients(query: PatientQuery): Promise<PatientPaginationResponse> {
-        const { page, per_page, search, sort, dir } = query;
-        const offset = (page - 1) * per_page;
+    static async getAllPatients(query: PatientQuery): Promise<ServiceResponse<PagedList<PatientResponse[]>>> {
+        try {
+            const { page, per_page, search, sort, dir } = query;
+            const offset = (page - 1) * per_page;
 
-        // Build where conditions
-        const whereConditions: SQL[] = [];
-        if (search) {
-            const searchCondition = or(
-                ilike(patientTable.name, `%${search}%`),
-                ilike(patientTable.nik, `%${search}%`),
-                ilike(patientTable.mrn, `%${search}%`),
-                ilike(patientTable.phone, `%${search}%`),
-                ilike(patientTable.email, `%${search}%`)
-            );
-            if (searchCondition) {
-                whereConditions.push(searchCondition);
+            // Build where conditions
+            const whereConditions: SQL[] = [];
+            if (search) {
+                const searchCondition = or(
+                    ilike(patientTable.name, `%${search}%`),
+                    ilike(patientTable.nik, `%${search}%`),
+                    ilike(patientTable.mrn, `%${search}%`),
+                    ilike(patientTable.phone, `%${search}%`),
+                    ilike(patientTable.email, `%${search}%`)
+                );
+                if (searchCondition) {
+                    whereConditions.push(searchCondition);
+                }
             }
+
+            const whereClause = whereConditions.length > 0 ? and(...whereConditions) : undefined;
+
+            // Determine sort order
+            const sortColumn = patientTable[sort];
+            const orderBy = dir === "asc" ? asc(sortColumn) : desc(sortColumn);
+
+            // Get patients
+            const patients = await db
+                .select()
+                .from(patientTable)
+                .where(whereClause)
+                .orderBy(orderBy)
+                .limit(per_page)
+                .offset(offset);
+
+            // Get total count
+            const [{ total }] = await db.select({ total: count() }).from(patientTable).where(whereClause);
+
+            const totalPages = Math.ceil(total / per_page);
+
+            return {
+                status: true,
+                data: {
+                    entries: patients.map((patient) => PatientService.formatPatientResponse(patient)),
+                    totalData: total,
+                    totalPage: totalPages,
+                },
+            };
+        } catch (err) {
+            console.error(`PatientService.getAllPatients: ${err}`);
+            return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
         }
-
-        const whereClause = whereConditions.length > 0 ? and(...whereConditions) : undefined;
-
-        // Determine sort order
-        const sortColumn = patientTable[sort];
-        const orderBy = dir === "asc" ? asc(sortColumn) : desc(sortColumn);
-
-        // Get patients
-        const patients = await db
-            .select()
-            .from(patientTable)
-            .where(whereClause)
-            .orderBy(orderBy)
-            .limit(per_page)
-            .offset(offset);
-
-        // Get total count
-        const [{ total }] = await db.select({ total: count() }).from(patientTable).where(whereClause);
-
-        const totalPages = Math.ceil(total / per_page);
-
-        return {
-            data: patients.map((patient) => PatientService.formatPatientResponse(patient)),
-            meta: {
-                total,
-                page,
-                per_page,
-                total_pages: totalPages,
-                has_next_page: page < totalPages,
-                has_prev_page: page > 1,
-            },
-        };
     }
 
-    static async getPatientById(patientId: string): Promise<PatientResponse | null> {
-        const [patient] = await db.select().from(patientTable).where(eq(patientTable.id, patientId)).limit(1);
+    static async getPatientById(patientId: string): Promise<ServiceResponse<PatientResponse>> {
+        try {
+            const [patient] = await db.select().from(patientTable).where(eq(patientTable.id, patientId)).limit(1);
 
-        if (!patient) return null;
+            if (!patient) return INVALID_ID_SERVICE_RESPONSE;
 
-        return PatientService.formatPatientResponse(patient);
-    }
-
-    static async createPatient(data: CreatePatientInput): Promise<PatientResponse> {
-        const mrn = await PatientService.generateMRN();
-
-        const [patient] = await db
-            .insert(patientTable)
-            .values({
-                ...data,
-                mrn,
-                birth_date: new Date(data.birth_date),
-                ihs_last_sync: data.ihs_last_sync ? new Date(data.ihs_last_sync) : null,
-            })
-            .returning();
-
-        return PatientService.formatPatientResponse(patient);
-    }
-
-    static async updatePatient(patientId: string, data: UpdatePatientInput): Promise<PatientResponse | null> {
-        const { birth_date, ihs_last_sync, ...restData } = data;
-
-        const updateData: Partial<InferSelectModel<typeof patientTable>> = {
-            ...restData,
-            updated_at: new Date(),
-        };
-
-        if (birth_date) {
-            updateData.birth_date = new Date(birth_date);
+            return {
+                status: true,
+                data: PatientService.formatPatientResponse(patient),
+            };
+        } catch (err) {
+            console.error(`PatientService.getPatientById: ${err}`);
+            return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
         }
-
-        if (ihs_last_sync) {
-            updateData.ihs_last_sync = new Date(ihs_last_sync);
-        }
-
-        const [patient] = await db
-            .update(patientTable)
-            .set(updateData)
-            .where(eq(patientTable.id, patientId))
-            .returning();
-
-        if (!patient) return null;
-
-        return PatientService.formatPatientResponse(patient);
     }
 
-    static async deletePatient(patientId: string): Promise<boolean> {
-        const result = await db.delete(patientTable).where(eq(patientTable.id, patientId)).returning();
+    static async createPatient(data: CreatePatientInput): Promise<ServiceResponse<PatientResponse>> {
+        try {
+            const mrn = await PatientService.generateMRN();
 
-        return result.length > 0;
+            const [patient] = await db
+                .insert(patientTable)
+                .values({
+                    ...data,
+                    mrn,
+                    birth_date: new Date(data.birth_date),
+                    ihs_last_sync: data.ihs_last_sync ? new Date(data.ihs_last_sync) : null,
+                })
+                .returning();
+
+            return {
+                status: true,
+                data: PatientService.formatPatientResponse(patient),
+            };
+        } catch (err) {
+            console.error(`PatientService.createPatient: ${err}`);
+            return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
+        }
+    }
+
+    static async updatePatient(patientId: string, data: UpdatePatientInput): Promise<ServiceResponse<PatientResponse>> {
+        try {
+            const { birth_date, ihs_last_sync, ...restData } = data;
+
+            const updateData: Partial<InferSelectModel<typeof patientTable>> = {
+                ...restData,
+                updated_at: new Date(),
+            };
+
+            if (birth_date) {
+                updateData.birth_date = new Date(birth_date);
+            }
+
+            if (ihs_last_sync) {
+                updateData.ihs_last_sync = new Date(ihs_last_sync);
+            }
+
+            const [patient] = await db
+                .update(patientTable)
+                .set(updateData)
+                .where(eq(patientTable.id, patientId))
+                .returning();
+
+            if (!patient) return INVALID_ID_SERVICE_RESPONSE;
+
+            return {
+                status: true,
+                data: PatientService.formatPatientResponse(patient),
+            };
+        } catch (err) {
+            console.error(`PatientService.updatePatient: ${err}`);
+            return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
+        }
+    }
+
+    static async deletePatient(patientId: string): Promise<ServiceResponse<{ deletedCount: number }>> {
+        try {
+            const result = await db.delete(patientTable).where(eq(patientTable.id, patientId)).returning();
+
+            if (result.length === 0) return INVALID_ID_SERVICE_RESPONSE;
+
+            return {
+                status: true,
+                data: { deletedCount: result.length },
+            };
+        } catch (err) {
+            console.error(`PatientService.deletePatient: ${err}`);
+            return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
+        }
     }
 }
