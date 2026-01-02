@@ -15,6 +15,11 @@ import {
 import { authMiddleware } from "@/middleware/auth.middleware";
 import { permissionMiddleware } from "@/middleware/role-permission.middleware";
 import { ModalityService } from "@/service/modality.service";
+import {
+    response_success,
+    response_created,
+    handleServiceErrorWithResponse,
+} from "@/utils/response.utils";
 
 const modalityController = createRouter();
 
@@ -53,16 +58,14 @@ modalityController.openapi(
         },
     }),
     async (c) => {
-        try {
-            const query = c.req.valid("query");
+        const query = c.req.valid("query");
+        const serviceResponse = await ModalityService.getAllModalities(query);
 
-            const data = await ModalityService.getAllModalities(query);
-
-            return c.json(data, HttpStatusCodes.OK);
-        } catch (error) {
-            loggerPino.error(error);
-            return c.json({ message: "Failed to fetch modalities" }, HttpStatusCodes.INTERNAL_SERVER_ERROR);
+        if (!serviceResponse.status) {
+            return handleServiceErrorWithResponse(c, serviceResponse);
         }
+
+        return response_success(c, serviceResponse.data, "Successfully fetched all Modalities!");
     }
 );
 
@@ -99,20 +102,14 @@ modalityController.openapi(
         },
     }),
     async (c) => {
-        try {
-            const { id } = c.req.valid("param");
+        const { id } = c.req.valid("param");
+        const serviceResponse = await ModalityService.getModalityById(id);
 
-            const modality = await ModalityService.getModalityById(id);
-
-            if (!modality) {
-                return c.json({ message: "Modality not found" }, HttpStatusCodes.NOT_FOUND);
-            }
-
-            return c.json(modality, HttpStatusCodes.OK);
-        } catch (error) {
-            loggerPino.error(error);
-            return c.json({ message: "Failed to fetch modality" }, HttpStatusCodes.INTERNAL_SERVER_ERROR);
+        if (!serviceResponse.status) {
+            return handleServiceErrorWithResponse(c, serviceResponse);
         }
+
+        return response_success(c, serviceResponse.data, "Successfully fetched Modality!");
     }
 );
 
@@ -146,16 +143,14 @@ modalityController.openapi(
         },
     }),
     async (c) => {
-        try {
-            const data = c.req.valid("json");
+        const data = c.req.valid("json");
+        const serviceResponse = await ModalityService.createModality(data);
 
-            const modality = await ModalityService.createModality(data);
-
-            return c.json(modality, HttpStatusCodes.CREATED);
-        } catch (error) {
-            loggerPino.error(error);
-            return c.json({ message: "Failed to create modality" }, HttpStatusCodes.INTERNAL_SERVER_ERROR);
+        if (!serviceResponse.status) {
+            return handleServiceErrorWithResponse(c, serviceResponse);
         }
+
+        return response_created(c, serviceResponse.data, "Successfully created Modality!");
     }
 );
 
@@ -194,21 +189,16 @@ modalityController.openapi(
         },
     }),
     async (c) => {
-        try {
-            const { id } = c.req.valid("param");
-            const data = c.req.valid("json");
+        const { id } = c.req.valid("param");
+        const data = c.req.valid("json");
 
-            const modality = await ModalityService.updateModality(id, data);
+        const serviceResponse = await ModalityService.updateModality(id, data);
 
-            if (!modality) {
-                return c.json({ message: "Modality not found" }, HttpStatusCodes.NOT_FOUND);
-            }
-
-            return c.json(modality, HttpStatusCodes.OK);
-        } catch (error) {
-            loggerPino.error(error);
-            return c.json({ message: "Failed to update modality" }, HttpStatusCodes.INTERNAL_SERVER_ERROR);
+        if (!serviceResponse.status) {
+            return handleServiceErrorWithResponse(c, serviceResponse);
         }
+
+        return response_success(c, serviceResponse.data, "Successfully updated Modality!");
     }
 );
 
@@ -248,20 +238,14 @@ modalityController.openapi(
         },
     }),
     async (c) => {
-        try {
-            const { id } = c.req.valid("param");
+        const { id } = c.req.valid("param");
+        const serviceResponse = await ModalityService.deleteModality(id);
 
-            const deleted = await ModalityService.deleteModality(id);
-
-            if (!deleted) {
-                return c.json({ message: "Modality not found" }, HttpStatusCodes.NOT_FOUND);
-            }
-
-            return c.json({ message: "Modality deleted successfully" }, HttpStatusCodes.OK);
-        } catch (error) {
-            loggerPino.error(error);
-            return c.json({ message: "Failed to delete modality" }, HttpStatusCodes.INTERNAL_SERVER_ERROR);
+        if (!serviceResponse.status) {
+            return handleServiceErrorWithResponse(c, serviceResponse);
         }
+
+        return response_success(c, serviceResponse.data, "Successfully deleted Modality!");
     }
 );
 
