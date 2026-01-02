@@ -107,3 +107,79 @@ export function formatDateYYYYMMDD(date: Date): string {
 export function parseDate(dateStr: string | Date): Date {
     return typeof dateStr === "string" ? new Date(dateStr) : dateStr;
 }
+
+/**
+ * Standard API Response Interface
+ */
+export interface ApiResponse<T = any> {
+    data: T;
+    message: string;
+    code: number;
+    meta?: {
+        total: number;
+        page: number;
+        per_page: number;
+        total_pages: number;
+        has_next_page: boolean;
+        has_prev_page: boolean;
+    };
+}
+
+/**
+ * Create standardized API response
+ * @param data - Response data
+ * @param message - Response message
+ * @param code - HTTP status code
+ * @param meta - Optional pagination metadata
+ * @returns Standardized API response object
+ */
+export function createResponse<T = any>(
+    data: T,
+    message: string,
+    code: number,
+    meta?: ApiResponse<T>["meta"]
+): ApiResponse<T> {
+    const response: ApiResponse<T> = {
+        data,
+        message,
+        code,
+    };
+
+    if (meta) {
+        response.meta = meta;
+    }
+
+    return response;
+}
+
+/**
+ * Helper to create OpenAPI response schema with standard wrapper
+ * Wraps any data schema with { data, message, code, meta? } structure
+ */
+import { z } from "@hono/zod-openapi";
+
+export function createApiResponseSchema<T extends z.ZodTypeAny>(
+    dataSchema: T,
+    withMeta = false
+) {
+    const baseSchema = z.object({
+        data: dataSchema,
+        message: z.string(),
+        code: z.number(),
+    });
+
+    if (withMeta) {
+        return baseSchema.extend({
+            meta: z.object({
+                total: z.number(),
+                page: z.number(),
+                per_page: z.number(),
+                total_pages: z.number(),
+                has_next_page: z.boolean(),
+                has_prev_page: z.boolean(),
+            }).optional(),
+        });
+    }
+
+    return baseSchema;
+}
