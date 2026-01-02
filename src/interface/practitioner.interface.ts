@@ -108,15 +108,11 @@ export const practitionerPaginationResponseSchema = z.object({
 // Single practitioner response with API wrapper
 export const practitionerApiResponseSchema = z.object({
     data: practitionerResponseSchema,
-    message: z.string(),
-    code: z.number(),
 });
 
 // Error response with API wrapper
 export const practitionerErrorResponseSchema = z.object({
     data: z.null(),
-    message: z.string(),
-    code: z.number(),
 });
 
 // Path params

@@ -53,14 +53,10 @@ export type LoincPaginationResponse = z.infer<typeof loincPaginationResponseSche
 // ==================== LOINC API Response Schemas ====================
 export const loincApiResponseSchema = z.object({
     data: loincResponseSchema,
-    message: z.string(),
-    code: z.number(),
 });
 
 export const loincErrorResponseSchema = z.object({
     data: z.null(),
-    message: z.string(),
-    code: z.number(),
 });
 
 // ==================== Create LOINC Schema ====================

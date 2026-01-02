@@ -103,15 +103,11 @@ export const patientPaginationResponseSchema = z.object({
 // Single patient response with API wrapper
 export const patientApiResponseSchema = z.object({
     data: patientResponseSchema,
-    message: z.string(),
-    code: z.number(),
 });
 
 // Error response with API wrapper
 export const patientErrorResponseSchema = z.object({
     data: z.null(),
-    message: z.string(),
-    code: z.number(),
 });
 
 // Path params

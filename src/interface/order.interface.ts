@@ -282,14 +282,10 @@ export type OrderPaginationResponse = z.infer<typeof orderPaginationResponseSche
 // ==================== Order API Response Schemas ====================
 export const fullOrderApiResponseSchema = z.object({
     data: fullOrderResponseSchema,
-    message: z.string(),
-    code: z.number(),
 });
 
 export const orderErrorResponseSchema = z.object({
     data: z.null(),
-    message: z.string(),
-    code: z.number(),
 });
 
 // ==================== Create Detail Order Item Schema (from SIMRS) ====================
