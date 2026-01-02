@@ -35,6 +35,23 @@ export const loginDataSchema = z.object({
 
 export const currentUserResponseSchema = userResponseSchema;
 
+// ==================== Auth API Response Schemas (HTTP Wrapper) ====================
+// Full HTTP response for login
+export const loginApiResponseSchema = z.object({
+    content: loginDataSchema,
+    message: z.string(),
+    errors: z.array(z.unknown()),
+});
+
+// Full HTTP response for current user
+export const currentUserApiResponseSchema = z.object({
+    content: z.object({
+        data: currentUserResponseSchema,
+    }),
+    message: z.string(),
+    errors: z.array(z.unknown()),
+});
+
 export type LoginPayload = z.infer<typeof loginPayloadSchema>;
 export type UserResponse = z.infer<typeof userResponseSchema>;
 export type LoginResponse = z.infer<typeof loginResponseSchema>;

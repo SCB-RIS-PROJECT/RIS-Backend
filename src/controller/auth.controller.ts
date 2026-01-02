@@ -3,7 +3,7 @@ import * as HttpStatusCodes from "stoker/http-status-codes";
 import { jsonContent, jsonContentRequired } from "stoker/openapi/helpers";
 import { createErrorSchema, createMessageObjectSchema } from "stoker/openapi/schemas";
 import createRouter from "@/config/create-router";
-import { currentUserResponseSchema, loginPayloadSchema, loginResponseSchema } from "@/interface/auth.interface";
+import { currentUserApiResponseSchema, currentUserResponseSchema, loginApiResponseSchema, loginPayloadSchema, loginResponseSchema } from "@/interface/auth.interface";
 import { authMiddleware } from "@/middleware/auth.middleware";
 import { AuthService } from "@/service/auth.service";
 import {
@@ -27,7 +27,7 @@ authController.openapi(
             body: jsonContentRequired(loginPayloadSchema, "Login credentials"),
         },
         responses: {
-            [HttpStatusCodes.OK]: jsonContent(loginResponseSchema, "Login successful"),
+            [HttpStatusCodes.OK]: jsonContent(loginApiResponseSchema, "Login successful"),
             [HttpStatusCodes.UNAUTHORIZED]: jsonContent(
                 createMessageObjectSchema("Invalid email or password"),
                 "Authentication failed"
@@ -99,7 +99,7 @@ authController.openapi(
         security: [{ bearerAuth: [] }],
         middleware: [authMiddleware],
         responses: {
-            [HttpStatusCodes.OK]: jsonContent(currentUserResponseSchema, "Current user retrieved successfully"),
+            [HttpStatusCodes.OK]: jsonContent(currentUserApiResponseSchema, "Current user retrieved successfully"),
             [HttpStatusCodes.UNAUTHORIZED]: jsonContent(
                 createMessageObjectSchema("Not authenticated"),
                 "User not authenticated"
