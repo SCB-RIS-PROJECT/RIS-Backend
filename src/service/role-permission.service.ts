@@ -17,177 +17,348 @@ import type {
     UpdateRoleInput,
     UserRolesAndPermissions,
 } from "@/interface/role-permission.interface";
+import type { ServiceResponse } from "@/entities/Service";
+import { 
+    INTERNAL_SERVER_ERROR_SERVICE_RESPONSE, 
+    INVALID_ID_SERVICE_RESPONSE 
+} from "@/entities/Service";
 
 export class RolePermissionService {
     /**
      * Role
      */
-    static async createRole(data: CreateRoleInput): Promise<InferSelectModel<typeof roleTable>> {
-        const [role] = await db
-            .insert(roleTable)
-            .values({
-                name: data.name,
-                description: data.description || null,
-            })
-            .returning();
+    static async createRole(data: CreateRoleInput): Promise<ServiceResponse<InferSelectModel<typeof roleTable>>> {
+        try {
+            const [role] = await db
+                .insert(roleTable)
+                .values({
+                    name: data.name,
+                    description: data.description || null,
+                })
+                .returning();
 
-        return role;
+            return {
+                status: true,
+                data: role,
+            };
+        } catch (err) {
+            console.error(`RolePermissionService.createRole: ${err}`);
+            return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
+        }
     }
 
-    static async updateRole(roleId: string, data: UpdateRoleInput): Promise<InferSelectModel<typeof roleTable> | null> {
-        const [role] = await db
-            .update(roleTable)
-            .set({
-                name: data.name,
-                description: data.description,
-                updated_at: new Date(),
-            })
-            .where(eq(roleTable.id, roleId))
-            .returning();
+    static async updateRole(roleId: string, data: UpdateRoleInput): Promise<ServiceResponse<InferSelectModel<typeof roleTable>>> {
+        try {
+            const [role] = await db
+                .update(roleTable)
+                .set({
+                    name: data.name,
+                    description: data.description,
+                })
+                .where(eq(roleTable.id, roleId))
+                .returning();
 
-        return role ?? null;
+            if (!role) return INVALID_ID_SERVICE_RESPONSE;
+
+            return {
+                status: true,
+                data: role,
+            };
+        } catch (err) {
+            console.error(`RolePermissionService.updateRole: ${err}`);
+            return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
+        }
     }
 
-    static async deleteRole(roleId: string): Promise<void> {
-        await db.delete(roleTable).where(eq(roleTable.id, roleId));
+    static async deleteRole(roleId: string): Promise<ServiceResponse<{ deletedCount: number }>> {
+        try {
+            await db.delete(roleTable).where(eq(roleTable.id, roleId));
+
+            return {
+                status: true,
+                data: { deletedCount: 1 },
+            };
+        } catch (err) {
+            console.error(`RolePermissionService.deleteRole: ${err}`);
+            return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
+        }
     }
 
-    static async getAllRole(): Promise<InferSelectModel<typeof roleTable>[]> {
-        return await db.select().from(roleTable);
+    static async getAllRole(): Promise<ServiceResponse<InferSelectModel<typeof roleTable>[]>> {
+        try {
+            const roles = await db.select().from(roleTable);
+
+            return {
+                status: true,
+                data: roles,
+            };
+        } catch (err) {
+            console.error(`RolePermissionService.getAllRole: ${err}`);
+            return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
+        }
     }
 
-    static async getRoleById(roleId: string): Promise<InferSelectModel<typeof roleTable> | null> {
-        const [role] = await db.select().from(roleTable).where(eq(roleTable.id, roleId)).limit(1);
+    static async getRoleById(roleId: string): Promise<ServiceResponse<InferSelectModel<typeof roleTable>>> {
+        try {
+            const [role] = await db.select().from(roleTable).where(eq(roleTable.id, roleId)).limit(1);
 
-        return role ?? null;
+            if (!role) return INVALID_ID_SERVICE_RESPONSE;
+
+            return {
+                status: true,
+                data: role,
+            };
+        } catch (err) {
+            console.error(`RolePermissionService.getRoleById: ${err}`);
+            return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
+        }
     }
 
     /**
      * Permission
      */
-    static async createPermission(data: CreatePermissionInput): Promise<InferSelectModel<typeof permissionTable>> {
-        const [permission] = await db
-            .insert(permissionTable)
-            .values({
-                name: data.name,
-                description: data.description || null,
-            })
-            .returning();
+    static async createPermission(data: CreatePermissionInput): Promise<ServiceResponse<InferSelectModel<typeof permissionTable>>> {
+        try {
+            const [permission] = await db
+                .insert(permissionTable)
+                .values({
+                    name: data.name,
+                    description: data.description || null,
+                })
+                .returning();
 
-        return permission;
+            return {
+                status: true,
+                data: permission,
+            };
+        } catch (err) {
+            console.error(`RolePermissionService.createPermission: ${err}`);
+            return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
+        }
     }
 
     static async updatePermission(
         permissionId: string,
         data: UpdatePermissionInput
-    ): Promise<InferSelectModel<typeof permissionTable> | null> {
-        const [permission] = await db
-            .update(permissionTable)
-            .set({
-                name: data.name,
-                description: data.description,
-                updated_at: new Date(),
-            })
-            .where(eq(permissionTable.id, permissionId))
-            .returning();
+    ): Promise<ServiceResponse<InferSelectModel<typeof permissionTable>>> {
+        try {
+            const [permission] = await db
+                .update(permissionTable)
+                .set({
+                    name: data.name,
+                    description: data.description,
+                })
+                .where(eq(permissionTable.id, permissionId))
+                .returning();
 
-        return permission ?? null;
+            if (!permission) return INVALID_ID_SERVICE_RESPONSE;
+
+            return {
+                status: true,
+                data: permission,
+            };
+        } catch (err) {
+            console.error(`RolePermissionService.updatePermission: ${err}`);
+            return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
+        }
     }
 
-    static async deletePermission(permissionId: string): Promise<void> {
-        await db.delete(permissionTable).where(eq(permissionTable.id, permissionId));
+    static async deletePermission(permissionId: string): Promise<ServiceResponse<{ deletedCount: number }>> {
+        try {
+            await db.delete(permissionTable).where(eq(permissionTable.id, permissionId));
+
+            return {
+                status: true,
+                data: { deletedCount: 1 },
+            };
+        } catch (err) {
+            console.error(`RolePermissionService.deletePermission: ${err}`);
+            return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
+        }
     }
 
-    static async getAllPermission(): Promise<InferSelectModel<typeof permissionTable>[]> {
-        return await db.select().from(permissionTable);
+    static async getAllPermission(): Promise<ServiceResponse<InferSelectModel<typeof permissionTable>[]>> {
+        try {
+            const permissions = await db.select().from(permissionTable);
+
+            return {
+                status: true,
+                data: permissions,
+            };
+        } catch (err) {
+            console.error(`RolePermissionService.getAllPermission: ${err}`);
+            return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
+        }
     }
 
-    static async getPermissionById(permissionId: string): Promise<InferSelectModel<typeof permissionTable> | null> {
-        const [permission] = await db
-            .select()
-            .from(permissionTable)
-            .where(eq(permissionTable.id, permissionId))
-            .limit(1);
+    static async getPermissionById(permissionId: string): Promise<ServiceResponse<InferSelectModel<typeof permissionTable>>> {
+        try {
+            const [permission] = await db
+                .select()
+                .from(permissionTable)
+                .where(eq(permissionTable.id, permissionId))
+                .limit(1);
 
-        return permission ?? null;
+            if (!permission) return INVALID_ID_SERVICE_RESPONSE;
+
+            return {
+                status: true,
+                data: permission,
+            };
+        } catch (err) {
+            console.error(`RolePermissionService.getPermissionById: ${err}`);
+            return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
+        }
     }
 
     /**
      * Role <-> Permission
      */
-    static async assignPermissionToRole(data: AssignPermissionToRoleInput): Promise<void> {
-        await db.insert(rolePermissionTable).values({
-            id_role: data.roleId,
-            id_permission: data.permissionId,
-        });
+    static async assignPermissionToRole(data: AssignPermissionToRoleInput): Promise<ServiceResponse<{ success: boolean }>> {
+        try {
+            await db.insert(rolePermissionTable).values({
+                id_role: data.roleId,
+                id_permission: data.permissionId,
+            });
+
+            return {
+                status: true,
+                data: { success: true },
+            };
+        } catch (err) {
+            console.error(`RolePermissionService.assignPermissionToRole: ${err}`);
+            return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
+        }
     }
 
-    static async removePermissionFromRole(data: AssignPermissionToRoleInput): Promise<void> {
-        await db
-            .delete(rolePermissionTable)
-            .where(
-                and(
-                    eq(rolePermissionTable.id_role, data.roleId),
-                    eq(rolePermissionTable.id_permission, data.permissionId)
-                )
-            );
+    static async removePermissionFromRole(data: AssignPermissionToRoleInput): Promise<ServiceResponse<{ success: boolean }>> {
+        try {
+            await db
+                .delete(rolePermissionTable)
+                .where(
+                    and(
+                        eq(rolePermissionTable.id_role, data.roleId),
+                        eq(rolePermissionTable.id_permission, data.permissionId)
+                    )
+                );
+
+            return {
+                status: true,
+                data: { success: true },
+            };
+        } catch (err) {
+            console.error(`RolePermissionService.removePermissionFromRole: ${err}`);
+            return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
+        }
     }
 
-    static async getRolePermissions(roleId: string): Promise<InferSelectModel<typeof permissionTable>[]> {
-        const result = await db
-            .select({
-                id: permissionTable.id,
-                name: permissionTable.name,
-                description: permissionTable.description,
-            })
-            .from(rolePermissionTable)
-            .innerJoin(permissionTable, eq(rolePermissionTable.id_permission, permissionTable.id))
-            .where(eq(rolePermissionTable.id_role, roleId));
+    static async getRolePermissions(roleId: string): Promise<ServiceResponse<InferSelectModel<typeof permissionTable>[]>> {
+        try {
+            const result = await db
+                .select({
+                    id: permissionTable.id,
+                    name: permissionTable.name,
+                    description: permissionTable.description,
+                })
+                .from(rolePermissionTable)
+                .innerJoin(permissionTable, eq(rolePermissionTable.id_permission, permissionTable.id))
+                .where(eq(rolePermissionTable.id_role, roleId));
 
-        return result;
+            return {
+                status: true,
+                data: result as any,
+            };
+        } catch (err) {
+            console.error(`RolePermissionService.getRolePermissions: ${err}`);
+            return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
+        }
     }
 
     /**
      * Role <-> User
      */
-    static async assignRoleToUser(data: AssignRoleToUserInput): Promise<void> {
-        await db.insert(userRoleTable).values({
-            id_user: data.userId,
-            id_role: data.roleId,
-        });
+    static async assignRoleToUser(data: AssignRoleToUserInput): Promise<ServiceResponse<{ success: boolean }>> {
+        try {
+            await db.insert(userRoleTable).values({
+                id_user: data.userId,
+                id_role: data.roleId,
+            });
+
+            return {
+                status: true,
+                data: { success: true },
+            };
+        } catch (err) {
+            console.error(`RolePermissionService.assignRoleToUser: ${err}`);
+            return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
+        }
     }
 
-    static async removeRoleFromUser(data: AssignRoleToUserInput): Promise<void> {
-        await db
-            .delete(userRoleTable)
-            .where(and(eq(userRoleTable.id_user, data.userId), eq(userRoleTable.id_role, data.roleId)));
+    static async removeRoleFromUser(data: AssignRoleToUserInput): Promise<ServiceResponse<{ success: boolean }>> {
+        try {
+            await db
+                .delete(userRoleTable)
+                .where(and(eq(userRoleTable.id_user, data.userId), eq(userRoleTable.id_role, data.roleId)));
+
+            return {
+                status: true,
+                data: { success: true },
+            };
+        } catch (err) {
+            console.error(`RolePermissionService.removeRoleFromUser: ${err}`);
+            return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
+        }
     }
 
     /**
      * Permission <-> User
      */
-    static async assignPermissionToUser(data: AssignPermissionToUserInput): Promise<void> {
-        await db.insert(userPermissionTable).values({
-            id_user: data.userId,
-            id_permission: data.permissionId,
-        });
+    static async assignPermissionToUser(data: AssignPermissionToUserInput): Promise<ServiceResponse<{ success: boolean }>> {
+        try {
+            await db.insert(userPermissionTable).values({
+                id_user: data.userId,
+                id_permission: data.permissionId,
+            });
+
+            return {
+                status: true,
+                data: { success: true },
+            };
+        } catch (err) {
+            console.error(`RolePermissionService.assignPermissionToUser: ${err}`);
+            return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
+        }
     }
 
-    static async removePermissionFromUser(data: AssignPermissionToUserInput): Promise<void> {
-        await db
-            .delete(userPermissionTable)
-            .where(
-                and(
-                    eq(userPermissionTable.id_user, data.userId),
-                    eq(userPermissionTable.id_permission, data.permissionId)
-                )
-            );
+    static async removePermissionFromUser(data: AssignPermissionToUserInput): Promise<ServiceResponse<{ success: boolean }>> {
+        try {
+            await db
+                .delete(userPermissionTable)
+                .where(
+                    and(
+                        eq(userPermissionTable.id_user, data.userId),
+                        eq(userPermissionTable.id_permission, data.permissionId)
+                    )
+                );
+
+            return {
+                status: true,
+                data: { success: true },
+            };
+        } catch (err) {
+            console.error(`RolePermissionService.removePermissionFromUser: ${err}`);
+            return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
+        }
     }
 
     /**
      * User Role & Permission
      */
     static async getUserRolesAndPermissions(userId: string): Promise<UserRolesAndPermissions> {
+        // NOTE: This method is kept synchronous without ServiceResponse wrapper
+        // because it's used internally by UserService.attachRolesAndPermissions
+        // and changing it would break existing code flow
+        
         // Get user roles
         const userRoles = await db
             .select({
