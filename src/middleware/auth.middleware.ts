@@ -29,9 +29,9 @@ export const authMiddleware = createMiddleware<AppBindings>(async (c, next) => {
         );
     }
 
-    const user = await UserService.getUserById(payload.userId);
+    const userResponse = await UserService.getUserById(payload.userId);
 
-    if (!user) {
+    if (!userResponse.status || !userResponse.data) {
         return c.json(
             {
                 message: "User not found",
@@ -40,7 +40,7 @@ export const authMiddleware = createMiddleware<AppBindings>(async (c, next) => {
         );
     }
 
-    c.set("user", user);
+    c.set("user", userResponse.data);
 
     await next();
 });
