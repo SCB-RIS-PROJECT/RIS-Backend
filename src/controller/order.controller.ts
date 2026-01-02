@@ -4,24 +4,28 @@ import { jsonContent, jsonContentRequired } from "stoker/openapi/helpers";
 import { createErrorSchema, createMessageObjectSchema } from "stoker/openapi/schemas";
 import createRouter from "@/config/create-router";
 import { loggerPino } from "@/config/log";
+import { response_success, response_created, response_unauthorized, handleServiceErrorWithResponse } from "@/utils/response.utils";
 import {
     createOrderSchema,
     detailOrderIdParamSchema,
+    detailOrderResponseSchema,
+    finalizeOrderDetailResponseSchema,
+    finalizeOrderDetailSchema,
+    fullOrderApiResponseSchema,
     fullOrderResponseSchema,
+    mwlPushResponseSchema,
+    orderCreationSuccessSchema,
+    orderErrorResponseSchema,
     orderIdParamSchema,
     orderPaginationResponseSchema,
     orderQuerySchema,
     updateDetailOrderSchema,
     updateOrderSchema,
-    detailOrderResponseSchema,
-    orderCreationSuccessSchema,
-    mwlPushResponseSchema,
-    finalizeOrderDetailSchema,
-    finalizeOrderDetailResponseSchema,
 } from "@/interface/order.interface";
 import { authMiddleware } from "@/middleware/auth.middleware";
 import { permissionMiddleware } from "@/middleware/role-permission.middleware";
 import { OrderService } from "@/service/order.service";
+import { createResponse } from "@/lib/utils";
 
 const orderController = createRouter();
 
@@ -86,14 +90,14 @@ Get paginated list of orders with comprehensive filtering and search capabilitie
         },
     }),
     async (c) => {
-        try {
-            const query = c.req.valid("query");
-            const data = await OrderService.getAllOrders(query);
-            return c.json(data, HttpStatusCodes.OK);
-        } catch (error) {
-            loggerPino.error(error);
-            return c.json({ message: "Failed to fetch orders" }, HttpStatusCodes.INTERNAL_SERVER_ERROR);
+        const query = c.req.valid("query");
+        const serviceResponse = await OrderService.getAllOrders(query);
+        
+        if (!serviceResponse.status) {
+            return handleServiceErrorWithResponse(c, serviceResponse);
         }
+        
+        return response_success(c, serviceResponse.data, "Successfully fetched orders");
     }
 );
 
@@ -110,8 +114,8 @@ orderController.openapi(
             params: orderIdParamSchema,
         },
         responses: {
-            [HttpStatusCodes.OK]: jsonContent(fullOrderResponseSchema, "Order retrieved successfully"),
-            [HttpStatusCodes.NOT_FOUND]: jsonContent(createMessageObjectSchema("Order not found"), "Order not found"),
+            [HttpStatusCodes.OK]: jsonContent(fullOrderApiResponseSchema, "Order retrieved successfully"),
+            [HttpStatusCodes.NOT_FOUND]: jsonContent(orderErrorResponseSchema, "Order not found"),
             [HttpStatusCodes.UNAUTHORIZED]: jsonContent(
                 createMessageObjectSchema("Not authenticated"),
                 "User not authenticated"
@@ -127,19 +131,14 @@ orderController.openapi(
         },
     }),
     async (c) => {
-        try {
-            const { id } = c.req.valid("param");
-            const order = await OrderService.getOrderById(id);
+        const { id } = c.req.valid("param");
+        const serviceResponse = await OrderService.getOrderById(id);
 
-            if (!order) {
-                return c.json({ message: "Order not found" }, HttpStatusCodes.NOT_FOUND);
-            }
-
-            return c.json(order, HttpStatusCodes.OK);
-        } catch (error) {
-            loggerPino.error(error);
-            return c.json({ message: "Failed to fetch order" }, HttpStatusCodes.INTERNAL_SERVER_ERROR);
+        if (!serviceResponse.status) {
+            return handleServiceErrorWithResponse(c, serviceResponse);
         }
+
+        return response_success(c, serviceResponse.data, "Order retrieved successfully");
     }
 );
 
@@ -164,8 +163,8 @@ orderController.openapi(
             }),
         },
         responses: {
-            [HttpStatusCodes.OK]: jsonContent(fullOrderResponseSchema, "Order retrieved successfully"),
-            [HttpStatusCodes.NOT_FOUND]: jsonContent(createMessageObjectSchema("Order not found"), "Order not found"),
+            [HttpStatusCodes.OK]: jsonContent(fullOrderApiResponseSchema, "Order retrieved successfully"),
+            [HttpStatusCodes.NOT_FOUND]: jsonContent(orderErrorResponseSchema, "Order not found"),
             [HttpStatusCodes.UNAUTHORIZED]: jsonContent(
                 createMessageObjectSchema("Not authenticated"),
                 "User not authenticated"
@@ -181,19 +180,14 @@ orderController.openapi(
         },
     }),
     async (c) => {
-        try {
-            const { accessionNumber } = c.req.valid("param");
-            const order = await OrderService.getOrderByAccessionNumber(accessionNumber);
+        const { accessionNumber } = c.req.valid("param");
+        const serviceResponse = await OrderService.getOrderByAccessionNumber(accessionNumber);
 
-            if (!order) {
-                return c.json({ message: "Order not found" }, HttpStatusCodes.NOT_FOUND);
-            }
-
-            return c.json(order, HttpStatusCodes.OK);
-        } catch (error) {
-            loggerPino.error(error);
-            return c.json({ message: "Failed to fetch order" }, HttpStatusCodes.INTERNAL_SERVER_ERROR);
+        if (!serviceResponse.status) {
+            return handleServiceErrorWithResponse(c, serviceResponse);
         }
+
+        return response_success(c, serviceResponse.data, "Order retrieved successfully");
     }
 );
 
@@ -228,20 +222,20 @@ orderController.openapi(
         },
     }),
     async (c) => {
-        try {
-            const data = c.req.valid("json");
-            const user = c.get("user");
+        const data = c.req.valid("json");
+        const user = c.get("user");
 
-            if (!user) {
-                return c.json({ message: "User not found in context" }, HttpStatusCodes.UNAUTHORIZED);
-            }
-
-            const order = await OrderService.createOrder(data, user.id);
-            return c.json(order, HttpStatusCodes.CREATED);
-        } catch (error) {
-            loggerPino.error(error);
-            return c.json({ message: "Failed to create order" }, HttpStatusCodes.INTERNAL_SERVER_ERROR);
+        if (!user) {
+            return response_unauthorized(c, "User not found in context");
         }
+
+        const serviceResponse = await OrderService.createOrder(data, user.id);
+
+        if (!serviceResponse.status) {
+            return handleServiceErrorWithResponse(c, serviceResponse);
+        }
+
+        return response_created(c, serviceResponse.data, "Order created successfully");
     }
 );
 
@@ -289,21 +283,16 @@ orderController.openapi(
         },
     }),
     async (c) => {
-        try {
-            const { id } = c.req.valid("param");
-            const data = c.req.valid("json");
+        const { id } = c.req.valid("param");
+        const data = c.req.valid("json");
 
-            const order = await OrderService.updateOrder(id, data);
+        const serviceResponse = await OrderService.updateOrder(id, data);
 
-            if (!order) {
-                return c.json({ message: "Order not found" }, HttpStatusCodes.NOT_FOUND);
-            }
-
-            return c.json(order, HttpStatusCodes.OK);
-        } catch (error) {
-            loggerPino.error(error);
-            return c.json({ message: "Failed to update order" }, HttpStatusCodes.INTERNAL_SERVER_ERROR);
+        if (!serviceResponse.status) {
+            return handleServiceErrorWithResponse(c, serviceResponse);
         }
+
+        return response_success(c, serviceResponse.data, "Order updated successfully");
     }
 );
 
@@ -420,13 +409,13 @@ orderController.openapi(
             const detail = await OrderService.updateDetailOrder(detailId, data);
 
             if (!detail) {
-                return c.json({ message: "Order detail not found" }, HttpStatusCodes.NOT_FOUND);
+                return c.json(createResponse(null, "Order detail not found", HttpStatusCodes.NOT_FOUND), HttpStatusCodes.NOT_FOUND);
             }
 
             return c.json(detail, HttpStatusCodes.OK);
         } catch (error) {
             loggerPino.error(error);
-            return c.json({ message: "Failed to update order detail" }, HttpStatusCodes.INTERNAL_SERVER_ERROR);
+            return c.json(createResponse(null, "Failed to update order detail", HttpStatusCodes.INTERNAL_SERVER_ERROR), HttpStatusCodes.INTERNAL_SERVER_ERROR);
         }
     }
 );
@@ -461,19 +450,14 @@ orderController.openapi(
         },
     }),
     async (c) => {
-        try {
-            const { id } = c.req.valid("param");
-            const deleted = await OrderService.deleteOrder(id);
+        const { id } = c.req.valid("param");
+        const serviceResponse = await OrderService.deleteOrder(id);
 
-            if (!deleted) {
-                return c.json({ message: "Order not found" }, HttpStatusCodes.NOT_FOUND);
-            }
-
-            return c.json({ message: "Order deleted successfully" }, HttpStatusCodes.OK);
-        } catch (error) {
-            loggerPino.error(error);
-            return c.json({ message: "Failed to delete order" }, HttpStatusCodes.INTERNAL_SERVER_ERROR);
+        if (!serviceResponse.status) {
+            return handleServiceErrorWithResponse(c, serviceResponse);
         }
+
+        return response_success(c, serviceResponse.data, "Order deleted successfully");
     }
 );
 
@@ -518,13 +502,13 @@ orderController.openapi(
             const deleted = await OrderService.deleteDetailOrder(detailId);
 
             if (!deleted) {
-                return c.json({ message: "Order detail not found" }, HttpStatusCodes.NOT_FOUND);
+                return c.json(createResponse(null, "Order detail not found", HttpStatusCodes.NOT_FOUND), HttpStatusCodes.NOT_FOUND);
             }
 
-            return c.json({ message: "Order detail deleted successfully" }, HttpStatusCodes.OK);
+            return c.json(createResponse(null, "Order detail deleted successfully", HttpStatusCodes.OK), HttpStatusCodes.OK);
         } catch (error) {
             loggerPino.error(error);
-            return c.json({ message: "Failed to delete order detail" }, HttpStatusCodes.INTERNAL_SERVER_ERROR);
+            return c.json(createResponse(null, "Failed to delete order detail", HttpStatusCodes.INTERNAL_SERVER_ERROR), HttpStatusCodes.INTERNAL_SERVER_ERROR);
         }
     }
 );
@@ -567,13 +551,13 @@ orderController.openapi(
             const detail = await OrderService.getDetailOrderById(detailId);
 
             if (!detail) {
-                return c.json({ message: "Order detail not found" }, HttpStatusCodes.NOT_FOUND);
+                return c.json(createResponse(null, "Order detail not found", HttpStatusCodes.NOT_FOUND), HttpStatusCodes.NOT_FOUND);
             }
 
             return c.json(detail, HttpStatusCodes.OK);
         } catch (error) {
             loggerPino.error(error);
-            return c.json({ message: "Failed to fetch order detail" }, HttpStatusCodes.INTERNAL_SERVER_ERROR);
+            return c.json(createResponse(null, "Failed to fetch order detail", HttpStatusCodes.INTERNAL_SERVER_ERROR), HttpStatusCodes.INTERNAL_SERVER_ERROR);
         }
     }
 );
@@ -626,7 +610,7 @@ orderController.openapi(
             const user = c.get("user");
 
             if (!user) {
-                return c.json({ message: "User not found in context" }, HttpStatusCodes.UNAUTHORIZED);
+                return c.json(createResponse(null, "User not found in context", HttpStatusCodes.UNAUTHORIZED), HttpStatusCodes.UNAUTHORIZED);
             }
 
             // Create order and auto-send to Satu Sehat
@@ -635,7 +619,7 @@ orderController.openapi(
             return c.json(result, HttpStatusCodes.CREATED);
         } catch (error) {
             loggerPino.error(error);
-            return c.json({ message: "Failed to create order" }, HttpStatusCodes.INTERNAL_SERVER_ERROR);
+            return c.json(createResponse(null, "Failed to create order", HttpStatusCodes.INTERNAL_SERVER_ERROR), HttpStatusCodes.INTERNAL_SERVER_ERROR);
         }
     }
 );
@@ -1134,7 +1118,6 @@ Call this endpoint when radiology examination is completed and final report is r
                     {
                         success: false,
                         message: result.message,
-                        // Jangan kirim data jika gagal
                     },
                     statusCode
                 );
