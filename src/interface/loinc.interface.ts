@@ -36,6 +36,8 @@ export type LoincQuery = z.infer<typeof loincQuerySchema>;
 // ==================== LOINC Pagination Response ====================
 export const loincPaginationResponseSchema = z.object({
     data: z.array(loincResponseSchema),
+    message: z.string(),
+    code: z.number(),
     meta: z.object({
         total: z.number(),
         page: z.number(),
@@ -43,10 +45,23 @@ export const loincPaginationResponseSchema = z.object({
         total_pages: z.number(),
         has_next_page: z.boolean(),
         has_prev_page: z.boolean(),
-    }),
+    }).optional(),
 });
 
 export type LoincPaginationResponse = z.infer<typeof loincPaginationResponseSchema>;
+
+// ==================== LOINC API Response Schemas ====================
+export const loincApiResponseSchema = z.object({
+    data: loincResponseSchema,
+    message: z.string(),
+    code: z.number(),
+});
+
+export const loincErrorResponseSchema = z.object({
+    data: z.null(),
+    message: z.string(),
+    code: z.number(),
+});
 
 // ==================== Create LOINC Schema ====================
 export const createLoincSchema = z.object({
