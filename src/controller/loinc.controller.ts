@@ -6,6 +6,8 @@ import createRouter from "@/config/create-router";
 import { loggerPino } from "@/config/log";
 import {
     createLoincSchema,
+    loincApiResponseSchema,
+    loincErrorResponseSchema,
     loincIdParamSchema,
     loincPaginationResponseSchema,
     loincQuerySchema,
@@ -15,6 +17,11 @@ import {
 import { authMiddleware } from "@/middleware/auth.middleware";
 import { permissionMiddleware } from "@/middleware/role-permission.middleware";
 import { LoincService } from "@/service/loinc.service";
+import {
+    response_success,
+    response_created,
+    handleServiceErrorWithResponse,
+} from "@/utils/response.utils";
 
 const loincController = createRouter();
 
@@ -51,16 +58,14 @@ loincController.openapi(
         },
     }),
     async (c) => {
-        try {
-            const query = c.req.valid("query");
+        const query = c.req.valid("query");
+        const serviceResponse = await LoincService.getAllLoinc(query);
 
-            const data = await LoincService.getAllLoinc(query);
-
-            return c.json(data, HttpStatusCodes.OK);
-        } catch (error) {
-            loggerPino.error(error);
-            return c.json({ message: "Failed to fetch LOINC codes" }, HttpStatusCodes.INTERNAL_SERVER_ERROR);
+        if (!serviceResponse.status) {
+            return handleServiceErrorWithResponse(c, serviceResponse);
         }
+
+        return response_success(c, serviceResponse.data, "Successfully fetched all LOINC codes!");
     }
 );
 
@@ -77,9 +82,9 @@ loincController.openapi(
             params: loincIdParamSchema,
         },
         responses: {
-            [HttpStatusCodes.OK]: jsonContent(loincResponseSchema, "LOINC code retrieved successfully"),
+            [HttpStatusCodes.OK]: jsonContent(loincApiResponseSchema, "LOINC code retrieved successfully"),
             [HttpStatusCodes.NOT_FOUND]: jsonContent(
-                createMessageObjectSchema("LOINC code not found"),
+                loincErrorResponseSchema,
                 "LOINC code not found"
             ),
             [HttpStatusCodes.UNAUTHORIZED]: jsonContent(
@@ -97,20 +102,14 @@ loincController.openapi(
         },
     }),
     async (c) => {
-        try {
-            const { id } = c.req.valid("param");
+        const { id } = c.req.valid("param");
+        const serviceResponse = await LoincService.getLoincById(id);
 
-            const loinc = await LoincService.getLoincById(id);
-
-            if (!loinc) {
-                return c.json({ message: "LOINC code not found" }, HttpStatusCodes.NOT_FOUND);
-            }
-
-            return c.json(loinc, HttpStatusCodes.OK);
-        } catch (error) {
-            loggerPino.error(error);
-            return c.json({ message: "Failed to fetch LOINC code" }, HttpStatusCodes.INTERNAL_SERVER_ERROR);
+        if (!serviceResponse.status) {
+            return handleServiceErrorWithResponse(c, serviceResponse);
         }
+
+        return response_success(c, serviceResponse.data, "Successfully fetched LOINC code!");
     }
 );
 
@@ -127,7 +126,7 @@ loincController.openapi(
             body: jsonContent(createLoincSchema, "LOINC code data"),
         },
         responses: {
-            [HttpStatusCodes.CREATED]: jsonContent(loincResponseSchema, "LOINC code created successfully"),
+            [HttpStatusCodes.CREATED]: jsonContent(loincApiResponseSchema, "LOINC code created successfully"),
             [HttpStatusCodes.UNAUTHORIZED]: jsonContent(
                 createMessageObjectSchema("Not authenticated"),
                 "User not authenticated"
@@ -144,16 +143,14 @@ loincController.openapi(
         },
     }),
     async (c) => {
-        try {
-            const data = c.req.valid("json");
+        const data = c.req.valid("json");
+        const serviceResponse = await LoincService.createLoinc(data);
 
-            const loinc = await LoincService.createLoinc(data);
-
-            return c.json(loinc, HttpStatusCodes.CREATED);
-        } catch (error) {
-            loggerPino.error(error);
-            return c.json({ message: "Failed to create LOINC code" }, HttpStatusCodes.INTERNAL_SERVER_ERROR);
+        if (!serviceResponse.status) {
+            return handleServiceErrorWithResponse(c, serviceResponse);
         }
+
+        return response_created(c, serviceResponse.data, "Successfully created LOINC code!");
     }
 );
 
@@ -171,9 +168,9 @@ loincController.openapi(
             body: jsonContent(updateLoincSchema, "LOINC code update data"),
         },
         responses: {
-            [HttpStatusCodes.OK]: jsonContent(loincResponseSchema, "LOINC code updated successfully"),
+            [HttpStatusCodes.OK]: jsonContent(loincApiResponseSchema, "LOINC code updated successfully"),
             [HttpStatusCodes.NOT_FOUND]: jsonContent(
-                createMessageObjectSchema("LOINC code not found"),
+                loincErrorResponseSchema,
                 "LOINC code not found"
             ),
             [HttpStatusCodes.UNAUTHORIZED]: jsonContent(
@@ -192,21 +189,16 @@ loincController.openapi(
         },
     }),
     async (c) => {
-        try {
-            const { id } = c.req.valid("param");
-            const data = c.req.valid("json");
+        const { id } = c.req.valid("param");
+        const data = c.req.valid("json");
 
-            const loinc = await LoincService.updateLoinc(id, data);
+        const serviceResponse = await LoincService.updateLoinc(id, data);
 
-            if (!loinc) {
-                return c.json({ message: "LOINC code not found" }, HttpStatusCodes.NOT_FOUND);
-            }
-
-            return c.json(loinc, HttpStatusCodes.OK);
-        } catch (error) {
-            loggerPino.error(error);
-            return c.json({ message: "Failed to update LOINC code" }, HttpStatusCodes.INTERNAL_SERVER_ERROR);
+        if (!serviceResponse.status) {
+            return handleServiceErrorWithResponse(c, serviceResponse);
         }
+
+        return response_success(c, serviceResponse.data, "Successfully updated LOINC code!");
     }
 );
 
@@ -246,20 +238,14 @@ loincController.openapi(
         },
     }),
     async (c) => {
-        try {
-            const { id } = c.req.valid("param");
+        const { id } = c.req.valid("param");
+        const serviceResponse = await LoincService.deleteLoinc(id);
 
-            const deleted = await LoincService.deleteLoinc(id);
-
-            if (!deleted) {
-                return c.json({ message: "LOINC code not found" }, HttpStatusCodes.NOT_FOUND);
-            }
-
-            return c.json({ message: "LOINC code deleted successfully" }, HttpStatusCodes.OK);
-        } catch (error) {
-            loggerPino.error(error);
-            return c.json({ message: "Failed to delete LOINC code" }, HttpStatusCodes.INTERNAL_SERVER_ERROR);
+        if (!serviceResponse.status) {
+            return handleServiceErrorWithResponse(c, serviceResponse);
         }
+
+        return response_success(c, serviceResponse.data, "Successfully deleted LOINC code!");
     }
 );
 
