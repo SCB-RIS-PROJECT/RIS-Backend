@@ -6,6 +6,10 @@ import createRouter from "@/config/create-router";
 import { currentUserResponseSchema, loginPayloadSchema, loginResponseSchema } from "@/interface/auth.interface";
 import { authMiddleware } from "@/middleware/auth.middleware";
 import { AuthService } from "@/service/auth.service";
+import {
+    response_success,
+    handleServiceErrorWithResponse,
+} from "@/utils/response.utils";
 
 const authController = createRouter();
 
@@ -40,26 +44,13 @@ authController.openapi(
     }),
     async (c) => {
         const payload = c.req.valid("json");
+        const serviceResponse = await AuthService.login(c, payload);
 
-        const result = await AuthService.login(c, payload);
-
-        if (!result) {
-            return c.json(
-                {
-                    message: "Invalid email or password",
-                },
-                HttpStatusCodes.UNAUTHORIZED
-            );
+        if (!serviceResponse.status) {
+            return handleServiceErrorWithResponse(c, serviceResponse);
         }
 
-        return c.json(
-            {
-                message: "Login successful",
-                token: result.token,
-                user: result.user,
-            },
-            HttpStatusCodes.OK
-        );
+        return response_success(c, serviceResponse.data, "Login successful!");
     }
 );
 
@@ -86,14 +77,13 @@ authController.openapi(
         },
     }),
     async (c) => {
-        await AuthService.logout(c);
+        const serviceResponse = await AuthService.logout(c);
 
-        return c.json(
-            {
-                message: "Logout successful",
-            },
-            HttpStatusCodes.OK
-        );
+        if (!serviceResponse.status) {
+            return handleServiceErrorWithResponse(c, serviceResponse);
+        }
+
+        return response_success(c, serviceResponse.data, "Logout successful!");
     }
 );
 
@@ -122,18 +112,13 @@ authController.openapi(
     }),
 
     async (c) => {
-        const user = await AuthService.current(c);
+        const serviceResponse = await AuthService.current(c);
 
-        if (!user) {
-            return c.json(
-                {
-                    message: "Not authenticated",
-                },
-                HttpStatusCodes.UNAUTHORIZED
-            );
+        if (!serviceResponse.status) {
+            return handleServiceErrorWithResponse(c, serviceResponse);
         }
 
-        return c.json(user, HttpStatusCodes.OK);
+        return response_success(c, serviceResponse.data, "Current user retrieved successfully!");
     }
 );
 
