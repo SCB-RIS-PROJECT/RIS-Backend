@@ -274,10 +274,23 @@ export const orderPaginationResponseSchema = z.object({
         total_pages: z.number(),
         has_next_page: z.boolean(),
         has_prev_page: z.boolean(),
-    }),
+    }).optional(),
 });
 
 export type OrderPaginationResponse = z.infer<typeof orderPaginationResponseSchema>;
+
+// ==================== Order API Response Schemas ====================
+export const fullOrderApiResponseSchema = z.object({
+    data: fullOrderResponseSchema,
+    message: z.string(),
+    code: z.number(),
+});
+
+export const orderErrorResponseSchema = z.object({
+    data: z.null(),
+    message: z.string(),
+    code: z.number(),
+});
 
 // ==================== Create Detail Order Item Schema (from SIMRS) ====================
 export const createDetailOrderItemSchema = z.object({
