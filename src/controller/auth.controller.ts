@@ -166,7 +166,7 @@ authController.openapi(
             return handleServiceErrorWithResponse(c, serviceResponse);
         }
 
-        return response_success(c, serviceResponse.data, "User registered successfully!", HttpStatusCodes.CREATED);
+        return response_success(c, serviceResponse.data, "User registered successfully!");
     }
 );
 
@@ -205,7 +205,7 @@ authController.openapi(
             return handleServiceErrorWithResponse(c, serviceResponse);
         }
 
-        return response_success(c, serviceResponse.data, "Practitioner registered successfully!", HttpStatusCodes.CREATED);
+        return response_success(c, serviceResponse.data, "Practitioner registered successfully!");
     }
 );
 

@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import type { Context } from "hono";
 import db from "@/database/db";
 import { userTable } from "@/database/schemas/schema-user";
-import { practitionerTable } from "@/database/schemas/schema-practitioner";
+import { profileTable } from "@/database/schemas/schema-profile";
 import type { AppBindings } from "@/interface";
 import type { LoginData, LoginPayload, UserResponse, RegisterUserPayload, RegisterPractitionerPayload } from "@/interface/auth.interface";
 import { verifyPassword, hashPassword } from "@/lib/crypto";
@@ -15,6 +15,28 @@ import {
 } from "@/entities/Service";
 
 export class AuthService {
+    private static async fetchProfile(profileId?: string) {
+        if (!profileId) return null;
+
+        const [profile] = await db
+            .select()
+            .from(profileTable)
+            .where(eq(profileTable.id, profileId))
+            .limit(1);
+
+        if (!profile) return null;
+
+        return {
+            id: profile.id,
+            nik: profile.nik,
+            name: profile.name,
+            gender: profile.gender,
+            phone: profile.phone,
+            email: profile.email,
+            address: profile.address,
+        };
+    }
+
     static async login(c: Context<AppBindings>, payload: LoginPayload): Promise<ServiceResponse<LoginData>> {
         try {
             // Find user by email
@@ -52,6 +74,8 @@ export class AuthService {
                 email: user.email,
             });
 
+            const profile = await AuthService.fetchProfile(userWithRolesAndPermissions.profile_id);
+
             return {
                 status: true,
                 data: {
@@ -61,12 +85,13 @@ export class AuthService {
                         name: userWithRolesAndPermissions.name,
                         email: userWithRolesAndPermissions.email,
                         avatar: userWithRolesAndPermissions.avatar,
-                        practitioner_id: userWithRolesAndPermissions.practitioner_id,
+                        profile_id: userWithRolesAndPermissions.profile_id,
                         email_verified_at: userWithRolesAndPermissions.email_verified_at?.toISOString() || null,
                         created_at: userWithRolesAndPermissions.created_at.toISOString(),
                         updated_at: userWithRolesAndPermissions.updated_at?.toISOString() || null,
                         roles: userWithRolesAndPermissions.roles,
                         permissions: userWithRolesAndPermissions.permissions,
+                        profile,
                     },
                 },
             };
@@ -103,27 +128,7 @@ export class AuthService {
 
             const userData = userResponse.data;
 
-            // Get practitioner data if user is a practitioner
-            let practitionerData = null;
-            if (userData.practitioner_id) {
-                const [practitioner] = await db
-                    .select()
-                    .from(practitionerTable)
-                    .where(eq(practitionerTable.id, userData.practitioner_id))
-                    .limit(1);
-
-                if (practitioner) {
-                    practitionerData = {
-                        id: practitioner.id,
-                        nik: practitioner.nik,
-                        name: practitioner.name,
-                        profession: practitioner.profession,
-                        gender: practitioner.gender,
-                        phone: practitioner.phone,
-                        email: practitioner.email,
-                    };
-                }
-            }
+            const profile = await AuthService.fetchProfile(userData.profile_id);
 
             return {
                 status: true,
@@ -132,13 +137,13 @@ export class AuthService {
                     name: userData.name,
                     email: userData.email,
                     avatar: userData.avatar,
-                    practitioner_id: userData.practitioner_id,
+                    profile_id: userData.profile_id,
                     email_verified_at: userData.email_verified_at?.toISOString() || null,
                     created_at: userData.created_at.toISOString(),
                     updated_at: userData.updated_at?.toISOString() || null,
                     roles: userData.roles,
                     permissions: userData.permissions,
-                    practitioner: practitionerData,
+                    profile,
                 },
             };
         } catch (err) {
@@ -176,7 +181,7 @@ export class AuthService {
                     name: payload.name,
                     email: payload.email,
                     password: hashedPassword,
-                    practitioner_id: null, // Not a practitioner
+                    profile_id: null, // Not a profile yet
                 })
                 .returning();
 
@@ -189,6 +194,8 @@ export class AuthService {
                 email: newUser.email,
             });
 
+            const profile = await AuthService.fetchProfile(userWithRolesAndPermissions.profile_id);
+
             return {
                 status: true,
                 data: {
@@ -198,12 +205,13 @@ export class AuthService {
                         name: userWithRolesAndPermissions.name,
                         email: userWithRolesAndPermissions.email,
                         avatar: userWithRolesAndPermissions.avatar,
-                        practitioner_id: userWithRolesAndPermissions.practitioner_id,
+                        profile_id: userWithRolesAndPermissions.profile_id,
                         email_verified_at: userWithRolesAndPermissions.email_verified_at?.toISOString() || null,
                         created_at: userWithRolesAndPermissions.created_at.toISOString(),
                         updated_at: userWithRolesAndPermissions.updated_at?.toISOString() || null,
                         roles: userWithRolesAndPermissions.roles,
                         permissions: userWithRolesAndPermissions.permissions,
+                        profile,
                     },
                 },
             };
@@ -232,14 +240,14 @@ export class AuthService {
                 };
             }
 
-            // Check if NIK already exists
-            const [existingPractitioner] = await db
+            // Check if NIK already exists in profile table
+            const [existingProfile] = await db
                 .select()
-                .from(practitionerTable)
-                .where(eq(practitionerTable.nik, payload.nik))
+                .from(profileTable)
+                .where(eq(profileTable.nik, payload.nik))
                 .limit(1);
 
-            if (existingPractitioner) {
+            if (existingProfile) {
                 return {
                     status: false,
                     err: {
@@ -249,18 +257,15 @@ export class AuthService {
                 };
             }
 
-            // Hash password
             const hashedPassword = await hashPassword(payload.password);
 
-            // Create practitioner first
-            const [newPractitioner] = await db
-                .insert(practitionerTable)
+            const [newProfile] = await db
+                .insert(profileTable)
                 .values({
                     nik: payload.nik,
                     name: payload.name,
                     gender: payload.gender,
                     birth_date: new Date(payload.birth_date),
-                    profession: payload.profession || "DOCTOR",
                     phone: payload.phone,
                     email: payload.email,
                     address: payload.address,
@@ -280,25 +285,24 @@ export class AuthService {
                 })
                 .returning();
 
-            // Create user linked to practitioner
             const [newUser] = await db
                 .insert(userTable)
                 .values({
                     name: payload.name,
                     email: payload.email,
                     password: hashedPassword,
-                    practitioner_id: newPractitioner.id,
+                    profile_id: newProfile.id,
                 })
                 .returning();
 
-            // Get user with roles and permissions
             const userWithRolesAndPermissions = await UserService.attachRolesAndPermissions(newUser);
 
-            // Generate JWT token
             const token = generateToken({
                 userId: newUser.id,
                 email: newUser.email,
             });
+
+            const profile = await AuthService.fetchProfile(userWithRolesAndPermissions.profile_id);
 
             return {
                 status: true,
@@ -309,21 +313,13 @@ export class AuthService {
                         name: userWithRolesAndPermissions.name,
                         email: userWithRolesAndPermissions.email,
                         avatar: userWithRolesAndPermissions.avatar,
-                        practitioner_id: userWithRolesAndPermissions.practitioner_id,
+                        profile_id: userWithRolesAndPermissions.profile_id,
                         email_verified_at: userWithRolesAndPermissions.email_verified_at?.toISOString() || null,
                         created_at: userWithRolesAndPermissions.created_at.toISOString(),
                         updated_at: userWithRolesAndPermissions.updated_at?.toISOString() || null,
                         roles: userWithRolesAndPermissions.roles,
                         permissions: userWithRolesAndPermissions.permissions,
-                        practitioner: {
-                            id: newPractitioner.id,
-                            nik: newPractitioner.nik,
-                            name: newPractitioner.name,
-                            profession: newPractitioner.profession,
-                            gender: newPractitioner.gender,
-                            phone: newPractitioner.phone,
-                            email: newPractitioner.email,
-                        },
+                        profile,
                     },
                 },
             };

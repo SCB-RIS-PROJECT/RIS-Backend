@@ -19,7 +19,7 @@ export interface UserWithRolesAndPermissions {
     name: string;
     email: string;
     avatar: string | null;
-    practitioner_id: string | null;
+    profile_id: string | null;
     email_verified_at: Date | null;
     created_at: Date;
     updated_at: Date | null;
