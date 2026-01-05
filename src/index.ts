@@ -6,6 +6,7 @@ import loincController from "@/controller/loinc.controller";
 import modalityController from "@/controller/modality.controller";
 import orderController from "@/controller/order.controller";
 import patientController from "@/controller/patient.controller";
+import permissionController from "@/controller/permission.controller";
 import practitionerController from "@/controller/practitioner.controller";
 import satuSehatController from "@/controller/satu-sehat.controller";
 
@@ -22,6 +23,7 @@ const routes = [
     loincController,
     orderController,
     satuSehatController,
+    permissionController,
 ] as const;
 
 routes.forEach((route) => {
