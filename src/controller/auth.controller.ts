@@ -3,7 +3,16 @@ import * as HttpStatusCodes from "stoker/http-status-codes";
 import { jsonContent, jsonContentRequired } from "stoker/openapi/helpers";
 import { createErrorSchema, createMessageObjectSchema } from "stoker/openapi/schemas";
 import createRouter from "@/config/create-router";
-import { currentUserApiResponseSchema, currentUserResponseSchema, loginApiResponseSchema, loginPayloadSchema, loginResponseSchema } from "@/interface/auth.interface";
+import { 
+    currentUserApiResponseSchema, 
+    currentUserResponseSchema, 
+    loginApiResponseSchema, 
+    loginPayloadSchema, 
+    loginResponseSchema,
+    registerUserPayloadSchema,
+    registerPractitionerPayloadSchema,
+    registerApiResponseSchema
+} from "@/interface/auth.interface";
 import { authMiddleware } from "@/middleware/auth.middleware";
 import { AuthService } from "@/service/auth.service";
 import {
@@ -119,6 +128,84 @@ authController.openapi(
         }
 
         return response_success(c, serviceResponse.data, "Current user retrieved successfully!");
+    }
+);
+
+// Register User (non-practitioner) endpoint
+authController.openapi(
+    createRoute({
+        tags,
+        method: "post",
+        path: "/api/auth/register",
+        summary: "Register User",
+        description: "Register a new user account (admin, staff, etc - non-practitioner).",
+        request: {
+            body: jsonContentRequired(registerUserPayloadSchema, "User registration data"),
+        },
+        responses: {
+            [HttpStatusCodes.CREATED]: jsonContent(registerApiResponseSchema, "Registration successful"),
+            [HttpStatusCodes.CONFLICT]: jsonContent(
+                createMessageObjectSchema("Email already registered"),
+                "Email conflict"
+            ),
+            [HttpStatusCodes.UNPROCESSABLE_ENTITY]: jsonContent(
+                createErrorSchema(registerUserPayloadSchema),
+                "Validation error(s)"
+            ),
+            [HttpStatusCodes.TOO_MANY_REQUESTS]: jsonContent(
+                createMessageObjectSchema("Too many requests"),
+                "Too many requests"
+            ),
+        },
+    }),
+    async (c) => {
+        const payload = c.req.valid("json");
+        const serviceResponse = await AuthService.registerUser(c, payload);
+
+        if (!serviceResponse.status) {
+            return handleServiceErrorWithResponse(c, serviceResponse);
+        }
+
+        return response_success(c, serviceResponse.data, "User registered successfully!", HttpStatusCodes.CREATED);
+    }
+);
+
+// Register Practitioner endpoint
+authController.openapi(
+    createRoute({
+        tags,
+        method: "post",
+        path: "/api/auth/register-practitioner",
+        summary: "Register Practitioner",
+        description: "Register a new practitioner account with full practitioner data. The practitioner will be able to login with the provided credentials.",
+        request: {
+            body: jsonContentRequired(registerPractitionerPayloadSchema, "Practitioner registration data"),
+        },
+        responses: {
+            [HttpStatusCodes.CREATED]: jsonContent(registerApiResponseSchema, "Practitioner registration successful"),
+            [HttpStatusCodes.CONFLICT]: jsonContent(
+                createMessageObjectSchema("Email or NIK already registered"),
+                "Conflict error"
+            ),
+            [HttpStatusCodes.UNPROCESSABLE_ENTITY]: jsonContent(
+                createErrorSchema(registerPractitionerPayloadSchema),
+                "Validation error(s)"
+            ),
+            [HttpStatusCodes.TOO_MANY_REQUESTS]: jsonContent(
+                createMessageObjectSchema("Too many requests"),
+                "Too many requests"
+            ),
+        },
+    }),
+    async (c) => {
+        const payload = c.req.valid("json");
+        const serviceResponse = await AuthService.registerPractitioner(c, payload);
+
+        if (!serviceResponse.status) {
+            return handleServiceErrorWithResponse(c, serviceResponse);
+        }
+
+        return response_success(c, serviceResponse.data, "Practitioner registered successfully!", HttpStatusCodes.CREATED);
     }
 );
 

@@ -1,6 +1,7 @@
 import { count, eq, type InferSelectModel, ilike, or } from "drizzle-orm";
 import db from "@/database/db";
 import { userTable } from "@/database/schemas/schema-user";
+import { practitionerTable } from "@/database/schemas/schema-practitioner";
 import type {
     CreateUserInput,
     PaginationParams,
@@ -28,6 +29,7 @@ export class UserService {
             name: user.name,
             email: user.email,
             avatar: user.avatar,
+            practitioner_id: user.practitioner_id,
             email_verified_at: user.email_verified_at,
             created_at: user.created_at,
             updated_at: user.updated_at,

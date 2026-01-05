@@ -1,4 +1,5 @@
 import { boolean, index, pgTable, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
 import { genderEnum, practitionerProfessionEnum } from "@/database/schemas/constants";
 
 export const practitionerTable = pgTable(
@@ -38,3 +39,10 @@ export const practitionerTable = pgTable(
         professionIdx: index("practitioner_profession_idx").on(table.profession),
     })
 );
+
+export const practitionerRelations = relations(practitionerTable, ({ one }) => ({
+    user: one(practitionerTable, {
+        fields: [practitionerTable.id],
+        references: [practitionerTable.id],
+    }),
+}));
