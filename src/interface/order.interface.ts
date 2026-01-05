@@ -306,6 +306,16 @@ export const orderErrorResponseSchema = z.object({
 });
 
 // ==================== Create Detail Order Item Schema (from SIMRS) ====================
+// Schema untuk detail pemeriksaan (LOINC)
+export const simrsDetailSchema = z.object({
+    system: z.string().default("http://loinc.org").describe("LOINC system URL"),
+    code: z.string().describe("LOINC code"),
+    display: z.string().describe("LOINC display name"),
+    text: z.string().optional().describe("Procedure description"),
+});
+
+export type SimrsDetail = z.infer<typeof simrsDetailSchema>;
+
 export const createDetailOrderItemSchema = z.object({
     // Scheduling - ccurence_date_time (occurrence datetime)
     ccurence_date_time: z.string().datetime().optional().describe("Occurrence datetime (ISO 8601)"),
@@ -332,13 +342,31 @@ export const createDetailOrderItemSchema = z.object({
 
 export type CreateDetailOrderItem = z.infer<typeof createDetailOrderItemSchema>;
 
-// ==================== Create Order Schema (from SIMRS) ====================
+// ==================== Create Order Schema (from SIMRS) - NEW FORMAT ====================
 export const createOrderSchema = z.object({
-    // Pelayanan ID from SIMRS - optional
-    id_pelayanan: z.string().max(255).optional().describe("Service ID from SIMRS"),
+    // Pelayanan ID from SIMRS - required
+    id_pelayanan: z.string().max(255).describe("Service ID from SIMRS"),
     
-    // Order details - at least one required
-    details: z.array(createDetailOrderItemSchema).min(1, "At least one order detail is required"),
+    // Subject (Patient info) - required
+    subject: simrsSubjectSchema.describe("Patient information"),
+    
+    // Encounter - required
+    encounter: simrsEncounterSchema.describe("Encounter information"),
+    
+    // Requester (Referring physician) - required
+    requester: simrsRequesterSchema.describe("Referring physician information"),
+    
+    // Diagnosa (ICD-10) - optional but recommended
+    diagnosa: simrsDiagnosaSchema.optional().describe("Diagnosis ICD-10 code"),
+    
+    // Order priority
+    order_priority: z.enum(ORDER_PRIORITY).default("ROUTINE").describe("Order priority"),
+    
+    // Notes
+    notes: z.string().optional().describe("Additional notes from SIMRS"),
+    
+    // Details - array of LOINC examinations (at least one required)
+    details: z.array(simrsDetailSchema).min(1, "At least one examination detail is required").describe("Array of examination LOINC codes"),
 });
 
 export type CreateOrderInput = z.infer<typeof createOrderSchema>;
@@ -413,14 +441,19 @@ export const detailOrderIdParamSchema = z.object({
 export type DetailOrderIdParam = z.infer<typeof detailOrderIdParamSchema>;
 
 // ==================== Order Creation Success Response (for SIMRS) ====================
-// Simple response: return success message only
-// Satu Sehat will be sent later after RIS completes the order
+// Response yang dikembalikan ke SIMRS setelah berhasil create order
+export const orderDetailCreatedSchema = z.object({
+    id_detail_order: z.string().uuid().describe("ID detail order"),
+    accession_number: z.string().describe("Accession number yang di-generate"),
+});
+
 export const orderCreationSuccessSchema = z.object({
-    success: z.boolean(),
-    message: z.string(),
+    id_order: z.string().uuid().describe("ID order yang dibuat"),
+    detail_orders: z.array(orderDetailCreatedSchema).describe("Array detail order dengan ACSN masing-masing"),
 });
 
 export type OrderCreationSuccess = z.infer<typeof orderCreationSuccessSchema>;
+export type OrderDetailCreated = z.infer<typeof orderDetailCreatedSchema>;
 
 // ==================== MWL Push Response ====================
 export const mwlPushResponseSchema = z.object({

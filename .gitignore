@@ -67,3 +67,5 @@ drizzle/
 *.backup
 *.bak
 *.old
+*.bun-build
+.*.bun-build

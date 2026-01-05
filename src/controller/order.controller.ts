@@ -198,15 +198,43 @@ orderController.openapi(
         tags,
         method: "post",
         path: "/api/orders",
-        summary: "Create new order",
-        description:
-            "Create a new order with multiple order details. This endpoint is for SIMRS integration to submit radiology orders.",
+        summary: "Create new order from SIMRS",
+        description: `
+Create a new radiology order from SIMRS with new simplified format.
+
+**Request Body:**
+- \`id_pelayanan\`: Service ID from SIMRS (required)
+- \`subject\`: Patient information with IHS ID
+- \`encounter\`: Encounter ID
+- \`requester\`: Referring physician information
+- \`diagnosa\`: ICD-10 diagnosis (optional)
+- \`order_priority\`: Order priority (ROUTINE, URGENT, ASAP, STAT)
+- \`notes\`: Additional notes (optional)
+- \`details\`: Array of LOINC examination codes (minimum 1)
+
+**Response:**
+Returns order ID and array of detail orders with generated ACSN for each examination.
+
+**Note:**
+- Each examination detail will get its own ACSN
+- LOINC codes will be matched with master data in tb_loinc
+- SatuSehat integration is handled by SIMRS, not RIS
+        `,
         middleware: [authMiddleware, permissionMiddleware("create:order")] as const,
         request: {
             body: jsonContentRequired(createOrderSchema, "Order data with details"),
         },
         responses: {
-            [HttpStatusCodes.CREATED]: jsonContent(fullOrderResponseSchema, "Order created successfully"),
+            [HttpStatusCodes.CREATED]: jsonContent(
+                z.object({
+                    content: z.object({
+                        data: orderCreationSuccessSchema,
+                    }),
+                    message: z.string(),
+                    errors: z.array(z.unknown()),
+                }),
+                "Order created successfully"
+            ),
             [HttpStatusCodes.UNAUTHORIZED]: jsonContent(
                 createMessageObjectSchema("Not authenticated"),
                 "User not authenticated"
@@ -563,70 +591,7 @@ orderController.openapi(
     }
 );
 
-// ==================== CREATE ORDER FROM SIMRS ====================
-orderController.openapi(
-    createRoute({
-        tags,
-        method: "post",
-        path: "/api/orders/simrs",
-        summary: "Create order from SIMRS",
-        description: `Create a new radiology order from SIMRS with simplified format.
-
-**Flow:**
-1. SIMRS sends order data
-2. RIS generates ACSN and stores order
-3. Returns simple success message
-4. Satu Sehat will be sent later after RIS completes/updates the order
-
-**Required data from SIMRS:**
-- pemeriksaan: LOINC code information
-- subject: Patient information (ihs_id, name, mrn, birth_date, age, gender)
-- encounter: Encounter ID from Satu Sehat
-- requester: Referring physician (id_practitioner, name_practitioner)
-- diagnosa: ICD-10 diagnosis (optional)`,
-        middleware: [authMiddleware, permissionMiddleware("create:order")] as const,
-        request: {
-            body: jsonContentRequired(createOrderSchema, "SIMRS order data with FHIR ServiceRequest"),
-        },
-        responses: {
-            [HttpStatusCodes.CREATED]: jsonContent(orderCreationSuccessSchema, "Order created successfully"),
-            [HttpStatusCodes.UNAUTHORIZED]: jsonContent(
-                createMessageObjectSchema("Not authenticated"),
-                "User not authenticated"
-            ),
-            [HttpStatusCodes.FORBIDDEN]: jsonContent(
-                createMessageObjectSchema("Permission denied"),
-                "Insufficient permissions"
-            ),
-            [HttpStatusCodes.BAD_REQUEST]: jsonContent(createErrorSchema(createOrderSchema), "Invalid request body"),
-            [HttpStatusCodes.INTERNAL_SERVER_ERROR]: jsonContent(
-                createMessageObjectSchema("Failed to create order"),
-                "Internal server error"
-            ),
-        },
-    }),
-    async (c) => {
-        try {
-            const data = c.req.valid("json");
-            const user = c.get("user");
-
-            if (!user) {
-                return c.json(createResponse(null, "User not found in context", HttpStatusCodes.UNAUTHORIZED), HttpStatusCodes.UNAUTHORIZED);
-            }
-
-            // Create order and auto-send to Satu Sehat
-            const result = await OrderService.createOrderForSimrs(data, user.id);
-            
-            return c.json(result, HttpStatusCodes.CREATED);
-        } catch (error) {
-            loggerPino.error(error);
-            return c.json(createResponse(null, "Failed to create order", HttpStatusCodes.INTERNAL_SERVER_ERROR), HttpStatusCodes.INTERNAL_SERVER_ERROR);
-        }
-    }
-);
-
 // ==================== PUSH ORDER TO MWL ====================
-// Note: Send to Satu Sehat is now automatic when creating order from SIMRS
 orderController.openapi(
     createRoute({
         tags,
@@ -709,117 +674,6 @@ orderController.openapi(
                 {
                     success: false,
                     message: "Failed to push order to MWL",
-                },
-                HttpStatusCodes.INTERNAL_SERVER_ERROR
-            );
-        }
-    }
-);
-
-// ==================== SEND TO SATU SEHAT (ServiceRequest Only) ====================
-orderController.openapi(
-    createRoute({
-        tags,
-        method: "post",
-        path: "/api/orders/{id}/details/{detailId}/send-to-satusehat",
-        summary: "Send ServiceRequest to Satu Sehat",
-        description: `**Kirim ServiceRequest ke Satu Sehat API**
-
-**Prerequisite:** Data sudah di-update via PATCH /api/orders/{id}/details/{detailId} dengan:
-- modality_code
-- ae_title  
-- performer_id (id_performer_ss)
-- performer_name (performer_display)
-- contrast_code, contrast_name (optional)
-
-**Flow:**
-1. Ambil data order detail dari database
-2. Validasi data lengkap (modality, performer, dll)
-3. Build ServiceRequest FHIR
-4. POST ke Satu Sehat /ServiceRequest
-5. Simpan ServiceRequest ID ke database
-6. Return response
-
-**Tidak ada request body** - Semua data diambil dari database.`,
-        middleware: [authMiddleware, permissionMiddleware("update:order")] as const,
-        request: {
-            params: detailOrderIdParamSchema,
-        },
-        responses: {
-            [HttpStatusCodes.OK]: jsonContent(
-                z.object({
-                    success: z.boolean(),
-                    message: z.string(),
-                    data: z.object({
-                        detail_id: z.string().uuid(),
-                        accession_number: z.string(),
-                        service_request_id: z.string(),
-                    }),
-                }),
-                "ServiceRequest sent to Satu Sehat successfully"
-            ),
-            [HttpStatusCodes.NOT_FOUND]: jsonContent(
-                createMessageObjectSchema("Order detail not found"),
-                "Order detail not found"
-            ),
-            [HttpStatusCodes.BAD_REQUEST]: jsonContent(
-                createMessageObjectSchema("Missing required data. Please update order detail first."),
-                "Invalid request - missing data"
-            ),
-            [HttpStatusCodes.UNAUTHORIZED]: jsonContent(
-                createMessageObjectSchema("Not authenticated"),
-                "User not authenticated"
-            ),
-            [HttpStatusCodes.FORBIDDEN]: jsonContent(
-                createMessageObjectSchema("Permission denied"),
-                "Insufficient permissions"
-            ),
-            [HttpStatusCodes.INTERNAL_SERVER_ERROR]: jsonContent(
-                createMessageObjectSchema("Failed to send to Satu Sehat"),
-                "Internal server error"
-            ),
-        },
-    }),
-    async (c) => {
-        try {
-            const { id, detailId } = c.req.valid("param");
-
-            const result = await OrderService.sendToSatuSehat(id, detailId);
-
-            if (!result.success) {
-                return c.json(
-                    {
-                        success: false,
-                        message: result.message,
-                    },
-                    HttpStatusCodes.BAD_REQUEST
-                );
-            }
-
-            if (!result.data) {
-                return c.json(
-                    {
-                        success: false,
-                        message: "Unexpected error: No data returned",
-                    },
-                    HttpStatusCodes.INTERNAL_SERVER_ERROR
-                );
-            }
-
-            return c.json(
-                {
-                    success: result.success,
-                    message: result.message,
-                    data: result.data,
-                },
-                HttpStatusCodes.OK
-            );
-        } catch (error) {
-            loggerPino.error(error);
-            return c.json(
-                {
-                    success: false,
-                    message: error instanceof Error ? error.message : "Failed to send to Satu Sehat",
                 },
                 HttpStatusCodes.INTERNAL_SERVER_ERROR
             );
@@ -941,134 +795,27 @@ orderController.openapi(
     }
 );
 
-// ==================== FETCH IMAGING STUDY FROM SATU SEHAT ====================
-orderController.openapi(
-    createRoute({
-        tags,
-        method: "post",
-        path: "/api/orders/fetch-imaging-study/:accessionNumber",
-        summary: "Fetch ImagingStudy from Satu Sehat by Accession Number",
-        description: `
-Fetch ImagingStudy data from Satu Sehat API using the Accession Number and save the ImagingStudy ID to the database.
-
-This endpoint will:
-1. Query Satu Sehat API: \`/ImagingStudy?identifier=http://sys-ids.kemkes.go.id/acsn/{Org_id}|{ACSN}\`
-2. Extract the ImagingStudy ID from the response
-3. Update the detail order record with the ImagingStudy ID
-
-**Returns:**
-- Success response with the saved ImagingStudy ID
-- Error message if not found or failed
-
-**Use Case:**
-- After radiology examination is completed and uploaded to PACS
-- To link the order with the actual ImagingStudy in Satu Sehat
-        `,
-        middleware: [authMiddleware, permissionMiddleware("update:order")],
-        request: {
-            params: z.object({
-                accessionNumber: z.string().min(1).openapi({
-                    param: {
-                        name: "accessionNumber",
-                        in: "path",
-                    },
-                    example: "20251230001",
-                }),
-            }),
-        },
-        responses: {
-            [HttpStatusCodes.OK]: jsonContent(
-                z.object({
-                    success: z.boolean(),
-                    message: z.string(),
-                    data: z.object({
-                        detail_id: z.string().uuid(),
-                        accession_number: z.string(),
-                        imaging_study_id: z.string(),
-                    }).optional(),
-                }),
-                "Successfully fetched ImagingStudy ID from Satu Sehat"
-            ),
-            [HttpStatusCodes.NOT_FOUND]: jsonContent(
-                z.object({
-                    success: z.boolean(),
-                    message: z.string(),
-                }),
-                "Accession number not found or ImagingStudy not found in Satu Sehat"
-            ),
-            [HttpStatusCodes.INTERNAL_SERVER_ERROR]: jsonContent(
-                z.object({
-                    success: z.boolean(),
-                    message: z.string(),
-                }),
-                "Failed to fetch ImagingStudy"
-            ),
-        },
-    }),
-    async (c) => {
-        try {
-            const { accessionNumber } = c.req.valid("param");
-
-            const result = await OrderService.fetchImagingStudyFromSatuSehat(accessionNumber);
-
-            if (!result.success) {
-                return c.json(
-                    {
-                        success: false,
-                        message: result.message,
-                    },
-                    HttpStatusCodes.NOT_FOUND
-                );
-            }
-
-            return c.json(
-                {
-                    success: result.success,
-                    message: result.message,
-                    data: result.data,
-                },
-                HttpStatusCodes.OK
-            );
-        } catch (error) {
-            loggerPino.error(error);
-            return c.json(
-                {
-                    success: false,
-                    message: error instanceof Error ? error.message : "Failed to fetch ImagingStudy",
-                },
-                HttpStatusCodes.INTERNAL_SERVER_ERROR
-            );
-        }
-    }
-);
-
 // ==================== FINALIZE ORDER DETAIL ====================
 orderController.openapi(
     createRoute({
         tags,
         method: "post",
         path: "/api/orders/{id}/details/{detailId}/finalize",
-        summary: "Finalize order detail and send to Satu Sehat (if encounter exists)",
+        summary: "Finalize order detail (local only - no SatuSehat)",
         description: `
 Finalize order detail by:
 1. Setting status to FINAL
 2. Saving observation notes and diagnostic conclusion
-3. **IF encounter exists**: Send Observation and DiagnosticReport to Satu Sehat
-4. **IF no encounter**: Only save data locally
 
 **Prerequisites:**
 - Order detail must be in IN_PROGRESS status
-- ServiceRequest must already be sent to Satu Sehat
-- Performer information must be complete
 
 **Flow:**
-- Check if order has \`id_encounter_ss\`
-- **With encounter**: POST Observation → POST DiagnosticReport → Save IDs to DB
-- **Without encounter**: Only update DB locally
+- Update order status to FINAL
+- Save observation notes and diagnostic conclusion to database
 
-**Response:**
-- \`sent_to_satusehat\`: true if encounter exists and data sent
-- \`observation_id\` and \`diagnostic_report_id\`: Only present if sent to Satu Sehat
+**Note:**
+- SatuSehat integration is handled by SIMRS, not RIS
 
 **Use Case:**
 Call this endpoint when radiology examination is completed and final report is ready.

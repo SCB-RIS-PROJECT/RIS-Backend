@@ -813,82 +813,78 @@ export class OrderService {
     }
 
     /**
-     * Create new order with details from SIMRS
+     * Create new order with details from SIMRS (NEW FORMAT)
      * Flow:
      * 1. Extract patient/practitioner info from new SIMRS format
      * 2. Create order record
-     * 3. Generate ACSN for each detail (format: {MODALITY}{YYYYMMDD}{SEQ})
-     * 4. Create detail order records
-     * 5. Return order with details
-     * Note: Satu Sehat will be sent later after RIS completes the order
+     * 3. For each detail (LOINC):
+     *    - Find LOINC in master data (tb_loinc)
+     *    - Generate ACSN for each detail
+     *    - Create detail order record
+     * 4. Return id_order dan array detail_orders dengan ACSN
+     * Note: SatuSehat tidak dilakukan di RIS, akan dilakukan oleh SIMRS
      */
-    static async createOrder(data: CreateOrderInput, userId: string): Promise<ServiceResponse<FullOrderResponse>> {
+    static async createOrder(data: CreateOrderInput, userId: string): Promise<ServiceResponse<OrderCreationSuccess>> {
         try {
-            // Extract patient and practitioner info from first detail
-            let id_patient_ss: string | null = null;
-        let id_encounter_ss: string | null = null;
-        let patient_name: string | null = null;
-        let patient_mrn: string | null = null;
-        let patient_birth_date: string | null = null;
-        let patient_age: number | null = null;
-        let patient_gender: string | null = null;
-
-        if (data.details.length > 0) {
-            const firstDetail = data.details[0];
-            
-            // Extract patient info from subject
-            if (firstDetail.subject) {
-                id_patient_ss = firstDetail.subject.ihs_id || null;
-                patient_name = firstDetail.subject.patient_name;
-                patient_mrn = firstDetail.subject.patient_mrn;
-                patient_birth_date = firstDetail.subject.patient_birth_date;
-                patient_age = firstDetail.subject.patient_age;
-                patient_gender = firstDetail.subject.patient_gender;
-            }
+            // Extract patient info dari subject
+            const patient_name = data.subject.patient_name;
+            const patient_mrn = data.subject.patient_mrn;
+            const patient_birth_date = data.subject.patient_birth_date;
+            const patient_age = data.subject.patient_age;
+            const patient_gender = data.subject.patient_gender;
+            const id_patient_ss = data.subject.ihs_id;
 
             // Extract encounter ID
-            if (firstDetail.encounter) {
-                id_encounter_ss = firstDetail.encounter.encounter_id || null;
+            const id_encounter_ss = data.encounter.encounter_id;
+
+            // Build diagnosis string from diagnosa
+            let diagnosis: string | null = null;
+            let diagnosis_code: string | null = null;
+            let diagnosis_display: string | null = null;
+            if (data.diagnosa) {
+                diagnosis = `${data.diagnosa.code} - ${data.diagnosa.display}`;
+                diagnosis_code = data.diagnosa.code;
+                diagnosis_display = data.diagnosa.display;
             }
-        }
 
-        // Create order record
-        const [order] = await db
-            .insert(orderTable)
-            .values({
-                id_patient: null, // We store SS ID separately
-                id_practitioner: null,
-                id_created_by: userId,
-                id_encounter_ss: id_encounter_ss || data.id_pelayanan,
-                id_pelayanan: data.id_pelayanan,
-                patient_name,
-                patient_mrn,
-                patient_birth_date,
-                patient_age,
-                patient_gender,
-            })
-            .returning();
+            // Create order record
+            const [order] = await db
+                .insert(orderTable)
+                .values({
+                    id_patient: null, // We don't use patient table relation
+                    id_practitioner: null,
+                    id_created_by: userId,
+                    id_encounter_ss: id_encounter_ss,
+                    id_pelayanan: data.id_pelayanan,
+                    patient_name,
+                    patient_mrn,
+                    patient_birth_date,
+                    patient_age,
+                    patient_gender,
+                })
+                .returning();
 
-        // Create order details with generated ACSN
-        const detailsToInsert = await Promise.all(
-            data.details.map(async (detailData: CreateDetailOrderItem) => {
-                // Determine modality code for ACSN from LOINC code prefix (e.g., "36687-2" -> search in DB)
-                // For now, try to determine from LOINC code pattern or use default
+            // Process each detail (pemeriksaan/LOINC)
+            const detailsCreated: Array<{ id_detail_order: string; accession_number: string }> = [];
+            
+            for (const detailData of data.details) {
+                // Find LOINC in master data
+                const loincResult = await db
+                    .select({
+                        loinc: loincTable,
+                        modality: modalityTable,
+                    })
+                    .from(loincTable)
+                    .leftJoin(modalityTable, eq(loincTable.id_modality, modalityTable.id))
+                    .where(eq(loincTable.loinc_code, detailData.code))
+                    .limit(1);
+
+                let loincId: string | null = null;
                 let modalityCode = "OT"; // Default: Other
-                
-                // Try to find modality from LOINC code in pemeriksaan
-                if (detailData.pemeriksaan?.code) {
-                    const loincResult = await db
-                        .select({
-                            loinc: loincTable,
-                            modality: modalityTable,
-                        })
-                        .from(loincTable)
-                        .leftJoin(modalityTable, eq(loincTable.id_modality, modalityTable.id))
-                        .where(eq(loincTable.loinc_code, detailData.pemeriksaan.code))
-                        .limit(1);
 
-                    if (loincResult[0]?.modality?.code) {
+                if (loincResult.length > 0 && loincResult[0].loinc) {
+                    loincId = loincResult[0].loinc.id;
+                    if (loincResult[0].modality?.code) {
                         modalityCode = loincResult[0].modality.code;
                     }
                 }
@@ -899,136 +895,67 @@ export class OrderService {
                 // Generate order number
                 const orderNumber = `ORD-${accessionNumber}`;
 
-                // Build diagnosis string from diagnosa
-                let diagnosis: string | null = null;
-                let diagnosis_code: string | null = null;
-                let diagnosis_display: string | null = null;
-                if (detailData.diagnosa) {
-                    diagnosis = `${detailData.diagnosa.code} - ${detailData.diagnosa.display}`;
-                    diagnosis_code = detailData.diagnosa.code;
-                    diagnosis_display = detailData.diagnosa.display;
-                }
+                // Create detail order
+                const [detailOrder] = await db
+                    .insert(detailOrderTable)
+                    .values({
+                        id_order: order.id,
+                        id_loinc: loincId, // Reference ke tb_loinc jika ada
+                        accession_number: accessionNumber,
+                        order_number: orderNumber,
+                        order_date: new Date(),
+                        schedule_date: new Date(),
+                        occurrence_datetime: new Date(),
+                        order_priority: data.order_priority || "ROUTINE",
+                        order_from: "EXTERNAL" as const,
+                        order_status: "IN_REQUEST" as const,
+                        fhir_status: "active",
+                        fhir_intent: "original-order",
+                        order_category_code: "363679005",
+                        order_category_display: "Imaging",
+                        // LOINC info from detail
+                        loinc_code_alt: detailData.code,
+                        loinc_display_alt: detailData.display,
+                        code_text: detailData.text || detailData.display,
+                        // Modality info
+                        modality_code: modalityCode,
+                        ae_title: null,
+                        // Requester info (tidak digunakan untuk SatuSehat di RIS)
+                        id_requester_ss: data.requester.id_practitioner,
+                        requester_display: data.requester.name_practitioner,
+                        // Diagnosis info
+                        reason_code: diagnosis_code,
+                        reason_display: diagnosis_display,
+                        diagnosis: diagnosis,
+                        diagnosis_code: diagnosis_code,
+                        diagnosis_display: diagnosis_display,
+                        // Notes
+                        notes: data.notes || null,
+                        // Service request json tidak diperlukan lagi karena tidak kirim ke SatuSehat
+                        service_request_json: null,
+                    })
+                    .returning();
 
-                // Build service_request_json for later Satu Sehat integration
-                const serviceRequestJson = {
-                    code: {
-                        coding: [{
-                            system: detailData.pemeriksaan.system,
-                            code: detailData.pemeriksaan.code,
-                            display: detailData.pemeriksaan.display,
-                        }],
-                        text: detailData.pemeriksaan.text,
-                    },
-                    subject: {
-                        reference: `Patient/${detailData.subject.ihs_id}`,
-                        patient_name: detailData.subject.patient_name,
-                        patient_mrn: detailData.subject.patient_mrn,
-                        patient_birth_date: detailData.subject.patient_birth_date,
-                        patient_age: detailData.subject.patient_age,
-                        patient_gender: detailData.subject.patient_gender,
-                    },
-                    encounter: {
-                        reference: `Encounter/${detailData.encounter.encounter_id}`,
-                    },
-                    requester: {
-                        reference: `Practitioner/${detailData.requester.id_practitioner}`,
-                        display: detailData.requester.name_practitioner,
-                    },
-                    reasonCode: detailData.diagnosa ? [{
-                        coding: [{
-                            system: detailData.diagnosa.system,
-                            code: detailData.diagnosa.code,
-                            display: detailData.diagnosa.display,
-                        }],
-                    }] : undefined,
-                    occurrenceDateTime: detailData.ccurence_date_time,
-                };
-
-                return {
-                    id_order: order.id,
-                    id_loinc: null, // SIMRS orders don't use RIS LOINC master
+                detailsCreated.push({
+                    id_detail_order: detailOrder.id,
                     accession_number: accessionNumber,
-                    order_number: orderNumber,
-                    order_date: new Date(),
-                    schedule_date: detailData.ccurence_date_time ? new Date(detailData.ccurence_date_time) : new Date(),
-                    occurrence_datetime: detailData.ccurence_date_time ? new Date(detailData.ccurence_date_time) : new Date(),
-                    order_priority: detailData.order_priority || "ROUTINE",
-                    order_from: "EXTERNAL" as const,
-                    order_status: "IN_REQUEST" as const,
-                    fhir_status: "active",
-                    fhir_intent: "original-order",
-                    order_category_code: "363679005",
-                    order_category_display: "Imaging",
-                    // LOINC info from pemeriksaan
-                    loinc_code_alt: detailData.pemeriksaan.code || null,
-                    loinc_display_alt: detailData.pemeriksaan.display || null,
-                    code_text: detailData.pemeriksaan.text || detailData.pemeriksaan.display || null,
-                    // Modality info
-                    modality_code: modalityCode,
-                    ae_title: null,
-                    // Requester info
-                    id_requester_ss: detailData.requester.id_practitioner || null,
-                    requester_display: detailData.requester.name_practitioner || null,
-                    // Diagnosis info
-                    reason_code: detailData.diagnosa?.code || null,
-                    reason_display: detailData.diagnosa?.display || null,
-                    diagnosis: diagnosis,
-                    diagnosis_code: diagnosis_code,
-                    diagnosis_display: diagnosis_display,
-                    // Notes
-                    notes: detailData.notes || null,
-                    // Store original data as service_request_json for later Satu Sehat integration
-                    service_request_json: serviceRequestJson,
-                };
-            })
-        );
+                });
+            }
 
-        await db.insert(detailOrderTable).values(detailsToInsert);
-
-        // Return created order with details
-        const createdOrderResponse = await OrderService.getOrderById(order.id);
-        
-        if (!createdOrderResponse.status || !createdOrderResponse.data) {
-            return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
-        }
-        
-        return createdOrderResponse;
+            // Return response sesuai format baru
+            return {
+                status: true,
+                data: {
+                    id_order: order.id,
+                    detail_orders: detailsCreated,
+                },
+            };
         } catch (err) {
             console.error(`OrderService.createOrder: ${err}`);
             return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
         }
     }
 
-    /**
-     * Create order from SIMRS and return simple message
-     * Satu Sehat will NOT be sent immediately - it will be sent later after RIS completes the order
-     */
-    static async createOrderForSimrs(
-        data: CreateOrderInput, 
-        userId: string
-    ): Promise<OrderCreationSuccess> {
-        try {
-            const result = await OrderService.createOrder(data, userId);
-
-            if (!result.status) {
-                return {
-                    success: false,
-                    message: result.err?.message || "Failed to create order",
-                };
-            }
-
-            return {
-                success: true,
-                message: "Order created successfully",
-            };
-        } catch (err) {
-            console.error(`OrderService.createOrderForSimrs: ${err}`);
-            return {
-                success: false,
-                message: "Failed to create order",
-            };
-        }
-    }
 
     /**
      * Send order details to Satu Sehat as ServiceRequest
