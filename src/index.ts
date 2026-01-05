@@ -8,7 +8,6 @@ import orderController from "@/controller/order.controller";
 import patientController from "@/controller/patient.controller";
 import permissionController from "@/controller/permission.controller";
 import practitionerController from "@/controller/practitioner.controller";
-import profileController from "@/controller/profile.controller";
 import satuSehatController from "@/controller/satu-sehat.controller";
 
 const app = createApp();
@@ -20,7 +19,6 @@ const routes = [
     authController,
     patientController,
     practitionerController,
-    profileController,
     modalityController,
     loincController,
     orderController,
