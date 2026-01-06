@@ -70,13 +70,6 @@ export const seedRolePermission = async () => {
             createPermission({ name: "delete:practitioner", description: "can delete practitioner" }),
         ]);
 
-        const profilePermissions = await Promise.all([
-            createPermission({ name: "create:profile", description: "can create profile" }),
-            createPermission({ name: "read:profile", description: "can read profile" }),
-            createPermission({ name: "update:profile", description: "can update profile" }),
-            createPermission({ name: "delete:profile", description: "can delete profile" }),
-        ]);
-
         const modalityPermissions = await Promise.all([
             createPermission({ name: "create:modality", description: "can create modality" }),
             createPermission({ name: "read:modality", description: "can read modality" }),
@@ -110,7 +103,6 @@ export const seedRolePermission = async () => {
             ...permissionPermissions,
             ...patientPermissions,
             ...practitionerPermissions,
-            ...profilePermissions,
             ...modalityPermissions,
             ...loincPermissions,
             ...orderPermissions,
@@ -145,13 +137,6 @@ export const seedRolePermission = async () => {
                     p.name === "update:practitioner" ||
                     p.name === "delete:practitioner"
             ),
-            ...profilePermissions.filter(
-                (p) =>
-                    p.name === "create:profile" ||
-                    p.name === "read:profile" ||
-                    p.name === "update:profile" ||
-                    p.name === "delete:profile"
-            ),
         ];
 
         await db.insert(rolePermissionTable).values(
@@ -168,7 +153,6 @@ export const seedRolePermission = async () => {
             ...loincPermissions,
             ...patientPermissions.filter((p) => p.name === "read:patient"),
             ...practitionerPermissions.filter((p) => p.name === "read:practitioner"),
-            ...profilePermissions.filter((p) => p.name === "read:profile"),
             ...modalityPermissions.filter((p) => p.name === "read:modality"),
         ];
 
@@ -186,7 +170,6 @@ export const seedRolePermission = async () => {
             ...orderPermissions,
             ...patientPermissions.filter((p) => p.name === "read:patient"),
             ...practitionerPermissions.filter((p) => p.name === "read:practitioner"),
-            ...profilePermissions.filter((p) => p.name === "read:profile"),
         ];
 
         await db.insert(rolePermissionTable).values(
