@@ -34,7 +34,7 @@ logs/
 *.db
 *.sqlite
 *.sqlite3
-migrations/temp/
+# migrations/temp/
 
 # Temporary files
 temp/
