@@ -85,6 +85,20 @@
       "when": 1767672251086,
       "tag": "0011_regular_moondragon",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1767790800000,
+      "tag": "0012_familiar_banshee",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1767698035366,
+      "tag": "0014_unusual_baron_zemo",
+      "breakpoints": true
     }
   ]
 }
