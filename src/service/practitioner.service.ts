@@ -241,6 +241,21 @@ export class PractitionerService {
                 };
             }
 
+            // 2a. Check if already has IHS number
+            if (practitioner.ihs_number) {
+                loggerPino.info(`[Practitioner Sync] Practitioner ${practitioner.name} already has IHS number: ${practitioner.ihs_number}`);
+                return {
+                    success: true,
+                    message: "Practitioner already has IHS number (already synced)",
+                    data: {
+                        practitioner_id: practitioner.id,
+                        ihs_number: practitioner.ihs_number,
+                        name: practitioner.name,
+                        synced_at: practitioner.ihs_last_sync?.toISOString() || new Date().toISOString(),
+                    },
+                };
+            }
+
             // 3. Get IHS number from Satu Sehat
             loggerPino.info(`[Practitioner Sync] Fetching IHS number for NIK: ${practitioner.nik}`);
             const satuSehatResponse = await SatuSehatService.getIHSPractitionerByNIK(practitioner.nik);
@@ -269,19 +284,58 @@ export class PractitionerService {
                 };
             }
 
+            // 4a. Check if IHS number already exists in another practitioner
+            const existingPractitioner = await db
+                .select()
+                .from(practitionerTable)
+                .where(eq(practitionerTable.ihs_number, ihsNumber))
+                .limit(1);
+
+            if (existingPractitioner.length > 0 && existingPractitioner[0].id !== practitionerId) {
+                loggerPino.warn(
+                    `[Practitioner Sync] IHS number ${ihsNumber} already exists for practitioner: ${existingPractitioner[0].name} (${existingPractitioner[0].id})`
+                );
+                return {
+                    success: false,
+                    message: `IHS number ${ihsNumber} sudah terdaftar ke practitioner lain: ${existingPractitioner[0].name}. Periksa data NIK di Satu Sehat.`,
+                };
+            }
+
             // 5. Update practitioner with IHS number
             const syncedAt = new Date();
-            await db
-                .update(practitionerTable)
-                .set({
-                    ihs_number: ihsNumber,
-                    ihs_last_sync: syncedAt,
-                    ihs_response_status: "SUCCESS",
-                    updated_at: syncedAt,
-                })
-                .where(eq(practitionerTable.id, practitionerId));
+            
+            loggerPino.info(`[Practitioner Sync] Updating practitioner ${practitioner.name} with IHS: ${ihsNumber}`);
+            
+            try {
+                await db
+                    .update(practitionerTable)
+                    .set({
+                        ihs_number: ihsNumber,
+                        ihs_last_sync: syncedAt,
+                        ihs_response_status: "OK", // Max 3 chars as per schema
+                        updated_at: syncedAt,
+                    })
+                    .where(eq(practitionerTable.id, practitionerId));
 
-            loggerPino.info(`[Practitioner Sync] Successfully synced practitioner ${practitioner.name} with IHS number: ${ihsNumber}`);
+                loggerPino.info(`[Practitioner Sync] Successfully synced practitioner ${practitioner.name} with IHS number: ${ihsNumber}`);
+            } catch (dbError) {
+                // Check if it's a unique constraint violation
+                const errorMsg = dbError instanceof Error ? dbError.message : String(dbError);
+                loggerPino.error(`[Practitioner Sync] Database error: ${errorMsg}`);
+                
+                if (errorMsg.includes("unique") || errorMsg.includes("duplicate") || errorMsg.includes("constraint")) {
+                    return {
+                        success: false,
+                        message: `IHS number ${ihsNumber} sudah terdaftar ke practitioner lain. Periksa data di Satu Sehat atau database.`,
+                    };
+                }
+                
+                // Return error message instead of throwing
+                return {
+                    success: false,
+                    message: `Database error: ${errorMsg}`,
+                };
+            }
 
             return {
                 success: true,
