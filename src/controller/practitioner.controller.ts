@@ -4,6 +4,7 @@ import { jsonContent, jsonContentRequired } from "stoker/openapi/helpers";
 import { createErrorSchema, createMessageObjectSchema } from "stoker/openapi/schemas";
 import createRouter from "@/config/create-router";
 import { loggerPino } from "@/config/log";
+import { z } from "@hono/zod-openapi";
 import {
     createPractitionerSchema,
     practitionerApiResponseSchema,
@@ -185,5 +186,110 @@ const practitionerController = createRouter()
         loggerPino.debug({ message: "Practitioner deleted successfully" });
         return response_success(c, serviceResponse.data, "Successfully deleted Practitioner!");
     });
+
+// POST /api/practitioners/:id/sync-satusehat - Sync practitioner to Satu Sehat
+const syncToSatuSehat = createRoute({
+    path: "/api/practitioners/{id}/sync-satusehat",
+    method: "post",
+    tags,
+    summary: "Sync practitioner to Satu Sehat by NIK",
+    description: `
+Sync practitioner data to Satu Sehat to get IHS (Indonesia Health System) number.
+
+**Use Case:**
+- When practitioner doesn't have IHS number yet
+- Before assigning practitioner as performer in order
+- To update practitioner data with Satu Sehat
+
+**Process:**
+1. Validates practitioner exists and has NIK
+2. Fetches practitioner data from Satu Sehat by NIK
+3. Updates local practitioner with IHS number
+4. Updates sync status and timestamp
+
+**Requirements:**
+- Practitioner must have NIK (National ID Number)
+- NIK must be registered in Satu Sehat system
+    `,
+    middleware: [authMiddleware, permissionMiddleware("update:practitioner")] as const,
+    request: {
+        params: practitionerIdParamSchema,
+    },
+    responses: {
+        [HttpStatusCode.OK]: jsonContent(
+            z.object({
+                success: z.boolean(),
+                message: z.string(),
+                data: z.object({
+                    practitioner_id: z.string().uuid(),
+                    ihs_number: z.string(),
+                    name: z.string(),
+                    synced_at: z.string().datetime(),
+                }).optional(),
+            }),
+            "Practitioner synced to Satu Sehat successfully"
+        ),
+        [HttpStatusCode.BAD_REQUEST]: jsonContent(
+            createMessageObjectSchema("Invalid request or practitioner has no NIK"),
+            "Bad request"
+        ),
+        [HttpStatusCode.NOT_FOUND]: jsonContent(
+            createMessageObjectSchema("Practitioner not found or not found in Satu Sehat"),
+            "Not found"
+        ),
+        [HttpStatusCode.UNAUTHORIZED]: jsonContent(
+            createMessageObjectSchema("Not authenticated"),
+            "Unauthorized"
+        ),
+        [HttpStatusCode.FORBIDDEN]: jsonContent(
+            createMessageObjectSchema("Permission denied"),
+            "Forbidden"
+        ),
+        [HttpStatusCode.INTERNAL_SERVER_ERROR]: jsonContent(
+            createMessageObjectSchema("Failed to sync practitioner"),
+            "Internal server error"
+        ),
+    },
+});
+
+practitionerController.openapi(syncToSatuSehat, async (c) => {
+    try {
+        const { id } = c.req.valid("param");
+        const result = await PractitionerService.syncToSatuSehat(id);
+
+        if (!result.success) {
+            const statusCode = 
+                result.message.includes("not found")
+                    ? HttpStatusCode.NOT_FOUND
+                    : HttpStatusCode.BAD_REQUEST;
+
+            return c.json(
+                {
+                    success: false,
+                    message: result.message,
+                },
+                statusCode
+            );
+        }
+
+        return c.json(
+            {
+                success: true,
+                message: result.message,
+                data: result.data,
+            },
+            HttpStatusCode.OK
+        );
+    } catch (error) {
+        loggerPino.error(error);
+        return c.json(
+            {
+                success: false,
+                message: error instanceof Error ? error.message : "Failed to sync practitioner",
+            },
+            HttpStatusCode.INTERNAL_SERVER_ERROR
+        );
+    }
+});
 
 export default practitionerController;

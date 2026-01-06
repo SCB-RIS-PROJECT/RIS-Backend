@@ -13,6 +13,8 @@ import {
     INTERNAL_SERVER_ERROR_SERVICE_RESPONSE,
     INVALID_ID_SERVICE_RESPONSE,
 } from "@/entities/Service";
+import { SatuSehatService } from "@/service/satu-sehat.service";
+import { loggerPino } from "@/config/log";
 
 export class PractitionerService {
     static formatPractitionerResponse(practitioner: InferSelectModel<typeof practitionerTable>): PractitionerResponse {
@@ -199,6 +201,104 @@ export class PractitionerService {
         } catch (err) {
             console.error(`PractitionerService.deletePractitioner: ${err}`);
             return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
+        }
+    }
+
+    /**
+     * Sync practitioner to Satu Sehat by NIK
+     * This will fetch IHS number from Satu Sehat and update the practitioner
+     */
+    static async syncToSatuSehat(practitionerId: string): Promise<{
+        success: boolean;
+        message: string;
+        data?: {
+            practitioner_id: string;
+            ihs_number: string;
+            name: string;
+            synced_at: string;
+        };
+    }> {
+        try {
+            // 1. Get practitioner
+            const [practitioner] = await db
+                .select()
+                .from(practitionerTable)
+                .where(eq(practitionerTable.id, practitionerId))
+                .limit(1);
+
+            if (!practitioner) {
+                return {
+                    success: false,
+                    message: "Practitioner not found",
+                };
+            }
+
+            // 2. Validate NIK exists
+            if (!practitioner.nik) {
+                return {
+                    success: false,
+                    message: "Practitioner does not have NIK. NIK is required to sync with Satu Sehat.",
+                };
+            }
+
+            // 3. Get IHS number from Satu Sehat
+            loggerPino.info(`[Practitioner Sync] Fetching IHS number for NIK: ${practitioner.nik}`);
+            const satuSehatResponse = await SatuSehatService.getIHSPractitionerByNIK(practitioner.nik);
+
+            if (!satuSehatResponse.status || !satuSehatResponse.data) {
+                return {
+                    success: false,
+                    message: satuSehatResponse.err?.message || "Failed to fetch practitioner from Satu Sehat",
+                };
+            }
+
+            // 4. Extract IHS number
+            const bundle = satuSehatResponse.data;
+            if (!bundle.entry || bundle.entry.length === 0) {
+                return {
+                    success: false,
+                    message: `No practitioner found in Satu Sehat with NIK: ${practitioner.nik}`,
+                };
+            }
+
+            const ihsNumber = bundle.entry[0].resource.id;
+            if (!ihsNumber) {
+                return {
+                    success: false,
+                    message: "Failed to extract IHS number from Satu Sehat response",
+                };
+            }
+
+            // 5. Update practitioner with IHS number
+            const syncedAt = new Date();
+            await db
+                .update(practitionerTable)
+                .set({
+                    ihs_number: ihsNumber,
+                    ihs_last_sync: syncedAt,
+                    ihs_response_status: "SUCCESS",
+                    updated_at: syncedAt,
+                })
+                .where(eq(practitionerTable.id, practitionerId));
+
+            loggerPino.info(`[Practitioner Sync] Successfully synced practitioner ${practitioner.name} with IHS number: ${ihsNumber}`);
+
+            return {
+                success: true,
+                message: "Practitioner synced to Satu Sehat successfully",
+                data: {
+                    practitioner_id: practitioner.id,
+                    ihs_number: ihsNumber,
+                    name: practitioner.name,
+                    synced_at: syncedAt.toISOString(),
+                },
+            };
+        } catch (error) {
+            loggerPino.error(`[Practitioner Sync] Error: ${error}`);
+            return {
+                success: false,
+                message: error instanceof Error ? error.message : "Failed to sync practitioner to Satu Sehat",
+            };
         }
     }
 }

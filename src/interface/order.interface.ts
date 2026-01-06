@@ -586,3 +586,38 @@ export const finalizeOrderDetailResponseSchema = z.object({
 });
 
 export type FinalizeOrderDetailResponse = z.infer<typeof finalizeOrderDetailResponseSchema>;
+
+// ==================== Update Order Detail with Modality & Performer ====================
+export const updateOrderDetailWithModalityPerformerSchema = z.object({
+    // Modality info (required)
+    id_modality: z.string().uuid().describe("ID modality dari master data"),
+    ae_title: z.string().describe("AE Title workstation tujuan (dipilih dari list AET modality)"),
+    
+    // Performer/Practitioner (required)
+    id_performer: z.string().uuid().describe("ID practitioner/radiologist dari master data"),
+});
+
+export type UpdateOrderDetailWithModalityPerformerInput = z.infer<typeof updateOrderDetailWithModalityPerformerSchema>;
+
+export const updateOrderDetailWithModalityPerformerResponseSchema = z.object({
+    success: z.boolean(),
+    message: z.string(),
+    data: z.object({
+        detail_id: z.string().uuid(),
+        accession_number: z.string(),
+        order_status: z.string(),
+        modality: z.object({
+            id: z.string().uuid(),
+            code: z.string(),
+            name: z.string(),
+            ae_title: z.string(),
+        }),
+        performer: z.object({
+            id: z.string().uuid(),
+            id_ss: z.string(),
+            name: z.string(),
+        }),
+    }).optional(),
+});
+
+export type UpdateOrderDetailWithModalityPerformerResponse = z.infer<typeof updateOrderDetailWithModalityPerformerResponseSchema>;

@@ -4,6 +4,7 @@ import { jsonContent } from "stoker/openapi/helpers";
 import { createErrorSchema, createMessageObjectSchema } from "stoker/openapi/schemas";
 import createRouter from "@/config/create-router";
 import { loggerPino } from "@/config/log";
+import { z } from "@hono/zod-openapi";
 import {
     createModalitySchema,
     modalityIdParamSchema,
@@ -247,6 +248,66 @@ modalityController.openapi(
         }
 
         return response_success(c, serviceResponse.data, "Successfully deleted Modality!");
+    }
+);
+
+// Get AET list from modality
+modalityController.openapi(
+    createRoute({
+        tags,
+        method: "get",
+        path: "/api/modalities/{id}/aet",
+        summary: "Get AET list from modality",
+        description: `
+Get the list of AE Titles (Application Entity Titles) available for a specific modality.
+
+**Use Case:**
+- When updating an order, user selects a modality first
+- Then this endpoint is called to get available AE Titles for that modality
+- User can then select the appropriate AE Title from the list
+
+**Response:**
+- Returns an array of AE Title strings
+- Returns null if modality has no AE Titles configured
+        `,
+        middleware: [authMiddleware, permissionMiddleware("read:modality")] as const,
+        request: {
+            params: modalityIdParamSchema,
+        },
+        responses: {
+            [HttpStatusCodes.OK]: jsonContent(
+                z.object({
+                    aet: z.array(z.string()).nullable(),
+                }),
+                "AET list retrieved successfully"
+            ),
+            [HttpStatusCodes.NOT_FOUND]: jsonContent(
+                createMessageObjectSchema("Modality not found"),
+                "Modality not found"
+            ),
+            [HttpStatusCodes.UNAUTHORIZED]: jsonContent(
+                createMessageObjectSchema("Not authenticated"),
+                "User not authenticated"
+            ),
+            [HttpStatusCodes.FORBIDDEN]: jsonContent(
+                createMessageObjectSchema("Permission denied"),
+                "Insufficient permissions"
+            ),
+            [HttpStatusCodes.INTERNAL_SERVER_ERROR]: jsonContent(
+                createMessageObjectSchema("Failed to fetch AET list"),
+                "Internal server error"
+            ),
+        },
+    }),
+    async (c) => {
+        const { id } = c.req.valid("param");
+        const serviceResponse = await ModalityService.getModalityAetList(id);
+
+        if (!serviceResponse.status) {
+            return handleServiceErrorWithResponse(c, serviceResponse);
+        }
+
+        return response_success(c, serviceResponse.data, "Successfully fetched AET list!");
     }
 );
 

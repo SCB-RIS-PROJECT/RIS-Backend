@@ -76,7 +76,7 @@ Authorization: Bearer <your_token>
 ## cURL Command
 
 ```bash
-curl -X POST http://localhost:3000/api/orders \
+curl -X POST http://dev.verd.net.id:8001/api/orders \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -d '{

@@ -17,6 +17,7 @@ import type {
     OrderResponse,
     SimrsServiceRequest,
     UpdateDetailOrderInput,
+    UpdateOrderDetailWithModalityPerformerInput,
     UpdateOrderInput,
     FinalizeOrderDetailInput,
 } from "@/interface/order.interface";
@@ -347,10 +348,21 @@ export class OrderService {
             .limit(per_page)
             .offset(offset);
 
-        // Get details for each order (no filter here, show all details within filtered orders)
+        // Get details for each order - apply same filters as order query
         const ordersWithDetails: FullOrderResponse[] = await Promise.all(
             orders.map(async ({ order, patient, createdBy }) => {
                 const detailWhereConditions: SQL[] = [eq(detailOrderTable.id_order, order.id)];
+
+                // Apply filters from query params to details
+                if (order_status) {
+                    detailWhereConditions.push(eq(detailOrderTable.order_status, order_status));
+                }
+                if (order_priority) {
+                    detailWhereConditions.push(eq(detailOrderTable.order_priority, order_priority));
+                }
+                if (order_from) {
+                    detailWhereConditions.push(eq(detailOrderTable.order_from, order_from));
+                }
 
                 const detailWhereClause = and(...detailWhereConditions);
 
@@ -868,7 +880,10 @@ export class OrderService {
             const detailsCreated: Array<{ id_detail_order: string; accession_number: string }> = [];
             
             for (const detailData of data.details) {
-                // Find LOINC in master data
+                // Trim and normalize LOINC code
+                const normalizedCode = detailData.code.trim();
+                
+                // Find LOINC in master data - using ILIKE for case-insensitive search
                 const loincResult = await db
                     .select({
                         loinc: loincTable,
@@ -876,7 +891,7 @@ export class OrderService {
                     })
                     .from(loincTable)
                     .leftJoin(modalityTable, eq(loincTable.id_modality, modalityTable.id))
-                    .where(eq(loincTable.loinc_code, detailData.code))
+                    .where(ilike(loincTable.loinc_code, normalizedCode))
                     .limit(1);
 
                 let loincId: string | null = null;
@@ -887,6 +902,9 @@ export class OrderService {
                     if (loincResult[0].modality?.code) {
                         modalityCode = loincResult[0].modality.code;
                     }
+                } else {
+                    // Log ketika LOINC tidak ditemukan di master data
+                    console.warn(`[CreateOrder] LOINC code "${normalizedCode}" not found in master data. Creating order detail without id_loinc.`);
                 }
 
                 // Generate ACSN with modality code: {MODALITY}{YYYYMMDD}{SEQ}
@@ -1270,6 +1288,14 @@ export class OrderService {
 
         if (!detail.ae_title) {
             return { success: false, message: "Missing ae_title. Please update order detail first." };
+        }
+
+        // Validate status (must be IN_REQUEST or IN_QUEUE for retry)
+        if (detail.order_status !== "IN_REQUEST" && detail.order_status !== "IN_QUEUE") {
+            return { 
+                success: false, 
+                message: `Cannot push to MWL with status "${detail.order_status}". Status must be IN_REQUEST or IN_QUEUE.` 
+            };
         }
 
         try {
@@ -2220,6 +2246,178 @@ export class OrderService {
             return {
                 success: false,
                 message: error instanceof Error ? error.message : "Failed to finalize order",
+            };
+        }
+    }
+
+    /**
+     * Update order detail with modality and performer information
+     * This will:
+     * 1. Validate modality exists and get modality_code
+     * 2. Validate performer exists and get performer ID & name
+     * 3. Update detail order with modality_code, ae_title, performer info
+     * 4. Update status from IN_REQUEST to IN_QUEUE
+     * 
+     * Note: Push to MWL is done separately via pushToMWL() method
+     */
+    static async updateOrderDetailWithModalityPerformer(
+        orderId: string,
+        detailId: string,
+        data: UpdateOrderDetailWithModalityPerformerInput
+    ): Promise<{
+        success: boolean;
+        message: string;
+        data?: {
+            detail_id: string;
+            accession_number: string;
+            order_status: string;
+            modality: {
+                id: string;
+                code: string;
+                name: string;
+                ae_title: string;
+            };
+            performer: {
+                id: string;
+                id_ss: string;
+                name: string;
+            };
+        };
+    }> {
+        try {
+            // 1. Get modality data
+            const [modality] = await db
+                .select()
+                .from(modalityTable)
+                .where(eq(modalityTable.id, data.id_modality))
+                .limit(1);
+
+            if (!modality) {
+                return {
+                    success: false,
+                    message: "Modality not found",
+                };
+            }
+
+            // Validate AE Title exists in modality's AET list
+            if (!modality.aet || !modality.aet.includes(data.ae_title)) {
+                return {
+                    success: false,
+                    message: `AE Title "${data.ae_title}" not found in modality "${modality.name}"`,
+                };
+            }
+
+            // 2. Get performer/practitioner data
+            const [performer] = await db
+                .select()
+                .from(practitionerTable)
+                .where(eq(practitionerTable.id, data.id_performer))
+                .limit(1);
+
+            if (!performer) {
+                return {
+                    success: false,
+                    message: "Performer/Practitioner not found",
+                };
+            }
+
+            if (!performer.ihs_number) {
+                return {
+                    success: false,
+                    message: "Performer does not have Satu Sehat IHS number",
+                };
+            }
+
+            // 3. Get order and detail
+            const [order] = await db
+                .select()
+                .from(orderTable)
+                .where(eq(orderTable.id, orderId))
+                .limit(1);
+
+            if (!order) {
+                return {
+                    success: false,
+                    message: "Order not found",
+                };
+            }
+
+            const [detail] = await db
+                .select()
+                .from(detailOrderTable)
+                .where(and(
+                    eq(detailOrderTable.id, detailId),
+                    eq(detailOrderTable.id_order, orderId)
+                ))
+                .limit(1);
+
+            if (!detail) {
+                return {
+                    success: false,
+                    message: "Order detail not found",
+                };
+            }
+
+            // Validate status is IN_REQUEST
+            if (detail.order_status !== "IN_REQUEST") {
+                return {
+                    success: false,
+                    message: `Cannot update order with status "${detail.order_status}". Only orders with status IN_REQUEST can be updated.`,
+                };
+            }
+
+            // Validate required data exists
+            if (!detail.accession_number) {
+                return {
+                    success: false,
+                    message: "Order detail missing accession number",
+                };
+            }
+
+            if (!detail.schedule_date && !detail.occurrence_datetime) {
+                return {
+                    success: false,
+                    message: "Order detail missing schedule date",
+                };
+            }
+
+            // 4. Update detail order
+            await db
+                .update(detailOrderTable)
+                .set({
+                    modality_code: modality.code,
+                    ae_title: data.ae_title,
+                    id_performer_ss: performer.ihs_number,
+                    performer_display: performer.name,
+                    updated_at: new Date(),
+                })
+                .where(eq(detailOrderTable.id, detailId));
+
+            return {
+                success: true,
+                message: "Order detail updated successfully. You can now push to MWL.",
+                data: {
+                    detail_id: detailId,
+                    accession_number: detail.accession_number,
+                    order_status: "IN_REQUEST",
+                    modality: {
+                        id: modality.id,
+                        code: modality.code,
+                        name: modality.name,
+                        ae_title: data.ae_title,
+                    },
+                    performer: {
+                        id: performer.id,
+                        id_ss: performer.ihs_number,
+                        name: performer.name,
+                    },
+                },
+            };
+        } catch (error) {
+            loggerPino.error(error);
+            return {
+                success: false,
+                message: error instanceof Error ? error.message : "Failed to update order detail",
             };
         }
     }

@@ -154,4 +154,27 @@ export class ModalityService {
             return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
         }
     }
+
+    /**
+     * Get AET list from a modality
+     */
+    static async getModalityAetList(modalityId: string): Promise<ServiceResponse<{ aet: string[] | null }>> {
+        try {
+            const [modality] = await db
+                .select({ aet: modalityTable.aet })
+                .from(modalityTable)
+                .where(eq(modalityTable.id, modalityId))
+                .limit(1);
+
+            if (!modality) return INVALID_ID_SERVICE_RESPONSE;
+
+            return {
+                status: true,
+                data: { aet: modality.aet },
+            };
+        } catch (err) {
+            console.error(`ModalityService.getModalityAetList: ${err}`);
+            return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
+        }
+    }
 }

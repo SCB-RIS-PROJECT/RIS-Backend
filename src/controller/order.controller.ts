@@ -21,6 +21,8 @@ import {
     orderPaginationResponseSchema,
     orderQuerySchema,
     updateDetailOrderSchema,
+    updateOrderDetailWithModalityPerformerResponseSchema,
+    updateOrderDetailWithModalityPerformerSchema,
     updateOrderSchema,
 } from "@/interface/order.interface";
 import { authMiddleware } from "@/middleware/auth.middleware";
@@ -890,6 +892,113 @@ Call this endpoint when radiology examination is completed and final report is r
                 {
                     success: false,
                     message: error instanceof Error ? error.message : "Failed to finalize order",
+                },
+                HttpStatusCodes.INTERNAL_SERVER_ERROR
+            );
+        }
+    }
+);
+
+// ==================== UPDATE ORDER DETAIL WITH MODALITY & PERFORMER ====================
+orderController.openapi(
+    createRoute({
+        tags,
+        method: "patch",
+        path: "/api/orders/{id}/details/{detailId}/update-modality-performer",
+        summary: "Update order detail with modality and performer information",
+        description: `
+Update order detail with modality, AE Title, and performer/practitioner information.
+
+**Flow:**
+1. Validate modality exists in master data
+2. Validate AE Title is valid for the selected modality
+3. Validate performer/practitioner exists and has Satu Sehat IHS number
+4. Update detail order with:
+   - modality_code (from master data)
+   - ae_title (selected by user)
+   - id_performer_ss (IHS number)
+   - performer_display (name)
+5. Update status from IN_REQUEST to IN_QUEUE
+
+**Requirements:**
+- Order detail must have status IN_REQUEST
+- Order detail must have accession_number and schedule_date
+- Modality must exist in master data
+- AE Title must be valid for the selected modality
+- Performer/Practitioner must exist and have Satu Sehat IHS number
+
+**Next Step:**
+- After updating, you can push to MWL using separate endpoint:
+  POST /api/orders/{id}/details/{detailId}/push-mwl
+        `,
+        middleware: [authMiddleware, permissionMiddleware("update:order")] as const,
+        request: {
+            params: detailOrderIdParamSchema,
+            body: jsonContentRequired(updateOrderDetailWithModalityPerformerSchema, "Update order detail data"),
+        },
+        responses: {
+            [HttpStatusCodes.OK]: jsonContent(
+                updateOrderDetailWithModalityPerformerResponseSchema,
+                "Order detail updated successfully"
+            ),
+            [HttpStatusCodes.BAD_REQUEST]: jsonContent(
+                createMessageObjectSchema("Invalid request data"),
+                "Invalid request"
+            ),
+            [HttpStatusCodes.NOT_FOUND]: jsonContent(
+                createMessageObjectSchema("Order or detail not found"),
+                "Resource not found"
+            ),
+            [HttpStatusCodes.UNAUTHORIZED]: jsonContent(
+                createMessageObjectSchema("Not authenticated"),
+                "User not authenticated"
+            ),
+            [HttpStatusCodes.FORBIDDEN]: jsonContent(
+                createMessageObjectSchema("Permission denied"),
+                "Insufficient permissions"
+            ),
+            [HttpStatusCodes.INTERNAL_SERVER_ERROR]: jsonContent(
+                createMessageObjectSchema("Failed to update order detail"),
+                "Internal server error"
+            ),
+        },
+    }),
+    async (c) => {
+        try {
+            const { id: orderId, detailId } = c.req.valid("param");
+            const input = c.req.valid("json");
+
+            const result = await OrderService.updateOrderDetailWithModalityPerformer(orderId, detailId, input);
+
+            if (!result.success) {
+                const statusCode =
+                    result.message.includes("not found")
+                        ? HttpStatusCodes.NOT_FOUND
+                        : HttpStatusCodes.BAD_REQUEST;
+
+                return c.json(
+                    {
+                        success: false,
+                        message: result.message,
+                    },
+                    statusCode
+                );
+            }
+
+            return c.json(
+                {
+                    success: true,
+                    message: result.message,
+                    data: result.data,
+                },
+                HttpStatusCodes.OK
+            );
+        } catch (error) {
+            loggerPino.error(error);
+            return c.json(
+                {
+                    success: false,
+                    message: error instanceof Error ? error.message : "Failed to update order detail",
                 },
                 HttpStatusCodes.INTERNAL_SERVER_ERROR
             );

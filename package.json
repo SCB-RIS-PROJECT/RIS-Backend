@@ -4,11 +4,11 @@
     "type": "module",
     "license": "MIT",
     "author": {
-        "name": "Muhammad Haykal",
-        "email": "developer.kidzeroll@gmail.com",
-        "url": "https://github.com/haykal-fe-verd"
+        "name": "Muhammad Ghufran",
+        "email": "Ghufranbakrie@gmail.com",
+        "url": "https://github.com/gufriends"
     },
-    "publisher": "@kdiz.eroll",
+    "publisher": "@gufriends",
     "description": "RIS (Radiology Information System) API built with Hono and Bun",
     "repository": "https://github.com/haykal-fe-verd/ris-api",
     "scripts": {
