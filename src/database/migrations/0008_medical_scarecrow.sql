@@ -1,0 +1,1 @@
+ALTER TABLE "tb_modality" ADD COLUMN "aet" varchar(255);

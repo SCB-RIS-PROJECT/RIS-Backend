@@ -29,12 +29,12 @@ pids/
 logs/
 
 # Database
-*.sql
 *.dump
 *.db
 *.sqlite
 *.sqlite3
-# migrations/temp/
+# Don't ignore migration SQL files
+!src/database/migrations/*.sql
 
 # Temporary files
 temp/
