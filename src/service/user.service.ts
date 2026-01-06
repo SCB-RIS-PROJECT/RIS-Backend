@@ -95,7 +95,7 @@ export class UserService {
                 data: userWithRoles,
             };
         } catch (err) {
-            console.error(`UserService.getUserById: ${err}`);
+            console.error('UserService.getUserById error:', err);
             return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
         }
     }

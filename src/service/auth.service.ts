@@ -71,7 +71,7 @@ export class AuthService {
                 },
             };
         } catch (err) {
-            console.error(`AuthService.login: ${err}`);
+            console.error('AuthService.login error:', err);
             return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
         }
     }
@@ -142,7 +142,7 @@ export class AuthService {
                 },
             };
         } catch (err) {
-            console.error(`AuthService.current: ${err}`);
+            console.error('AuthService.current error:', err);
             return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
         }
     }
@@ -208,7 +208,7 @@ export class AuthService {
                 },
             };
         } catch (err) {
-            console.error(`AuthService.registerUser: ${err}`);
+            console.error('AuthService.registerUser error:', err);
             return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
         }
     }

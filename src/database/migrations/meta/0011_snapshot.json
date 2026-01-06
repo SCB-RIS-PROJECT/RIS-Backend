@@ -1,6 +1,6 @@
 {
-  "id": "d8e1a1e9-3ef0-4e4a-970c-79958c45ba84",
-  "prevId": "5f5c054e-1898-43d2-b7cd-b6495e757212",
+  "id": "ba583b94-be76-4f61-85ac-62b8e5180d55",
+  "prevId": "9cb52c50-beaa-4a00-9a81-6db2c7556f91",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -331,12 +331,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "id_modality": {
-          "name": "id_modality",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
         "id_service_request_ss": {
           "name": "id_service_request_ss",
           "type": "varchar(255)",
@@ -653,21 +647,6 @@
           "method": "btree",
           "with": {}
         },
-        "detail_order_modality_idx": {
-          "name": "detail_order_modality_idx",
-          "columns": [
-            {
-              "expression": "id_modality",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "detail_order_order_number_idx": {
           "name": "detail_order_order_number_idx",
           "columns": [
@@ -854,19 +833,6 @@
           "tableTo": "tb_loinc",
           "columnsFrom": [
             "id_loinc"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "tb_detail_order_id_modality_tb_modality_id_fk": {
-          "name": "tb_detail_order_id_modality_tb_modality_id_fk",
-          "tableFrom": "tb_detail_order",
-          "tableTo": "tb_modality",
-          "columnsFrom": [
-            "id_modality"
           ],
           "columnsTo": [
             "id"
