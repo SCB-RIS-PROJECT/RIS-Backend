@@ -51,6 +51,12 @@ const EnvSchema = z.object({
     ORTHANC_PASSWORD: z.string().default("orthanc"),
     ORTHANC_DICOM_MODALITY: z.string().default("SATUSEHAT_ROUTER"),
 
+    // PACS Orthanc (untuk retrieve studies)
+    PACS_ORTHANC_URL: z.string().default("http://192.168.251.202"),
+    PACS_ORTHANC_HTTP_PORT: z.coerce.number().default(8042),
+    PACS_ORTHANC_USERNAME: z.string().default("orthanc"),
+    PACS_ORTHANC_PASSWORD: z.string().default("orthanc"),
+
     // DCM4CHEE (PACS Archive)
     DCM4CHEE_HOST: z.string().default("192.168.250.205"),
     DCM4CHEE_PORT: z.coerce.number().default(8080),

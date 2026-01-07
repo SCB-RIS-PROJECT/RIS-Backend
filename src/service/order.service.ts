@@ -23,6 +23,7 @@ import type {
 } from "@/interface/order.interface";
 import { pushWorklistToOrthanc, type MWLWorklistItem } from "@/lib/orthanc-mwl";
 import { pushWorklistToDcm4chee, type DCM4CHEEMWLItem } from "@/lib/dcm4chee-mwl";
+import { queryStudiesFromPACS, testPACSConnection, getStudyWithSeriesAndInstances, type PACSStudyQueryParams } from "@/lib/pacs-orthanc";
 import { generateAccessionNumber } from "@/lib/utils";
 import { SatuSehatService } from "@/service/satu-sehat.service";
 import env from "@/config/env";
@@ -2418,6 +2419,193 @@ export class OrderService {
             return {
                 success: false,
                 message: error instanceof Error ? error.message : "Failed to update order detail",
+            };
+        }
+    }
+
+    /**
+     * Fetch study dari PACS Orthanc berdasarkan Accession Number
+     */
+    static async fetchStudyFromPACS(accessionNumber: string) {
+        try {
+            // Query study by ACSN
+            const queryResult = await queryStudiesFromPACS({ accessionNumber });
+
+            if (!queryResult.success || !queryResult.data || queryResult.data.length === 0) {
+                return {
+                    success: false,
+                    message: `Study with accession number ${accessionNumber} not found in PACS`,
+                };
+            }
+
+            const study = queryResult.data[0];
+
+            // Get detailed series and instances for Cornerstone
+            const detailResult = await getStudyWithSeriesAndInstances(study.studyId);
+
+            if (!detailResult.success) {
+                return {
+                    success: false,
+                    message: "Failed to get study details from PACS",
+                };
+            }
+
+            // Find order detail by ACSN
+            const detailOrders = await db
+                .select()
+                .from(detailOrderTable)
+                .where(eq(detailOrderTable.accession_number, accessionNumber))
+                .limit(1);
+
+            if (!detailOrders || detailOrders.length === 0) {
+                return {
+                    success: false,
+                    message: `Detail order with accession number ${accessionNumber} not found`,
+                };
+            }
+
+            const detailOrder = detailOrders[0];
+
+            // Update order with PACS URL
+            await db
+                .update(detailOrderTable)
+                .set({
+                    pacs_study_url: study.studyUrl,
+                    updated_at: new Date(),
+                })
+                .where(eq(detailOrderTable.id, detailOrder.id));
+
+            return {
+                success: true,
+                message: "Successfully fetched study from PACS and updated order",
+                data: {
+                    detail_id: detailOrder.id,
+                    accession_number: accessionNumber,
+                    pacs_study_url: study.studyUrl,
+                    viewer_url: study.viewerUrl,
+                    study_data: detailResult.data, // Contains series and instances for Cornerstone
+                },
+            };
+        } catch (error) {
+            console.error("[OrderService] Fetch study from PACS error:", error);
+            return {
+                success: false,
+                message: error instanceof Error ? error.message : "Failed to fetch study from PACS",
+            };
+        }
+    }
+
+    /**
+     * Test koneksi ke PACS Orthanc
+     */
+    static async testPACSConnection(): Promise<{
+        success: boolean;
+        message: string;
+        data?: any;
+    }> {
+        try {
+            const result = await testPACSConnection();
+            
+            if (!result.success) {
+                return {
+                    success: false,
+                    message: result.error || "Failed to connect to PACS",
+                };
+            }
+
+            return {
+                success: true,
+                message: "Successfully connected to PACS Orthanc",
+                data: result.data,
+            };
+        } catch (error) {
+            loggerPino.error(error, "[PACS] Connection test error");
+            return {
+                success: false,
+                message: error instanceof Error ? error.message : "Failed to test PACS connection",
+            };
+        }
+    }
+
+    /**
+     * Check-in order: Update schedule_date to current time and set status to IN_PROGRESS
+     */
+    static async checkInOrder(orderId: string, detailId: string): Promise<{
+        success: boolean;
+        message: string;
+        data?: any;
+    }> {
+        try {
+            // Find order detail
+            const detailOrders = await db
+                .select()
+                .from(detailOrderTable)
+                .where(
+                    and(
+                        eq(detailOrderTable.id, detailId),
+                        eq(detailOrderTable.id_order, orderId)
+                    )
+                )
+                .limit(1);
+
+            if (!detailOrders || detailOrders.length === 0) {
+                return {
+                    success: false,
+                    message: "Order detail not found",
+                };
+            }
+
+            const detailOrder = detailOrders[0];
+
+            // Check if already IN_PROGRESS or FINAL
+            if (detailOrder.order_status === "IN_PROGRESS") {
+                return {
+                    success: false,
+                    message: "Order already checked in",
+                };
+            }
+
+            if (detailOrder.order_status === "FINAL") {
+                return {
+                    success: false,
+                    message: "Order already finalized, cannot check in",
+                };
+            }
+
+            // Update schedule_date and status
+            const now = new Date();
+            const updated = await db
+                .update(detailOrderTable)
+                .set({
+                    schedule_date: now,
+                    order_status: "IN_PROGRESS",
+                    updated_at: now,
+                })
+                .where(eq(detailOrderTable.id, detailId))
+                .returning();
+
+            if (!updated || updated.length === 0) {
+                return {
+                    success: false,
+                    message: "Failed to check in order",
+                };
+            }
+
+            return {
+                success: true,
+                message: "Order checked in successfully",
+                data: {
+                    detail_id: detailId,
+                    accession_number: updated[0].accession_number,
+                    order_status: updated[0].order_status,
+                    schedule_date: updated[0].schedule_date,
+                },
+            };
+        } catch (error) {
+            loggerPino.error(error, "[OrderService] Check-in order error");
+            return {
+                success: false,
+                message: error instanceof Error ? error.message : "Failed to check in order",
             };
         }
     }

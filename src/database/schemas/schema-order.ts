@@ -76,6 +76,7 @@ export const detailOrderTable = pgTable(
         notes: text("notes"),
         observation_notes: text("observation_notes"),
         diagnostic_conclusion: text("diagnostic_conclusion"),
+        pacs_study_url: varchar({ length: 500 }),
         require_fasting: boolean("require_fasting").default(false),
         require_pregnancy_check: boolean("require_pregnancy_check").default(false),
         require_use_contrast: boolean("require_use_contrast").default(false),

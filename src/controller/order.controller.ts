@@ -29,6 +29,7 @@ import { authMiddleware } from "@/middleware/auth.middleware";
 import { permissionMiddleware } from "@/middleware/role-permission.middleware";
 import { OrderService } from "@/service/order.service";
 import { createResponse } from "@/lib/utils";
+import env from "@/config/env";
 
 const orderController = createRouter();
 
@@ -999,6 +1000,454 @@ Update order detail with modality, AE Title, and performer/practitioner informat
                 {
                     success: false,
                     message: error instanceof Error ? error.message : "Failed to update order detail",
+                },
+                HttpStatusCodes.INTERNAL_SERVER_ERROR
+            );
+        }
+    }
+);
+
+// ==================== TEST PACS CONNECTION ====================
+orderController.openapi(
+    createRoute({
+        tags,
+        method: "get",
+        path: "/api/orders/pacs/test",
+        summary: "Test connection to PACS Orthanc",
+        description: "Test if the PACS Orthanc server is accessible and retrieve system information",
+        middleware: [authMiddleware] as const,
+        responses: {
+            [HttpStatusCodes.OK]: jsonContent(
+                z.object({
+                    success: z.boolean(),
+                    message: z.string(),
+                    data: z.object({
+                        name: z.string(),
+                        version: z.string(),
+                        url: z.string(),
+                    }).optional(),
+                }),
+                "PACS connection test result"
+            ),
+            [HttpStatusCodes.INTERNAL_SERVER_ERROR]: jsonContent(
+                z.object({
+                    success: z.boolean(),
+                    message: z.string(),
+                }),
+                "Failed to test PACS connection"
+            ),
+        },
+    }),
+    async (c) => {
+        try {
+            const result = await OrderService.testPACSConnection();
+
+            if (!result.success) {
+                return c.json(
+                    {
+                        success: false,
+                        message: result.message,
+                    },
+                    HttpStatusCodes.INTERNAL_SERVER_ERROR
+                );
+            }
+
+            return c.json(
+                {
+                    success: true,
+                    message: result.message,
+                    data: result.data,
+                },
+                HttpStatusCodes.OK
+            );
+        } catch (error) {
+            loggerPino.error(error);
+            return c.json(
+                {
+                    success: false,
+                    message: error instanceof Error ? error.message : "Failed to test PACS connection",
+                },
+                HttpStatusCodes.INTERNAL_SERVER_ERROR
+            );
+        }
+    }
+);
+
+// ==================== FETCH STUDY FROM PACS ====================
+orderController.openapi(
+    createRoute({
+        tags,
+        method: "post",
+        path: "/api/orders/pacs/fetch/:accessionNumber",
+        summary: "Fetch study from PACS by Accession Number",
+        description: "Retrieve study information from PACS Orthanc and update order with PACS URL",
+        middleware: [authMiddleware] as const,
+        request: {
+            params: z.object({
+                accessionNumber: z.string().openapi({
+                    param: {
+                        name: "accessionNumber",
+                        in: "path",
+                    },
+                    example: "DX20231224001",
+                }),
+            }),
+        },
+        responses: {
+            [HttpStatusCodes.OK]: jsonContent(
+                z.object({
+                    success: z.boolean(),
+                    message: z.string(),
+                    data: z.object({
+                        detail_id: z.string().uuid(),
+                        accession_number: z.string(),
+                        pacs_study_url: z.string(),
+                        study_data: z.any(),
+                    }).optional(),
+                }),
+                "Study fetched successfully from PACS"
+            ),
+            [HttpStatusCodes.NOT_FOUND]: jsonContent(
+                z.object({
+                    success: z.boolean(),
+                    message: z.string(),
+                }),
+                "Order or study not found"
+            ),
+            [HttpStatusCodes.INTERNAL_SERVER_ERROR]: jsonContent(
+                z.object({
+                    success: z.boolean(),
+                    message: z.string(),
+                }),
+                "Failed to fetch study from PACS"
+            ),
+        },
+    }),
+    async (c) => {
+        try {
+            const { accessionNumber } = c.req.valid("param");
+
+            const result = await OrderService.fetchStudyFromPACS(accessionNumber);
+
+            if (!result.success) {
+                const statusCode = result.message.includes("not found") 
+                    ? HttpStatusCodes.NOT_FOUND 
+                    : HttpStatusCodes.INTERNAL_SERVER_ERROR;
+
+                return c.json(
+                    {
+                        success: false,
+                        message: result.message,
+                    },
+                    statusCode
+                );
+            }
+
+            return c.json(
+                {
+                    success: true,
+                    message: result.message,
+                    data: result.data,
+                },
+                HttpStatusCodes.OK
+            );
+        } catch (error) {
+            loggerPino.error(error);
+            return c.json(
+                {
+                    success: false,
+                    message: error instanceof Error ? error.message : "Failed to fetch study from PACS",
+                },
+                HttpStatusCodes.INTERNAL_SERVER_ERROR
+            );
+        }
+    }
+);
+
+// ==================== CHECK-IN ORDER ====================
+orderController.openapi(
+    createRoute({
+        tags,
+        method: "post",
+        path: "/api/orders/{id}/details/{detailId}/check-in",
+        summary: "Check-in order (update schedule_date and set status to IN_PROGRESS)",
+        description: `
+Check-in order untuk memulai pemeriksaan radiologi.
+
+**Action:**
+- Update \`schedule_date\` dengan waktu saat ini
+- Update \`order_status\` menjadi \`IN_PROGRESS\`
+
+**Prerequisites:**
+- Order detail status harus \`IN_REQUEST\` atau \`IN_QUEUE\`
+- Tidak bisa check-in jika sudah \`IN_PROGRESS\` atau \`FINAL\`
+
+**Use Case:**
+- Pasien datang ke ruang radiologi
+- Radiografer melakukan check-in untuk memulai pemeriksaan
+- Sistem mencatat waktu check-in secara otomatis
+        `,
+        middleware: [authMiddleware, permissionMiddleware("update:order")] as const,
+        request: {
+            params: detailOrderIdParamSchema,
+        },
+        responses: {
+            [HttpStatusCodes.OK]: jsonContent(
+                z.object({
+                    success: z.boolean(),
+                    message: z.string(),
+                    data: z.object({
+                        detail_id: z.string().uuid(),
+                        accession_number: z.string(),
+                        order_status: z.string(),
+                        schedule_date: z.date(),
+                    }),
+                }),
+                "Order checked in successfully"
+            ),
+            [HttpStatusCodes.BAD_REQUEST]: jsonContent(
+                z.object({
+                    success: z.boolean(),
+                    message: z.string(),
+                }),
+                "Order already checked in or finalized"
+            ),
+            [HttpStatusCodes.NOT_FOUND]: jsonContent(
+                z.object({
+                    success: z.boolean(),
+                    message: z.string(),
+                }),
+                "Order detail not found"
+            ),
+            [HttpStatusCodes.UNAUTHORIZED]: jsonContent(
+                createMessageObjectSchema("Not authenticated"),
+                "User not authenticated"
+            ),
+            [HttpStatusCodes.FORBIDDEN]: jsonContent(
+                createMessageObjectSchema("Permission denied"),
+                "Insufficient permissions"
+            ),
+            [HttpStatusCodes.INTERNAL_SERVER_ERROR]: jsonContent(
+                z.object({
+                    success: z.boolean(),
+                    message: z.string(),
+                }),
+                "Failed to check in order"
+            ),
+        },
+    }),
+    async (c) => {
+        try {
+            const { id, detailId } = c.req.valid("param");
+
+            const result = await OrderService.checkInOrder(id, detailId);
+
+            if (!result.success) {
+                const statusCode = result.message.includes("not found")
+                    ? HttpStatusCodes.NOT_FOUND
+                    : HttpStatusCodes.BAD_REQUEST;
+
+                return c.json(
+                    {
+                        success: false,
+                        message: result.message,
+                    },
+                    statusCode
+                );
+            }
+
+            return c.json(
+                {
+                    success: true,
+                    message: result.message,
+                    data: result.data,
+                },
+                HttpStatusCodes.OK
+            );
+        } catch (error) {
+            loggerPino.error(error);
+            return c.json(
+                {
+                    success: false,
+                    message: error instanceof Error ? error.message : "Failed to check in order",
+                },
+                HttpStatusCodes.INTERNAL_SERVER_ERROR
+            );
+        }
+    }
+);
+
+// ==================== PROXY DICOM WADO-RS (Bypass CORS) ====================
+orderController.openapi(
+    createRoute({
+        tags,
+        method: "get",
+        path: "/api/orders/pacs/dicom-web/studies/:studyUID/series/:seriesUID/instances/:instanceUID/frames/:frameNumber",
+        summary: "Proxy DICOM WADO-RS (bypass CORS)",
+        description: `
+Proxy endpoint untuk bypass CORS issue dari Orthanc PACS.
+
+**Flow:**
+1. Frontend request dengan StudyUID/SeriesUID/InstanceUID
+2. RIS lookup instance ID dari Orthanc menggunakan SOPInstanceUID
+3. RIS fetch full DICOM binary dari Orthanc
+4. RIS return DICOM binary dengan CORS headers ke frontend
+5. Cornerstone parse DICOM binary dan display gambar
+
+**Warning:** Endpoint ini untuk development/testing. Untuk production, setup CORS di Orthanc lebih baik.
+
+**Usage di Frontend (Cornerstone):**
+\`\`\`javascript
+const RIS_PROXY_URL = "http://localhost:8001";
+const imageIds = series.images.map(
+  (img) => \`wadors:\${RIS_PROXY_URL}/api/orders/pacs/dicom-web/studies/\${studyUID}/series/\${seriesUID}/instances/\${img.sopInstanceUID}/frames/1\`
+);
+\`\`\`
+
+**Performance Note:**
+- Setiap DICOM file request melewati RIS server (double bandwidth)
+- Tidak recommended untuk production dengan banyak users
+- Setup CORS di Orthanc adalah solusi yang lebih baik
+        `,
+        middleware: [authMiddleware] as const,
+        request: {
+            params: z.object({
+                studyUID: z.string().openapi({
+                    param: { name: "studyUID", in: "path" },
+                    example: "1.3.6.1.4.1.50525.1.2.202613.3594.133.24163.26",
+                }),
+                seriesUID: z.string().openapi({
+                    param: { name: "seriesUID", in: "path" },
+                    example: "1.3.6.1.4.1.50525.2.2.202613.12345.1",
+                }),
+                instanceUID: z.string().openapi({
+                    param: { name: "instanceUID", in: "path" },
+                    example: "1.3.6.1.4.1.50525.3.2.202613.67890.1",
+                }),
+                frameNumber: z.string().openapi({
+                    param: { name: "frameNumber", in: "path" },
+                    example: "1",
+                }),
+            }),
+        },
+        responses: {
+            [HttpStatusCodes.OK]: {
+                description: "DICOM binary file",
+                content: {
+                    "application/dicom": { schema: { type: "string", format: "binary" } },
+                },
+            },
+            [HttpStatusCodes.NOT_FOUND]: jsonContent(
+                z.object({
+                    success: z.boolean(),
+                    message: z.string(),
+                }),
+                "DICOM instance not found"
+            ),
+            [HttpStatusCodes.INTERNAL_SERVER_ERROR]: jsonContent(
+                z.object({
+                    success: z.boolean(),
+                    message: z.string(),
+                }),
+                "Failed to proxy DICOM frame"
+            ),
+        },
+    }),
+    async (c) => {
+        try {
+            const { studyUID, seriesUID, instanceUID, frameNumber } = c.req.valid("param");
+
+            // Orthanc REST API: Get instance by StudyInstanceUID/SeriesInstanceUID/SOPInstanceUID
+            // First, find the instance ID using UIDs
+            const pacsBaseUrl = `${env.PACS_ORTHANC_URL}:${env.PACS_ORTHANC_HTTP_PORT}`;
+            const authHeader = "Basic " + btoa(`${env.PACS_ORTHANC_USERNAME}:${env.PACS_ORTHANC_PASSWORD}`);
+
+            // Find instance by SOPInstanceUID
+            const lookupUrl = `${pacsBaseUrl}/tools/lookup`;
+            const lookupResponse = await fetch(lookupUrl, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "text/plain",
+                    Authorization: authHeader,
+                },
+                body: instanceUID,
+            });
+
+            if (!lookupResponse.ok) {
+                loggerPino.warn(`PACS instance lookup failed: ${lookupResponse.status}`);
+                return c.json(
+                    {
+                        success: false,
+                        message: "DICOM instance not found in PACS",
+                    },
+                    HttpStatusCodes.NOT_FOUND
+                );
+            }
+
+            const lookupResult = await lookupResponse.json();
+            
+            if (!lookupResult || lookupResult.length === 0) {
+                return c.json(
+                    {
+                        success: false,
+                        message: "DICOM instance not found",
+                    },
+                    HttpStatusCodes.NOT_FOUND
+                );
+            }
+
+            const instanceId = lookupResult[0]?.ID;
+            if (!instanceId) {
+                return c.json(
+                    {
+                        success: false,
+                        message: "Invalid instance ID",
+                    },
+                    HttpStatusCodes.NOT_FOUND
+                );
+            }
+
+            // Get full DICOM file (binary)
+            const dicomUrl = `${pacsBaseUrl}/instances/${instanceId}/file`;
+
+            const dicomResponse = await fetch(dicomUrl, {
+                method: "GET",
+                headers: {
+                    Authorization: authHeader,
+                },
+            });
+
+            if (!dicomResponse.ok) {
+                loggerPino.warn(`PACS DICOM fetch failed: ${dicomResponse.status} for ${dicomUrl}`);
+                return c.json(
+                    {
+                        success: false,
+                        message: `Failed to fetch DICOM file: ${dicomResponse.statusText}`,
+                    },
+                    HttpStatusCodes.NOT_FOUND
+                );
+            }
+
+            // Get DICOM binary buffer
+            const dicomBuffer = await dicomResponse.arrayBuffer();
+
+            // Return DICOM binary with CORS headers
+            return c.body(dicomBuffer, {
+                status: HttpStatusCodes.OK,
+                headers: {
+                    "Content-Type": "application/dicom",
+                    "Access-Control-Allow-Origin": "*",
+                    "Access-Control-Allow-Methods": "GET, OPTIONS",
+                    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+                    "Cache-Control": "public, max-age=86400", // Cache 24 hours
+                },
+            });
+        } catch (error) {
+            loggerPino.error(error, "[PACS Proxy] Failed to proxy DICOM frame");
+            return c.json(
+                {
+                    success: false,
+                    message: error instanceof Error ? error.message : "Failed to proxy DICOM frame",
                 },
                 HttpStatusCodes.INTERNAL_SERVER_ERROR
             );
