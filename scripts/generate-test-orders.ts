@@ -4,11 +4,14 @@
  * Usage:
  *   bun run scripts/generate-test-orders.ts
  *   bun run scripts/generate-test-orders.ts 30  (generate 30 orders)
+ *   API_TOKEN=your_token bun run scripts/generate-test-orders.ts 20 send
  * 
  * This script will:
- * 1. Generate sample order data
- * 2. Save to JSON file
- * 3. Optionally send to API endpoint
+ * 1. Fetch LOINC, Modality, and Practitioner data from API
+ * 2. Generate sample order data with id_loinc (UUID)
+ * 3. Send to API endpoint and create orders
+ * 4. Update each detail with modality and performer
+ * 5. Save to JSON file
  */
 
 const SAMPLE_PATIENTS = [
@@ -24,12 +27,12 @@ const SAMPLE_PATIENTS = [
     { name: "Sri Mulyani", mrn: "88888", birthDate: "1997-08-18", age: 28, gender: "FEMALE" },
 ];
 
-const SAMPLE_PRACTITIONERS = [
-    { id: "N10000001", name: "Dr. Bronsig, Sp.Rad" },
-    { id: "N10000002", name: "Dr. Ahmad Syafiq, Sp.PD" },
-    { id: "N10000003", name: "Dr. Sarah Wijaya, Sp.OG" },
-    { id: "N10000004", name: "Dr. Budi Hartono, Sp.OT" },
-    { id: "N10000005", name: "Dr. Linda Kusuma, Sp.JP" },
+const SAMPLE_PRACTITIONERS_IHS = [
+    { ihs: "N10000001", name: "Dr. Bronsig, Sp.Rad" },
+    { ihs: "N10000002", name: "Dr. Ahmad Syafiq, Sp.PD" },
+    { ihs: "N10000003", name: "Dr. Sarah Wijaya, Sp.OG" },
+    { ihs: "N10000004", name: "Dr. Budi Hartono, Sp.OT" },
+    { ihs: "N10000005", name: "Dr. Linda Kusuma, Sp.JP" },
 ];
 
 const SAMPLE_DIAGNOSES = [
@@ -43,19 +46,6 @@ const SAMPLE_DIAGNOSES = [
     { code: "J06.9", display: "Acute upper respiratory infection, unspecified" },
     { code: "A09", display: "Infectious gastroenteritis and colitis, unspecified" },
     { code: "R50.9", display: "Fever, unspecified" },
-];
-
-const SAMPLE_PROCEDURES = [
-    { code: "36687-2", display: "XR Chest AP and Lateral", text: "Pemeriksaan X-Ray Thorax PA" },
-    { code: "24627-2", display: "CT Chest with contrast", text: "Pemeriksaan CT Scan Thorax dengan kontras" },
-    { code: "30704-1", display: "CT Abdomen and Pelvis", text: "CT Scan Abdomen Pelvis dengan kontras" },
-    { code: "36554-4", display: "US Abdomen", text: "USG Abdomen" },
-    { code: "24558-9", display: "XR Abdomen", text: "X-Ray Abdomen" },
-    { code: "24627-2", display: "XR Spine Lumbar", text: "X-Ray Lumbal Spine AP/Lateral" },
-    { code: "26175-3", display: "CT Head without contrast", text: "CT Scan Kepala tanpa kontras" },
-    { code: "30799-1", display: "MRI Brain", text: "MRI Brain dengan kontras" },
-    { code: "36572-6", display: "US Pelvis", text: "USG Pelvis" },
-    { code: "24558-9", display: "XR Hand", text: "X-Ray Hand AP/Lateral" },
 ];
 
 const PRIORITIES = ["ROUTINE", "URGENT", "ASAP", "STAT"];
@@ -72,6 +62,11 @@ const NOTES = [
     "Evaluasi post-treatment",
     "Pasien dengan pacemaker",
 ];
+
+// API Data Cache
+let loincData: any[] = [];
+let modalityData: any[] = [];
+let practitionerData: any[] = [];
 
 function randomItem<T>(array: T[]): T {
     return array[Math.floor(Math.random() * array.length)];
@@ -91,16 +86,80 @@ function generateEncounterId(): string {
     return crypto.randomUUID();
 }
 
+async function fetchFromAPI(url: string, token: string) {
+    try {
+        const response = await fetch(url, {
+            method: "GET",
+            headers: {
+                "Authorization": `Bearer ${token}`,
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error(`API request failed: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error(`❌ Failed to fetch from ${url}:`, error);
+        return null;
+    }
+}
+
+async function fetchMasterData(baseUrl: string, token: string) {
+    console.log("📡 Fetching master data from API...\n");
+
+    // Fetch LOINC
+    console.log("  ├─ Fetching LOINC data...");
+    const loincResponse = await fetchFromAPI(`${baseUrl}/api/loinc?per_page=100`, token);
+    if (loincResponse?.content?.entries) {
+        loincData = loincResponse.content.entries;
+        console.log(`  │  ✓ Loaded ${loincData.length} LOINC items`);
+    } else {
+        console.log(`  │  ✗ Failed to load LOINC data`);
+    }
+
+    // Fetch Modality
+    console.log("  ├─ Fetching Modality data...");
+    const modalityResponse = await fetchFromAPI(`${baseUrl}/api/modalities?per_page=100`, token);
+    if (modalityResponse?.content?.entries) {
+        modalityData = modalityResponse.content.entries;
+        console.log(`  │  ✓ Loaded ${modalityData.length} Modality items`);
+    } else {
+        console.log(`  │  ✗ Failed to load Modality data`);
+    }
+
+    // Fetch Practitioner
+    console.log("  └─ Fetching Practitioner data...");
+    const practitionerResponse = await fetchFromAPI(`${baseUrl}/api/practitioners?per_page=100`, token);
+    if (practitionerResponse?.content?.entries) {
+        // Filter hanya practitioner yang memiliki ihs_number
+        practitionerData = practitionerResponse.content.entries.filter((p: any) => p.ihs_number && p.ihs_number !== null);
+        console.log(`     ✓ Loaded ${practitionerData.length} Practitioner items (with IHS number)`);
+    } else {
+        console.log(`     ✗ Failed to load Practitioner data`);
+    }
+
+    console.log();
+
+    return {
+        loinc: loincData,
+        modality: modalityData,
+        practitioner: practitionerData,
+    };
+}
+
 function generateOrder(index: number) {
     const patient = randomItem(SAMPLE_PATIENTS);
-    const practitioner = randomItem(SAMPLE_PRACTITIONERS);
+    const practitionerIhs = randomItem(SAMPLE_PRACTITIONERS_IHS);
     const diagnosis = randomItem(SAMPLE_DIAGNOSES);
     const priority = randomItem(PRIORITIES);
     const note = randomItem(NOTES);
 
-    // Random 1-3 procedures
-    const procedureCount = Math.floor(Math.random() * 3) + 1;
-    const procedures = randomItems(SAMPLE_PROCEDURES, procedureCount);
+    // Random 1-3 LOINC items
+    const loincCount = Math.floor(Math.random() * 3) + 1;
+    const selectedLoinc = randomItems(loincData, loincCount);
 
     return {
         id_pelayanan: generateOrderId(),
@@ -116,8 +175,8 @@ function generateOrder(index: number) {
             encounter_id: generateEncounterId(),
         },
         requester: {
-            id_practitioner: practitioner.id,
-            name_practitioner: practitioner.name,
+            id_practitioner: practitionerIhs.ihs,
+            name_practitioner: practitionerIhs.name,
         },
         diagnosa: {
             system: "http://hl7.org/fhir/sid/icd-10",
@@ -126,11 +185,8 @@ function generateOrder(index: number) {
         },
         order_priority: priority,
         notes: note,
-        details: procedures.map(proc => ({
-            system: "http://loinc.org",
-            code: proc.code,
-            display: proc.display,
-            text: proc.text,
+        details: selectedLoinc.map(loinc => ({
+            id_loinc: loinc.id,
         })),
     };
 }
@@ -162,6 +218,42 @@ async function sendToAPI(order: any, apiUrl: string, token: string) {
     }
 }
 
+async function updateDetailModalityPerformer(
+    baseUrl: string,
+    token: string,
+    orderId: string,
+    detailId: string,
+    updateData: { ae_title: string; id_performer: string; id_modality: string }
+) {
+    try {
+        const response = await fetch(
+            `${baseUrl}/api/orders/${orderId}/details/${detailId}/update-modality-performer`,
+            {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`,
+                },
+                body: JSON.stringify(updateData),
+            }
+        );
+
+        const data = await response.json();
+
+        return {
+            success: response.ok,
+            status: response.status,
+            data: data,
+        };
+    } catch (error) {
+        return {
+            success: false,
+            status: 0,
+            error: error instanceof Error ? error.message : "Unknown error",
+        };
+    }
+}
+
 async function main() {
     console.log("=".repeat(70));
     console.log("🏥 Generate Sample Orders for Testing");
@@ -172,21 +264,35 @@ async function main() {
     const args = process.argv.slice(2);
     const count = parseInt(args[0]) || 20;
     const sendToApiFlag = args[1] === "send";
-    const apiUrl = process.env.API_URL || "http://localhost:3000/api/orders";
+    const baseUrl = process.env.API_URL || "http://localhost:8001";
     const token = process.env.API_TOKEN || "";
 
     console.log("📋 Configuration:");
     console.log("  Number of orders:", count);
     console.log("  Send to API:", sendToApiFlag ? "Yes" : "No");
     if (sendToApiFlag) {
-        console.log("  API URL:", apiUrl);
+        console.log("  API URL:", baseUrl);
         console.log("  Token:", token ? "✓ Set" : "✗ Not set");
     }
     console.log();
 
+    // Fetch master data if sending to API
+    if (sendToApiFlag && token) {
+        const masterData = await fetchMasterData(baseUrl, token);
+
+        if (!masterData.loinc.length || !masterData.modality.length || !masterData.practitioner.length) {
+            console.error("❌ Failed to fetch master data. Aborting.");
+            process.exit(1);
+        }
+    } else {
+        console.log("⚠️  Skipping master data fetch (not sending to API)");
+        console.log();
+    }
+
     // Generate orders
     console.log(`📝 Generating ${count} orders...\n`);
     const orders = [];
+    const results = [];
 
     for (let i = 1; i <= count; i++) {
         const order = generateOrder(i);
@@ -195,26 +301,79 @@ async function main() {
         console.log(`[${i}/${count}] Generated order for: ${order.subject.patient_name}`);
         console.log(`  ├─ ID Pelayanan: ${order.id_pelayanan}`);
         console.log(`  ├─ Priority: ${order.order_priority}`);
-        console.log(`  └─ Procedures: ${order.details.length}`);
-        console.log();
+        console.log(`  └─ Details: ${order.details.length}`);
 
         // Send to API if flag is set
         if (sendToApiFlag && token) {
-            console.log(`  📡 Sending to API...`);
-            const result = await sendToAPI(order, apiUrl, token);
+            console.log(`  📡 Creating order...`);
+            const createResult = await sendToAPI(order, `${baseUrl}/api/orders`, token);
 
-            if (result.success) {
-                console.log(`  ✅ Success (${result.status})`);
-                if (result.data?.content?.data?.id_order) {
-                    console.log(`  └─ Order ID: ${result.data.content.data.id_order}`);
+            if (createResult.success && createResult.data?.content?.data) {
+                const orderData = createResult.data.content.data;
+                const orderId = orderData.id_order;
+                const details = orderData.details || [];
+
+                console.log(`  ✅ Order created (${createResult.status})`);
+                console.log(`  │  └─ Order ID: ${orderId}`);
+
+                // Update each detail with modality and performer
+                console.log(`  📝 Updating ${details.length} details...`);
+
+                for (let j = 0; j < details.length; j++) {
+                    const detail = details[j];
+                    const detailId = detail.id;
+
+                    // Get random modality and performer
+                    const modality = randomItem(modalityData);
+                    const performer = randomItem(practitionerData);
+                    const aeTitle = randomItem(modality.aet || ["AET_DEFAULT"]);
+
+                    console.log(`  │  [${j + 1}/${details.length}] Updating detail ${detailId.substring(0, 8)}...`);
+
+                    const updateResult = await updateDetailModalityPerformer(
+                        baseUrl,
+                        token,
+                        orderId,
+                        detailId,
+                        {
+                            ae_title: aeTitle,
+                            id_performer: performer.id,
+                            id_modality: modality.id,
+                        }
+                    );
+
+                    if (updateResult.success) {
+                        console.log(`  │  │  ✓ Updated with ${modality.name} - ${performer.name}`);
+                    } else {
+                        console.log(`  │  │  ✗ Failed: ${updateResult.error || JSON.stringify(updateResult.data)}`);
+                    }
+
+                    // Small delay between updates
+                    await new Promise(resolve => setTimeout(resolve, 200));
                 }
+
+                results.push({
+                    order,
+                    orderId,
+                    success: true,
+                    detailsUpdated: details.length,
+                });
+
+                console.log(`  └─ ✅ Completed`);
             } else {
-                console.log(`  ❌ Failed (${result.status}): ${result.error || JSON.stringify(result.data)}`);
+                console.log(`  ❌ Failed (${createResult.status}): ${createResult.error || JSON.stringify(createResult.data)}`);
+                results.push({
+                    order,
+                    success: false,
+                    error: createResult.error || createResult.data,
+                });
             }
             console.log();
 
-            // Delay to avoid overwhelming the server
+            // Delay between orders
             await new Promise(resolve => setTimeout(resolve, 500));
+        } else {
+            console.log();
         }
     }
 
@@ -225,7 +384,17 @@ async function main() {
     console.log("=".repeat(70));
     console.log("💾 Saving to file...");
 
-    await Bun.write(filepath, JSON.stringify(orders, null, 2));
+    const outputData = {
+        orders,
+        results: sendToApiFlag ? results : undefined,
+        summary: {
+            total_orders: orders.length,
+            successful: results.filter(r => r.success).length,
+            failed: results.filter(r => !r.success).length,
+        },
+    };
+
+    await Bun.write(filepath, JSON.stringify(outputData, null, 2));
 
     console.log(`✅ Saved to: ${filepath}`);
     console.log();
@@ -235,7 +404,13 @@ async function main() {
     console.log("📊 Summary:");
     console.log(`  Total orders generated: ${orders.length}`);
     console.log(`  Total patients: ${new Set(orders.map(o => o.subject.patient_mrn)).size}`);
-    console.log(`  Total procedures: ${orders.reduce((sum, o) => sum + o.details.length, 0)}`);
+    console.log(`  Total details: ${orders.reduce((sum, o) => sum + o.details.length, 0)}`);
+
+    if (sendToApiFlag) {
+        console.log(`  Successful: ${results.filter(r => r.success).length}`);
+        console.log(`  Failed: ${results.filter(r => !r.success).length}`);
+    }
+
     console.log("=".repeat(70));
     console.log();
 

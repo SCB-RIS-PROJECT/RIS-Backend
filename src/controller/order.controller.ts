@@ -23,7 +23,6 @@ import {
     updateDetailOrderSchema,
     updateOrderDetailWithModalityPerformerResponseSchema,
     updateOrderDetailWithModalityPerformerSchema,
-    updateOrderSchema,
 } from "@/interface/order.interface";
 import { authMiddleware } from "@/middleware/auth.middleware";
 import { permissionMiddleware } from "@/middleware/role-permission.middleware";
@@ -96,11 +95,11 @@ Get paginated list of orders with comprehensive filtering and search capabilitie
     async (c) => {
         const query = c.req.valid("query");
         const serviceResponse = await OrderService.getAllOrders(query);
-        
+
         if (!serviceResponse.status) {
             return handleServiceErrorWithResponse(c, serviceResponse);
         }
-        
+
         return response_success(c, serviceResponse.data, "Successfully fetched orders");
     }
 );
@@ -268,63 +267,6 @@ Returns order ID and array of detail orders with generated ACSN for each examina
         }
 
         return response_created(c, serviceResponse.data, "Order created successfully");
-    }
-);
-
-// ==================== UPDATE ORDER ====================
-orderController.openapi(
-    createRoute({
-        tags,
-        method: "patch",
-        path: "/api/orders/{id}",
-        summary: "Update order main data",
-        description: `Update informasi utama order (header level).
-
-**Field yang bisa diupdate:**
-- \`id_practitioner\`: UUID practitioner (dokter pengirim) - jika ingin mengganti dokter pengirim
-- \`id_encounter_ss\`: ID Encounter dari Satu Sehat - jika ada perubahan encounter
-
-**Use Cases:**
-- Mengganti dokter pengirim karena kesalahan input
-- Update encounter ID setelah ada perubahan di SIMRS
-- Koreksi data administratif order
-
-**Note:** Untuk update data pemeriksaan (status, jadwal, hasil, dll), gunakan PATCH /api/orders/{id}/details/{detailId}
-        `,
-        middleware: [authMiddleware, permissionMiddleware("update:order")] as const,
-        request: {
-            params: orderIdParamSchema,
-            body: jsonContentRequired(updateOrderSchema, "Order update data"),
-        },
-        responses: {
-            [HttpStatusCodes.OK]: jsonContent(fullOrderResponseSchema, "Order updated successfully"),
-            [HttpStatusCodes.NOT_FOUND]: jsonContent(createMessageObjectSchema("Order not found"), "Order not found"),
-            [HttpStatusCodes.UNAUTHORIZED]: jsonContent(
-                createMessageObjectSchema("Not authenticated"),
-                "User not authenticated"
-            ),
-            [HttpStatusCodes.FORBIDDEN]: jsonContent(
-                createMessageObjectSchema("Permission denied"),
-                "Insufficient permissions"
-            ),
-            [HttpStatusCodes.BAD_REQUEST]: jsonContent(createErrorSchema(updateOrderSchema), "Invalid request body"),
-            [HttpStatusCodes.INTERNAL_SERVER_ERROR]: jsonContent(
-                createMessageObjectSchema("Failed to update order"),
-                "Internal server error"
-            ),
-        },
-    }),
-    async (c) => {
-        const { id } = c.req.valid("param");
-        const data = c.req.valid("json");
-
-        const serviceResponse = await OrderService.updateOrder(id, data);
-
-        if (!serviceResponse.status) {
-            return handleServiceErrorWithResponse(c, serviceResponse);
-        }
-
-        return response_success(c, serviceResponse.data, "Order updated successfully");
     }
 );
 
@@ -874,15 +816,17 @@ Call this endpoint when radiology examination is completed and final report is r
                 );
             }
 
-            // Selalu isi data pada response sukses
+            // Ensure data always has required fields
             return c.json(
                 {
                     success: true,
                     message: result.message,
-                    data: result.data ?? {
-                        detail_id: detailId,
-                        order_status: "FINAL",
-                        sent_to_satusehat: false,
+                    data: {
+                        detail_id: result.data?.detail_id ?? detailId,
+                        order_status: result.data?.order_status ?? "FINAL",
+                        sent_to_satusehat: result.data?.sent_to_satusehat ?? false,
+                        observation_id: result.data?.observation_id,
+                        diagnostic_report_id: result.data?.diagnostic_report_id,
                     },
                 },
                 HttpStatusCodes.OK
@@ -1130,8 +1074,8 @@ orderController.openapi(
             const result = await OrderService.fetchStudyFromPACS(accessionNumber);
 
             if (!result.success) {
-                const statusCode = result.message.includes("not found") 
-                    ? HttpStatusCodes.NOT_FOUND 
+                const statusCode = result.message.includes("not found")
+                    ? HttpStatusCodes.NOT_FOUND
                     : HttpStatusCodes.INTERNAL_SERVER_ERROR;
 
                 return c.json(
@@ -1385,7 +1329,7 @@ const imageIds = series.images.map(
             }
 
             const lookupResult = await lookupResponse.json();
-            
+
             if (!lookupResult || lookupResult.length === 0) {
                 return c.json(
                     {

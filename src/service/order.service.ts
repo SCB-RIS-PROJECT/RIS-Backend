@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, gte, type InferSelectModel, ilike, lte, or, sql, type SQL } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, inArray, type InferSelectModel, ilike, lte, or, sql, type SQL } from "drizzle-orm";
 import db from "@/database/db";
 import { detailOrderTable, orderTable } from "@/database/schemas/schema-order";
 import { loincTable } from "@/database/schemas/schema-loinc";
@@ -18,7 +18,6 @@ import type {
     SimrsServiceRequest,
     UpdateDetailOrderInput,
     UpdateOrderDetailWithModalityPerformerInput,
-    UpdateOrderInput,
     FinalizeOrderDetailInput,
 } from "@/interface/order.interface";
 import { pushWorklistToOrthanc, type MWLWorklistItem } from "@/lib/orthanc-mwl";
@@ -353,7 +352,7 @@ export class OrderService {
                     .where(detailWhereClause);
 
                 // Get unique performer IDs from details (not requester - requester is at order level)
-                const performerIds = [...new Set(details.map(d => d.detail.id_performer).filter(Boolean))];
+                const performerIds = [...new Set(details.map(d => d.detail.id_performer).filter((id): id is string => id !== null))];
 
                 // Fetch performers only if there are any
                 let practitioners: InferSelectModel<typeof practitionerTable>[] = [];
@@ -361,7 +360,7 @@ export class OrderService {
                     practitioners = await db
                         .select()
                         .from(practitionerTable)
-                        .where(sql`${practitionerTable.id} = ANY(${performerIds})`);
+                        .where(inArray(practitionerTable.id, performerIds));
                 }
 
                 const practitionerMap = new Map(practitioners.map(p => [p.id, p]));
@@ -438,7 +437,7 @@ export class OrderService {
                 .where(eq(detailOrderTable.id_order, orderId));
 
             // Get unique performer IDs from details (not requester - requester is at order level)
-            const performerIds = [...new Set(details.map(d => d.detail.id_performer).filter(Boolean))];
+            const performerIds = [...new Set(details.map(d => d.detail.id_performer).filter((id): id is string => id !== null))];
 
             // Fetch performers only if there are any
             let practitioners: InferSelectModel<typeof practitionerTable>[] = [];
@@ -446,7 +445,7 @@ export class OrderService {
                 practitioners = await db
                     .select()
                     .from(practitionerTable)
-                    .where(sql`${practitionerTable.id} = ANY(${performerIds})`);
+                    .where(inArray(practitionerTable.id, performerIds));
             }
 
             const practitionerMap = new Map(practitioners.map(p => [p.id, p]));

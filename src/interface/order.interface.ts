@@ -398,14 +398,6 @@ export const updateDetailOrderSchema = z.object({
 
 export type UpdateDetailOrderInput = z.infer<typeof updateDetailOrderSchema>;
 
-// ==================== Update Order Schema ====================
-export const updateOrderSchema = z.object({
-    id_practitioner: z.string().uuid().optional(),
-    id_encounter_ss: z.string().max(255).optional(),
-});
-
-export type UpdateOrderInput = z.infer<typeof updateOrderSchema>;
-
 // ==================== Order ID Param Schema ====================
 export const orderIdParamSchema = z.object({
     id: z.string().uuid(),
