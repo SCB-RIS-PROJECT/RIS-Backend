@@ -151,17 +151,6 @@ export const orderResponseSchema = z.object({
         age: z.number().nullable(),
         gender: z.string().nullable(),
     }),
-    // Practitioners info from service_request
-    practitioners: z.object({
-        requester: z.object({
-            id_ss: z.string(),
-            name: z.string(),
-        }).nullable(),
-        performers: z.array(z.object({
-            id_ss: z.string(),
-            name: z.string(),
-        })),
-    }).nullable(),
     // Created by user
     created_by: z.object({
         id: z.string().uuid(),
@@ -196,10 +185,6 @@ export const detailOrderResponseSchema = z.object({
         name: z.string(),
         loinc_code: z.string(),
         loinc_display: z.string(),
-        require_fasting: z.boolean(),
-        require_pregnancy_check: z.boolean(),
-        require_use_contrast: z.boolean(),
-        contrast_name: z.string().nullable(),
     }).nullable(),
     // Modality & Workstation info
     modality: z.object({
@@ -218,18 +203,17 @@ export const detailOrderResponseSchema = z.object({
         code: z.string().nullable(),
         display: z.string().nullable(),
     }).nullable(),
+    // Requester info (referring physician)
+    requester: z.object({
+        id: z.string().uuid(),
+        id_ss: z.string().nullable(),
+        name: z.string(),
+    }).nullable(),
     // Performer info (radiologist assigned from RIS)
     performer: z.object({
+        id: z.string().uuid(),
         id_ss: z.string().nullable(),
-        name: z.string().nullable(),
-    }).nullable(),
-    // Satu Sehat integration IDs (for tracking)
-    satu_sehat: z.object({
-        id_service_request: z.string().nullable(),
-        id_imaging_study: z.string().nullable(),
-        id_observation: z.string().nullable(),
-        id_procedure: z.string().nullable(),
-        id_allergy_intolerance: z.string().nullable(),
+        name: z.string(),
     }).nullable(),
     // Flag to indicate if order can be pushed to MWL
     can_push_to_mwl: z.boolean(),
@@ -308,10 +292,7 @@ export const orderErrorResponseSchema = z.object({
 // ==================== Create Detail Order Item Schema (from SIMRS) ====================
 // Schema untuk detail pemeriksaan (LOINC)
 export const simrsDetailSchema = z.object({
-    system: z.string().default("http://loinc.org").describe("LOINC system URL"),
-    code: z.string().describe("LOINC code"),
-    display: z.string().describe("LOINC display name"),
-    text: z.string().optional().describe("Procedure description"),
+    id_loinc: z.string().uuid().describe("LOINC ID from master data (UUID)"),
 });
 
 export type SimrsDetail = z.infer<typeof simrsDetailSchema>;
@@ -320,22 +301,22 @@ export const createDetailOrderItemSchema = z.object({
     // Scheduling - ccurence_date_time (occurrence datetime)
     ccurence_date_time: z.string().datetime().optional().describe("Occurrence datetime (ISO 8601)"),
     order_priority: z.enum(ORDER_PRIORITY).default("ROUTINE"),
-    
+
     // Notes
     notes: z.string().optional().describe("Additional notes from SIMRS"),
 
     // Pemeriksaan (LOINC code info) - required
     pemeriksaan: simrsPemeriksaanSchema.describe("LOINC code information for the examination"),
-    
+
     // Subject (Patient info) - required
     subject: simrsSubjectSchema.describe("Patient information"),
-    
+
     // Encounter - required
     encounter: simrsEncounterSchema.describe("Encounter information"),
-    
+
     // Requester (Referring physician) - required
     requester: simrsRequesterSchema.describe("Referring physician information"),
-    
+
     // Diagnosa (ICD-10) - optional but recommended
     diagnosa: simrsDiagnosaSchema.optional().describe("Diagnosis ICD-10 code"),
 });
@@ -346,25 +327,25 @@ export type CreateDetailOrderItem = z.infer<typeof createDetailOrderItemSchema>;
 export const createOrderSchema = z.object({
     // Pelayanan ID from SIMRS - required
     id_pelayanan: z.string().max(255).describe("Service ID from SIMRS"),
-    
+
     // Subject (Patient info) - required
     subject: simrsSubjectSchema.describe("Patient information"),
-    
+
     // Encounter - required
     encounter: simrsEncounterSchema.describe("Encounter information"),
-    
+
     // Requester (Referring physician) - required
     requester: simrsRequesterSchema.describe("Referring physician information"),
-    
+
     // Diagnosa (ICD-10) - optional but recommended
     diagnosa: simrsDiagnosaSchema.optional().describe("Diagnosis ICD-10 code"),
-    
+
     // Order priority
     order_priority: z.enum(ORDER_PRIORITY).default("ROUTINE").describe("Order priority"),
-    
+
     // Notes
     notes: z.string().optional().describe("Additional notes from SIMRS"),
-    
+
     // Details - array of LOINC examinations (at least one required)
     details: z.array(simrsDetailSchema).min(1, "At least one examination detail is required").describe("Array of examination LOINC codes"),
 });
@@ -377,37 +358,37 @@ export const updateDetailOrderSchema = z.object({
     schedule_date: z.string().datetime().optional().describe("Tanggal jadwal pemeriksaan (ISO 8601)"),
     order_priority: z.enum(ORDER_PRIORITY).optional().describe("Prioritas order: ROUTINE, URGENT, ASAP, STAT"),
     order_status: z.enum(ORDER_STATUS).optional().describe("Status order: IN_REQUEST, IN_QUEUE, IN_PROGRESS, FINAL"),
-    
+
     // Diagnosis (ICD-10)
     diagnosis: z.object({
         code: z.string().optional().describe("Kode ICD-10"),
         display: z.string().optional().describe("Deskripsi diagnosis"),
     }).optional().describe("Update diagnosis jika berbeda dari SIMRS"),
-    
+
     // Notes
     notes: z.string().optional().describe("Catatan tambahan"),
-    
+
     // Observation & Diagnostic Report (untuk dikirim ke Satu Sehat)
     observation_notes: z.string().optional().describe("Hasil pemeriksaan radiologi (valueString untuk Observation)"),
     diagnostic_conclusion: z.string().optional().describe("Kesimpulan diagnosis (conclusion untuk DiagnosticReport)"),
-    
+
     // ========== Data yang perlu dilengkapi dari RIS ==========
     // Modality & Workstation
     modality_code: z.string().optional().describe("Kode modalitas DICOM (CT, MR, DX, CR, US, etc.)"),
     ae_title: z.string().optional().describe("AE Title workstation DICOM"),
-    
+
     // Performer (Radiolog)
     performer_id: z.string().optional().describe("ID Satu Sehat Practitioner (radiolog)"),
     performer_name: z.string().optional().describe("Nama radiolog yang akan melakukan pemeriksaan"),
-    
+
     // Contrast (optional)
     contrast_code: z.string().optional().describe("Kode KFA untuk kontras media"),
     contrast_name: z.string().optional().describe("Nama kontras media (dari KFA)"),
-    
+
     // KPTL Code (optional)
     kptl_code: z.string().optional().describe("Kode KPTL (Klasifikasi Prosedur Tindakan Laboratorium)"),
     kptl_display: z.string().optional().describe("Deskripsi KPTL"),
-    
+
     // ========== Satu Sehat IDs (untuk tracking/referensi) ==========
     id_service_request_ss: z.string().max(255).optional().describe("ID ServiceRequest dari Satu Sehat"),
     id_observation_ss: z.string().max(255).optional().describe("ID Observation dari Satu Sehat"),
@@ -509,20 +490,20 @@ export const sendToSatuSehatSchema = z.object({
     // Modality info (required)
     modality_code: z.string().describe("Modality code DICOM (e.g., DX, CT, MR, US)"),
     ae_title: z.string().describe("AE Title workstation tujuan"),
-    
+
     // Performer (required)
     performer_id: z.string().describe("Satu Sehat Practitioner ID untuk radiologist"),
     performer_name: z.string().describe("Nama lengkap radiologist"),
-    
+
     // Contrast (optional)
     contrast_code: z.string().optional().describe("KFA code untuk kontras (jika pakai)"),
     contrast_name: z.string().optional().describe("Nama kontras"),
-    
+
     // Supporting info dari Satu Sehat (optional)
     observation_id: z.string().optional().describe("Observation ID dari Satu Sehat"),
     procedure_id: z.string().optional().describe("Procedure ID dari Satu Sehat"),
     allergy_intolerance_id: z.string().optional().describe("AllergyIntolerance ID dari Satu Sehat"),
-    
+
     // MWL target (optional, default dcm4chee)
     mwl_target: z.enum(["orthanc", "dcm4chee", "both"]).optional().default("dcm4chee").describe("Target MWL server"),
 });
@@ -592,7 +573,7 @@ export const updateOrderDetailWithModalityPerformerSchema = z.object({
     // Modality info (required)
     id_modality: z.string().uuid().describe("ID modality dari master data"),
     ae_title: z.string().describe("AE Title workstation tujuan (dipilih dari list AET modality)"),
-    
+
     // Performer/Practitioner (required)
     id_performer: z.string().uuid().describe("ID practitioner/radiologist dari master data"),
 });
