@@ -48,6 +48,7 @@ export class LoincService {
             require_use_contrast: loinc.require_use_contrast,
             contrast_name: loinc.contrast_name,
             contrast_kfa_code: loinc.contrast_kfa_code,
+            is_active: loinc.is_active,
             created_at: loinc.created_at.toISOString(),
             updated_at: loinc.updated_at?.toISOString() ?? null,
         };

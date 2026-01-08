@@ -24,6 +24,10 @@ export const loincTable = pgTable(
         // contrast
         contrast_name: varchar({ length: 255 }),
         contrast_kfa_code: varchar({ length: 255 }),
+
+        // status
+        is_active: boolean("is_active").notNull().default(true),
+
         created_at: timestamp("created_at").notNull().defaultNow(),
         updated_at: timestamp("updated_at"),
     },

@@ -16,6 +16,7 @@ export const loincResponseSchema = z.object({
     require_use_contrast: z.boolean(),
     contrast_name: z.string().nullable(),
     contrast_kfa_code: z.string().nullable(),
+    is_active: z.boolean(),
     created_at: z.string(),
     updated_at: z.string().nullable(),
 });
@@ -89,6 +90,7 @@ export const createLoincSchema = z.object({
     require_use_contrast: z.boolean().default(false),
     contrast_name: z.string().max(255).optional(),
     contrast_kfa_code: z.string().max(255).optional(),
+    is_active: z.boolean().default(true),
 });
 
 export type CreateLoincInput = z.infer<typeof createLoincSchema>;
@@ -106,6 +108,7 @@ export const updateLoincSchema = z.object({
     require_use_contrast: z.boolean().optional(),
     contrast_name: z.string().max(255).optional(),
     contrast_kfa_code: z.string().max(255).optional(),
+    is_active: z.boolean().optional(),
 });
 
 export type UpdateLoincInput = z.infer<typeof updateLoincSchema>;
