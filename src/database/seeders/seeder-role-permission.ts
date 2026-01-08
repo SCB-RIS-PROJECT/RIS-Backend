@@ -179,9 +179,10 @@ export const seedRolePermission = async () => {
             }))
         );
 
-        // assign permission to simrs role (only create order)
+        // assign permission to simrs role (create order, read order, read loinc)
         const permissionForSimrs = [
-            orderPermissions.filter((p) => p.name === "create:order"),
+            orderPermissions.filter((p) => p.name === "create:order" || p.name === "read:order"),
+            loincPermissions.filter((p) => p.name === "read:loinc"),
         ].flat();
 
         await db.insert(rolePermissionTable).values(

@@ -4,12 +4,12 @@ import { modalityResponseSchema } from "@/interface/modality.interface";
 // ==================== LOINC Response Schema ====================
 export const loincResponseSchema = z.object({
     id: z.string(),
-    id_modality: z.string(),
+    id_modality: z.string().nullable(),
     modality: modalityResponseSchema.optional(),
-    code: z.string(),
+    code: z.string().nullable(),
     name: z.string(),
-    loinc_code: z.string(),
-    loinc_display: z.string(),
+    loinc_code: z.string().nullable(),
+    loinc_display: z.string().nullable(),
     loinc_system: z.string(),
     require_fasting: z.boolean(),
     require_pregnancy_check: z.boolean(),
@@ -79,11 +79,11 @@ export const loincErrorResponseSchema = z.object({
 
 // ==================== Create LOINC Schema ====================
 export const createLoincSchema = z.object({
-    id_modality: z.string().uuid(),
-    code: z.string().min(1).max(255),
+    id_modality: z.string().uuid().optional(),
+    code: z.string().min(1).max(255).optional(),
     name: z.string().min(1).max(255),
-    loinc_code: z.string().min(1).max(50),
-    loinc_display: z.string().min(1).max(255),
+    loinc_code: z.string().min(1).max(50).optional(),
+    loinc_display: z.string().min(1).max(255).optional(),
     loinc_system: z.string().min(1).max(255).default("http://loinc.org"),
     require_fasting: z.boolean().default(false),
     require_pregnancy_check: z.boolean().default(false),

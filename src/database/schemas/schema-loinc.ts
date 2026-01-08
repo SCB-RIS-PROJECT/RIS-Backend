@@ -6,14 +6,13 @@ export const loincTable = pgTable(
     {
         id: uuid("id").primaryKey().defaultRandom(),
         id_modality: uuid("id_modality")
-            .notNull()
             .references(() => modalityTable.id),
-        code: varchar({ length: 255 }).notNull().unique(),
+        code: varchar({ length: 255 }).unique(),
         name: varchar({ length: 255 }).notNull(),
 
         // loinc
-        loinc_code: varchar({ length: 50 }).notNull(),
-        loinc_display: varchar({ length: 255 }).notNull(),
+        loinc_code: varchar({ length: 50 }),
+        loinc_display: varchar({ length: 255 }),
         loinc_system: varchar({ length: 255 }).notNull().default("http://loinc.org"),
 
         // requirements
