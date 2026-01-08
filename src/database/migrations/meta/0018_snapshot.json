@@ -1,6 +1,6 @@
 {
-  "id": "0f8e7317-46f4-470a-8947-2d2e1f91cb39",
-  "prevId": "ba583b94-be76-4f61-85ac-62b8e5180d55",
+  "id": "f2436c4a-441f-4bd6-a3d0-cfe4632b4ad7",
+  "prevId": "5060bd3b-be6d-459b-9747-e1c6371a071f",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -84,6 +84,13 @@
           "type": "varchar(255)",
           "primaryKey": false,
           "notNull": false
+        },
+        "is_active": {
+          "name": "is_active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
         },
         "created_at": {
           "name": "created_at",
@@ -331,63 +338,21 @@
           "primaryKey": false,
           "notNull": false
         },
-        "id_service_request_ss": {
-          "name": "id_service_request_ss",
-          "type": "varchar(255)",
+        "id_modality": {
+          "name": "id_modality",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": false
         },
-        "id_imaging_study_ss": {
-          "name": "id_imaging_study_ss",
-          "type": "varchar(255)",
+        "id_requester": {
+          "name": "id_requester",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": false
         },
-        "id_observation_ss": {
-          "name": "id_observation_ss",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "id_diagnostic_report_ss": {
-          "name": "id_diagnostic_report_ss",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "id_procedure_ss": {
-          "name": "id_procedure_ss",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "id_allergy_intolerance_ss": {
-          "name": "id_allergy_intolerance_ss",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "id_requester_ss": {
-          "name": "id_requester_ss",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "requester_display": {
-          "name": "requester_display",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "id_performer_ss": {
-          "name": "id_performer_ss",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "performer_display": {
-          "name": "performer_display",
-          "type": "varchar(255)",
+        "id_performer": {
+          "name": "id_performer",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": false
         },
@@ -403,25 +368,12 @@
           "primaryKey": false,
           "notNull": false
         },
-        "order_date": {
-          "name": "order_date",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "now()"
-        },
         "schedule_date": {
           "name": "schedule_date",
           "type": "timestamp",
           "primaryKey": false,
           "notNull": false,
           "default": "now()"
-        },
-        "occurrence_datetime": {
-          "name": "occurrence_datetime",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
         },
         "order_priority": {
           "name": "order_priority",
@@ -447,101 +399,9 @@
           "notNull": false,
           "default": "'INTERNAL'"
         },
-        "fhir_status": {
-          "name": "fhir_status",
-          "type": "varchar(50)",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "'active'"
-        },
-        "fhir_intent": {
-          "name": "fhir_intent",
-          "type": "varchar(50)",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "'original-order'"
-        },
-        "order_category_code": {
-          "name": "order_category_code",
-          "type": "varchar(50)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "order_category_display": {
-          "name": "order_category_display",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "loinc_code_alt": {
-          "name": "loinc_code_alt",
-          "type": "varchar(50)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "loinc_display_alt": {
-          "name": "loinc_display_alt",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "kptl_code": {
-          "name": "kptl_code",
-          "type": "varchar(100)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "kptl_display": {
-          "name": "kptl_display",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "code_text": {
-          "name": "code_text",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "modality_code": {
-          "name": "modality_code",
-          "type": "varchar(50)",
-          "primaryKey": false,
-          "notNull": false
-        },
         "ae_title": {
           "name": "ae_title",
           "type": "varchar(50)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "contrast_code": {
-          "name": "contrast_code",
-          "type": "varchar(100)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "contrast_name_kfa": {
-          "name": "contrast_name_kfa",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "reason_code": {
-          "name": "reason_code",
-          "type": "varchar(50)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "reason_display": {
-          "name": "reason_display",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "diagnosis": {
-          "name": "diagnosis",
-          "type": "text",
           "primaryKey": false,
           "notNull": false
         },
@@ -575,26 +435,11 @@
           "primaryKey": false,
           "notNull": false
         },
-        "require_fasting": {
-          "name": "require_fasting",
-          "type": "boolean",
+        "pacs_study_url": {
+          "name": "pacs_study_url",
+          "type": "varchar(500)",
           "primaryKey": false,
-          "notNull": false,
-          "default": false
-        },
-        "require_pregnancy_check": {
-          "name": "require_pregnancy_check",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": false,
-          "default": false
-        },
-        "require_use_contrast": {
-          "name": "require_use_contrast",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": false,
-          "default": false
+          "notNull": false
         },
         "service_request_json": {
           "name": "service_request_json",
@@ -637,6 +482,51 @@
           "columns": [
             {
               "expression": "id_loinc",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "detail_order_modality_idx": {
+          "name": "detail_order_modality_idx",
+          "columns": [
+            {
+              "expression": "id_modality",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "detail_order_requester_idx": {
+          "name": "detail_order_requester_idx",
+          "columns": [
+            {
+              "expression": "id_requester",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "detail_order_performer_idx": {
+          "name": "detail_order_performer_idx",
+          "columns": [
+            {
+              "expression": "id_performer",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -691,126 +581,6 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
-        },
-        "detail_order_service_request_ss_idx": {
-          "name": "detail_order_service_request_ss_idx",
-          "columns": [
-            {
-              "expression": "id_service_request_ss",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "detail_order_imaging_study_ss_idx": {
-          "name": "detail_order_imaging_study_ss_idx",
-          "columns": [
-            {
-              "expression": "id_imaging_study_ss",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "detail_order_observation_ss_idx": {
-          "name": "detail_order_observation_ss_idx",
-          "columns": [
-            {
-              "expression": "id_observation_ss",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "detail_order_diagnostic_report_ss_idx": {
-          "name": "detail_order_diagnostic_report_ss_idx",
-          "columns": [
-            {
-              "expression": "id_diagnostic_report_ss",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "detail_order_procedure_ss_idx": {
-          "name": "detail_order_procedure_ss_idx",
-          "columns": [
-            {
-              "expression": "id_procedure_ss",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "detail_order_requester_ss_idx": {
-          "name": "detail_order_requester_ss_idx",
-          "columns": [
-            {
-              "expression": "id_requester_ss",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "detail_order_performer_ss_idx": {
-          "name": "detail_order_performer_ss_idx",
-          "columns": [
-            {
-              "expression": "id_performer_ss",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "detail_order_allergy_ss_idx": {
-          "name": "detail_order_allergy_ss_idx",
-          "columns": [
-            {
-              "expression": "id_allergy_intolerance_ss",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
         }
       },
       "foreignKeys": {
@@ -833,6 +603,45 @@
           "tableTo": "tb_loinc",
           "columnsFrom": [
             "id_loinc"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "tb_detail_order_id_modality_tb_modality_id_fk": {
+          "name": "tb_detail_order_id_modality_tb_modality_id_fk",
+          "tableFrom": "tb_detail_order",
+          "tableTo": "tb_modality",
+          "columnsFrom": [
+            "id_modality"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "tb_detail_order_id_requester_tb_practitioner_id_fk": {
+          "name": "tb_detail_order_id_requester_tb_practitioner_id_fk",
+          "tableFrom": "tb_detail_order",
+          "tableTo": "tb_practitioner",
+          "columnsFrom": [
+            "id_requester"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "tb_detail_order_id_performer_tb_practitioner_id_fk": {
+          "name": "tb_detail_order_id_performer_tb_practitioner_id_fk",
+          "tableFrom": "tb_detail_order",
+          "tableTo": "tb_practitioner",
+          "columnsFrom": [
+            "id_performer"
           ],
           "columnsTo": [
             "id"

@@ -1,6 +1,6 @@
 {
-  "id": "0f8e7317-46f4-470a-8947-2d2e1f91cb39",
-  "prevId": "ba583b94-be76-4f61-85ac-62b8e5180d55",
+  "id": "2a370ea9-d9c2-4486-9f6d-cc17de49d0cc",
+  "prevId": "0f8e7317-46f4-470a-8947-2d2e1f91cb39",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -84,6 +84,13 @@
           "type": "varchar(255)",
           "primaryKey": false,
           "notNull": false
+        },
+        "is_active": {
+          "name": "is_active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
         },
         "created_at": {
           "name": "created_at",
@@ -473,57 +480,9 @@
           "primaryKey": false,
           "notNull": false
         },
-        "loinc_code_alt": {
-          "name": "loinc_code_alt",
-          "type": "varchar(50)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "loinc_display_alt": {
-          "name": "loinc_display_alt",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "kptl_code": {
-          "name": "kptl_code",
-          "type": "varchar(100)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "kptl_display": {
-          "name": "kptl_display",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "code_text": {
-          "name": "code_text",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "modality_code": {
-          "name": "modality_code",
-          "type": "varchar(50)",
-          "primaryKey": false,
-          "notNull": false
-        },
         "ae_title": {
           "name": "ae_title",
           "type": "varchar(50)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "contrast_code": {
-          "name": "contrast_code",
-          "type": "varchar(100)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "contrast_name_kfa": {
-          "name": "contrast_name_kfa",
-          "type": "varchar(255)",
           "primaryKey": false,
           "notNull": false
         },
@@ -575,26 +534,11 @@
           "primaryKey": false,
           "notNull": false
         },
-        "require_fasting": {
-          "name": "require_fasting",
-          "type": "boolean",
+        "pacs_study_url": {
+          "name": "pacs_study_url",
+          "type": "varchar(500)",
           "primaryKey": false,
-          "notNull": false,
-          "default": false
-        },
-        "require_pregnancy_check": {
-          "name": "require_pregnancy_check",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": false,
-          "default": false
-        },
-        "require_use_contrast": {
-          "name": "require_use_contrast",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": false,
-          "default": false
+          "notNull": false
         },
         "service_request_json": {
           "name": "service_request_json",

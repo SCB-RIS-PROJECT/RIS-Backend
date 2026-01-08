@@ -1,0 +1,3 @@
+ALTER TABLE "tb_detail_order" ADD COLUMN "id_modality" uuid;--> statement-breakpoint
+ALTER TABLE "tb_detail_order" ADD CONSTRAINT "tb_detail_order_id_modality_tb_modality_id_fk" FOREIGN KEY ("id_modality") REFERENCES "public"."tb_modality"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX "detail_order_modality_idx" ON "tb_detail_order" USING btree ("id_modality");
