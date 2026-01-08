@@ -1,0 +1,33 @@
+{
+    "id_pelayanan": "PEL-1766652792213",
+    "subject": {
+        "ihs_id": "100000030009",
+        "patient_name": "Muhammad Ghufran",
+        "patient_mrn": "12345",
+        "patient_birth_date": "1933-07-10",
+        "patient_age": 92,
+        "patient_gender": "MALE"
+    },
+    "encounter": {
+        "encounter_id": "7b73d0ec-c891-404c-99b9-05f90c60372e"
+    },
+    "requester": {
+        "id_practitioner": "N10000001",
+        "name_practitioner": "Dokter Bronsig"
+    },
+    "diagnosa": {
+        "system": "http://hl7.org/fhir/sid/icd-10",
+        "code": "J18.9",
+        "display": "Pneumonia, unspecified organism"
+    },
+    "order_priority": "ROUTINE",
+    "notes": "Pasien tidak puasa",
+    "details": [
+        {
+            "id_loinc": "65db7572-c4f5-41d0-9955-1969f3af9a70"
+        },
+        {
+            "id_loinc": "a8f3b2e1-9c4d-4e2f-8a1b-5c7d9e3f2a1b"
+        }
+    ]
+}
