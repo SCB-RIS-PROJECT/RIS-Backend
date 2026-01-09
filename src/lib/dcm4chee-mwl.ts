@@ -159,7 +159,14 @@ export async function createMWLInDcm4chee(item: DCM4CHEEMWLItem): Promise<{ succ
     const scheduledDate = item.scheduledDate instanceof Date ? item.scheduledDate : new Date(item.scheduledDate);
     const scheduledTime = item.scheduledTime || toDicomTime(scheduledDate);
 
+    // Generate Study Instance UID (required by DCM4CHEE)
+    // Format: {org-root}.{timestamp}.{random}
+    const timestamp = Date.now();
+    const random = Math.floor(Math.random() * 100000);
+    const studyInstanceUID = `1.2.826.0.1.3680043.8.498.${timestamp}.${random}`;
+
     const mwlPayload = {
+        "0020000D": { "vr": "UI", "Value": [studyInstanceUID] },
         "00080050": { "vr": "SH", "Value": [item.accessionNumber] },
         "00100020": { "vr": "LO", "Value": [item.patientId] },
         "00080090": { "vr": "PN", "Value": [{ "Alphabetic": item.referringPhysician ? toDicomPersonName(item.referringPhysician) : "Unknown" }] },

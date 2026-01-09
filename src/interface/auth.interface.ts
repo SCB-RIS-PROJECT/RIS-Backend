@@ -27,7 +27,7 @@ export const registerPractitionerPayloadSchema = toZodV4SchemaTyped(
         // Auth data
         email: z.string().email().min(1).max(255),
         password: z.string().min(8).max(255),
-        
+
         // Practitioner data
         nik: z.string().length(16),
         name: z.string().min(1).max(255),
