@@ -692,51 +692,43 @@ export class OrderService {
             for (const detailData of data.details) {
                 const loincId = detailData.id_loinc;
 
-                // Get LOINC data from master
+                // Get LOINC data from master (no need to join modality - will be set later)
                 const loincResult = await db
                     .select({
                         loinc: loincTable,
-                        modality: modalityTable,
                     })
                     .from(loincTable)
-                    .leftJoin(modalityTable, eq(loincTable.id_modality, modalityTable.id))
                     .where(eq(loincTable.id, loincId))
                     .limit(1);
 
-                let modalityCode = "OT"; // Default: Other
-
-                if (loincResult.length > 0 && loincResult[0].loinc) {
-                    if (loincResult[0].modality?.code) {
-                        modalityCode = loincResult[0].modality.code;
-                    }
-                } else {
+                if (loincResult.length === 0) {
                     // Skip this detail if LOINC not found
                     console.warn(`[CreateOrder] LOINC ID "${loincId}" not found in master data. Skipping this detail.`);
                     continue;
                 }
 
-                // Generate ACSN with modality code: {MODALITY}{YYYYMMDD}{SEQ}
+                // Use default modality code for ACSN generation (modality will be set later during update)
+                const modalityCode = "OT"; // Default: Other
+
+                // Generate ACSN with default modality code: {MODALITY}{YYYYMMDD}{SEQ}
                 const accessionNumber = await generateAccessionNumber(modalityCode);
 
                 // Generate order number
                 const orderNumber = `ORD-${accessionNumber}`;
-
-                // Get modality ID from LOINC data
-                const modalityId = loincResult[0].loinc.id_modality;
 
                 const [detailOrder] = await db
                     .insert(detailOrderTable)
                     .values({
                         id_order: order.id,
                         id_loinc: loincId,
-                        id_modality: modalityId,
+                        id_modality: null, // Will be set later during update
                         accession_number: accessionNumber,
                         order_number: orderNumber,
                         schedule_date: new Date(),
                         order_priority: data.order_priority || "ROUTINE",
                         order_from: "EXTERNAL" as const,
                         order_status: "IN_REQUEST" as const,
-                        ae_title: null,
+                        ae_title: null, // Will be set later during update
                         // Diagnosis info
                         diagnosis_code: diagnosis_code,
                         diagnosis_display: diagnosis_display,
