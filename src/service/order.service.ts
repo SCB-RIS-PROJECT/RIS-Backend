@@ -776,6 +776,21 @@ export class OrderService {
             accession_number: string;
             mwl_target: string;
             order_status: string;
+            mwl_data?: {
+                studyInstanceUID: string;
+                accessionNumber: string;
+                patientId: string;
+                patientName: string;
+                patientBirthDate: string;
+                patientSex: string;
+                modality: string;
+                stationAETitle: string;
+                scheduledDate: string;
+                scheduledTime: string;
+                scheduledStepId: string;
+                requestedProcedure: string;
+                referringPhysician?: string;
+            };
         };
     }> {
         // Get order and detail
@@ -850,9 +865,28 @@ export class OrderService {
                         message: `Failed to push to DCM4CHEE: ${dcm4cheeResult.error}`,
                     };
                 }
+
+                // Update status to IN_QUEUE after successful MWL push
+                await db
+                    .update(detailOrderTable)
+                    .set({ order_status: "IN_QUEUE" })
+                    .where(eq(detailOrderTable.id, detailId));
+
+                // Return complete MWL data from DCM4CHEE
+                return {
+                    success: true,
+                    message: `Order pushed to DCM4CHEE MWL successfully`,
+                    data: {
+                        detail_id: detailId,
+                        accession_number: detail.accession_number,
+                        mwl_target: mwlTarget,
+                        order_status: "IN_QUEUE",
+                        mwl_data: dcm4cheeResult.mwlData,
+                    },
+                };
             }
 
-            // Update status to IN_QUEUE after successful MWL push
+            // Update status to IN_QUEUE after successful MWL push (Orthanc)
             await db
                 .update(detailOrderTable)
                 .set({ order_status: "IN_QUEUE" })

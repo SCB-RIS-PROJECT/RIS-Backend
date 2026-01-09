@@ -47,6 +47,21 @@ export interface DCM4CHEEMWLResult {
     patientCreated?: boolean;
     mwlCreated?: boolean;
     error?: string;
+    mwlData?: {
+        studyInstanceUID: string;
+        accessionNumber: string;
+        patientId: string;
+        patientName: string;
+        patientBirthDate: string;
+        patientSex: string;
+        modality: string;
+        stationAETitle: string;
+        scheduledDate: string;
+        scheduledTime: string;
+        scheduledStepId: string;
+        requestedProcedure: string;
+        referringPhysician?: string;
+    };
 }
 
 // ===========================
@@ -155,7 +170,7 @@ export async function createPatientInDcm4chee(item: DCM4CHEEMWLItem): Promise<{ 
 /**
  * Create MWL item in DCM4CHEE
  */
-export async function createMWLInDcm4chee(item: DCM4CHEEMWLItem): Promise<{ success: boolean; error?: string }> {
+export async function createMWLInDcm4chee(item: DCM4CHEEMWLItem): Promise<{ success: boolean; error?: string; studyInstanceUID?: string; scheduledTime?: string }> {
     const scheduledDate = item.scheduledDate instanceof Date ? item.scheduledDate : new Date(item.scheduledDate);
     const scheduledTime = item.scheduledTime || toDicomTime(scheduledDate);
 
@@ -197,7 +212,7 @@ export async function createMWLInDcm4chee(item: DCM4CHEEMWLItem): Promise<{ succ
         });
 
         if (response.ok) {
-            return { success: true };
+            return { success: true, studyInstanceUID, scheduledTime };
         }
 
         const error = await response.text();
@@ -233,10 +248,28 @@ export async function pushWorklistToDcm4chee(item: DCM4CHEEMWLItem): Promise<DCM
         };
     }
 
+    // Prepare complete MWL data for response
+    const scheduledDate = item.scheduledDate instanceof Date ? item.scheduledDate : new Date(item.scheduledDate);
+
     return {
         success: true,
         patientCreated: true,
         mwlCreated: true,
+        mwlData: {
+            studyInstanceUID: mwlResult.studyInstanceUID!,
+            accessionNumber: item.accessionNumber,
+            patientId: item.patientId,
+            patientName: item.patientName,
+            patientBirthDate: typeof item.patientBirthDate === 'string' ? item.patientBirthDate : toDicomDate(item.patientBirthDate),
+            patientSex: item.patientSex,
+            modality: item.modality,
+            stationAETitle: item.stationAETitle,
+            scheduledDate: toDicomDate(scheduledDate),
+            scheduledTime: mwlResult.scheduledTime!,
+            scheduledStepId: item.scheduledStepId,
+            requestedProcedure: item.requestedProcedure,
+            referringPhysician: item.referringPhysician,
+        },
     };
 }
 
