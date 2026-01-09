@@ -45,7 +45,7 @@ export const simrsPemeriksaanSchema = z.object({
  * Contains Satu Sehat Patient IHS ID + patient demographic info
  */
 export const simrsSubjectSchema = z.object({
-    ihs_id: z.string().describe("Satu Sehat Patient IHS ID"),
+    ihs_id: z.string().optional().describe("Satu Sehat Patient IHS ID"),
     patient_name: z.string().describe("Patient full name"),
     patient_mrn: z.string().describe("Patient MRN from SIMRS"),
     patient_birth_date: z.string().describe("Patient birth date (YYYY-MM-DD)"),
@@ -58,7 +58,7 @@ export const simrsSubjectSchema = z.object({
  * Contains Satu Sehat Encounter ID
  */
 export const simrsEncounterSchema = z.object({
-    encounter_id: z.string().describe("Satu Sehat Encounter ID"),
+    encounter_id: z.string().optional().describe("Satu Sehat Encounter ID"),
 });
 
 /**

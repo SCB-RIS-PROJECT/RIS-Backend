@@ -152,7 +152,7 @@ export class LoincService {
                 .returning();
 
             // Get modality info only if id_modality is provided
-            let modality = null;
+            let modality = undefined;
             if (loinc.id_modality) {
                 const [result] = await db
                     .select()
@@ -183,12 +183,16 @@ export class LoincService {
 
             if (!loinc) return INVALID_ID_SERVICE_RESPONSE;
 
-            // Get modality info
-            const [modality] = await db
-                .select()
-                .from(modalityTable)
-                .where(eq(modalityTable.id, loinc.id_modality))
-                .limit(1);
+            // Get modality info only if id_modality is provided
+            let modality = undefined;
+            if (loinc.id_modality) {
+                const [result] = await db
+                    .select()
+                    .from(modalityTable)
+                    .where(eq(modalityTable.id, loinc.id_modality))
+                    .limit(1);
+                modality = result;
+            }
 
             return {
                 status: true,

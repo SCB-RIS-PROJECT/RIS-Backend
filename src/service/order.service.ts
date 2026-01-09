@@ -132,10 +132,10 @@ export class OrderService {
         if (loinc) {
             exam = {
                 id: loinc.id,
-                code: loinc.code,
+                code: loinc.code ?? "",
                 name: loinc.name,
-                loinc_code: loinc.loinc_code,
-                loinc_display: loinc.loinc_display,
+                loinc_code: loinc.loinc_code ?? "",
+                loinc_display: loinc.loinc_display ?? "",
             };
         }
 
@@ -607,16 +607,30 @@ export class OrderService {
      */
     static async createOrder(data: CreateOrderInput, userId: string): Promise<ServiceResponse<OrderCreationSuccess>> {
         try {
+            // Validate all LOINC IDs exist before creating order
+            const loincIds = data.details.map(d => d.id_loinc);
+            const loincResults = await db
+                .select({ id: loincTable.id })
+                .from(loincTable)
+                .where(inArray(loincTable.id, loincIds));
+
+            const foundLoincIds = new Set(loincResults.map(l => l.id));
+            const invalidLoincIds = loincIds.filter(id => !foundLoincIds.has(id));
+
+            if (invalidLoincIds.length > 0) {
+                return NotFoundWithMessage(`Invalid LOINC IDs: ${invalidLoincIds.join(", ")}. Please use valid LOINC IDs from master data.`);
+            }
+
             // Extract patient info dari subject
             const patient_name = data.subject.patient_name;
             const patient_mrn = data.subject.patient_mrn;
             const patient_birth_date = data.subject.patient_birth_date;
             const patient_age = data.subject.patient_age;
             const patient_gender = data.subject.patient_gender;
-            const id_patient_ss = data.subject.ihs_id;
+            const id_patient_ss = data.subject.ihs_id ?? null;
 
-            // Extract encounter ID
-            const id_encounter_ss = data.encounter.encounter_id;
+            // Extract encounter ID (can be optional/undefined)
+            const id_encounter_ss = data.encounter.encounter_id ?? null;
 
             // Build diagnosis string from diagnosa
             let diagnosis: string | null = null;
@@ -1209,6 +1223,9 @@ export class OrderService {
         data?: {
             detail_id: string;
             order_status: string;
+            sent_to_satusehat?: boolean;
+            observation_id?: string;
+            diagnostic_report_id?: string;
         };
     }> {
         try {
