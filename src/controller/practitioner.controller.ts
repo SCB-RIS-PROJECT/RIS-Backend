@@ -9,7 +9,7 @@ import {
     createPractitionerSchema,
     practitionerApiResponseSchema,
     practitionerErrorResponseSchema,
-    practitionerIdParamSchema,    practitionerPaginationApiResponseSchema,    practitionerPaginationResponseSchema,
+    practitionerIdParamSchema, practitionerPaginationApiResponseSchema, practitionerPaginationResponseSchema,
     practitionerQuerySchema,
     practitionerResponseSchema,
     updatePractitionerSchema,
@@ -31,6 +31,7 @@ const getAllPractitioners = createRoute({
     method: "get",
     tags,
     summary: "Get all practitioners",
+    description: "Get paginated list of practitioners with optional filters: search (name, NIK, phone, email), profession, active status, and IHS number existence (has_ihs_number=true for practitioners with IHS, has_ihs_number=false for practitioners without IHS)",
     middleware: [authMiddleware, permissionMiddleware("read:practitioner")] as const,
     request: {
         query: practitionerQuerySchema,
@@ -258,7 +259,7 @@ practitionerController.openapi(syncToSatuSehat, async (c) => {
         const result = await PractitionerService.syncToSatuSehat(id);
 
         if (!result.success) {
-            const statusCode = 
+            const statusCode =
                 result.message.includes("not found")
                     ? HttpStatusCode.NOT_FOUND
                     : HttpStatusCode.BAD_REQUEST;

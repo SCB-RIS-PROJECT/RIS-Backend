@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, type InferSelectModel, ilike, or, type SQL } from "drizzle-orm";
+import { and, asc, count, desc, eq, type InferSelectModel, ilike, or, sql, type SQL } from "drizzle-orm";
 import db from "@/database/db";
 import { practitionerTable } from "@/database/schemas/schema-practitioner";
 import type {
@@ -50,7 +50,7 @@ export class PractitionerService {
 
     static async getAllPractitioners(query: PractitionerQuery): Promise<ServiceResponse<PagedList<PractitionerResponse[]>>> {
         try {
-            const { page, per_page, search, profession, active, sort, dir } = query;
+            const { page, per_page, search, profession, active, has_ihs_number, sort, dir } = query;
             const offset = (page - 1) * per_page;
 
             // Build where conditions
@@ -74,6 +74,17 @@ export class PractitionerService {
 
             if (active !== undefined) {
                 whereConditions.push(eq(practitionerTable.active, active));
+            }
+
+            // Filter by IHS number existence
+            if (has_ihs_number !== undefined) {
+                if (has_ihs_number) {
+                    // Has IHS number (not null)
+                    whereConditions.push(sql`${practitionerTable.ihs_number} IS NOT NULL`);
+                } else {
+                    // Does not have IHS number (null)
+                    whereConditions.push(sql`${practitionerTable.ihs_number} IS NULL`);
+                }
             }
 
             const whereClause = whereConditions.length > 0 ? and(...whereConditions) : undefined;
@@ -303,9 +314,9 @@ export class PractitionerService {
 
             // 5. Update practitioner with IHS number
             const syncedAt = new Date();
-            
+
             loggerPino.info(`[Practitioner Sync] Updating practitioner ${practitioner.name} with IHS: ${ihsNumber}`);
-            
+
             try {
                 await db
                     .update(practitionerTable)
@@ -322,14 +333,14 @@ export class PractitionerService {
                 // Check if it's a unique constraint violation
                 const errorMsg = dbError instanceof Error ? dbError.message : String(dbError);
                 loggerPino.error(`[Practitioner Sync] Database error: ${errorMsg}`);
-                
+
                 if (errorMsg.includes("unique") || errorMsg.includes("duplicate") || errorMsg.includes("constraint")) {
                     return {
                         success: false,
                         message: `IHS number ${ihsNumber} sudah terdaftar ke practitioner lain. Periksa data di Satu Sehat atau database.`,
                     };
                 }
-                
+
                 // Return error message instead of throwing
                 return {
                     success: false,

@@ -86,6 +86,7 @@ export const practitionerQuerySchema = z.object({
     search: z.string().optional(),
     profession: z.enum(PRACTITIONER_PROFFESIONS).optional(),
     active: z.coerce.boolean().optional(),
+    has_ihs_number: z.coerce.boolean().optional(),
     sort: z.enum(["name", "profession", "nik", "created_at"]).default("created_at"),
     dir: z.enum(["asc", "desc"]).default("desc"),
 });
