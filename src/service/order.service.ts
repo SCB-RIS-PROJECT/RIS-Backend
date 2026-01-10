@@ -611,12 +611,12 @@ export class OrderService {
             // Validate all LOINC IDs exist before creating order
             const loincIds = data.details.map(d => d.id_loinc);
             const loincResults = await db
-                .select({ id: loincTable.id })
+                .select()
                 .from(loincTable)
                 .where(inArray(loincTable.id, loincIds));
 
-            const foundLoincIds = new Set(loincResults.map(l => l.id));
-            const invalidLoincIds = loincIds.filter(id => !foundLoincIds.has(id));
+            const loincMap = new Map(loincResults.map(l => [l.id, l]));
+            const invalidLoincIds = loincIds.filter(id => !loincMap.has(id));
 
             if (invalidLoincIds.length > 0) {
                 return NotFoundWithMessage(`Invalid LOINC IDs: ${invalidLoincIds.join(", ")}. Please use valid LOINC IDs from master data.`);
@@ -688,33 +688,30 @@ export class OrderService {
                 .returning();
 
             // Process each detail (pemeriksaan/LOINC)
-            const detailsCreated: Array<{ id_detail_order: string; accession_number: string }> = [];
+            const detailsCreated: Array<{
+                id_detail_order: string;
+                accession_number: string;
+                loinc: {
+                    id: string;
+                    code: string | null;
+                    name: string;
+                    loinc_code: string | null;
+                    loinc_display: string | null;
+                };
+            }> = [];
 
             for (const detailData of data.details) {
                 const loincId = detailData.id_loinc;
+                const loincData = loincMap.get(loincId);
 
-                // Get LOINC data from master
-                const loincResult = await db
-                    .select({
-                        loinc: loincTable,
-                        modality: modalityTable,
-                    })
-                    .from(loincTable)
-                    .leftJoin(modalityTable, eq(loincTable.id_modality, modalityTable.id))
-                    .where(eq(loincTable.id, loincId))
-                    .limit(1);
-
-                let modalityCode = "OT"; // Default: Other
-
-                if (loincResult.length > 0 && loincResult[0].loinc) {
-                    if (loincResult[0].modality?.code) {
-                        modalityCode = loincResult[0].modality.code;
-                    }
-                } else {
-                    // Skip this detail if LOINC not found
+                if (!loincData) {
+                    // Skip this detail if LOINC not found (should not happen due to validation above)
                     console.warn(`[CreateOrder] LOINC ID "${loincId}" not found in master data. Skipping this detail.`);
                     continue;
                 }
+
+                // Use default modality code for ACSN generation (modality will be set via update endpoint)
+                const modalityCode = "OT"; // Default: Other - will be updated via update modality performer endpoint
 
                 // Generate ACSN with modality code: {MODALITY}{YYYYMMDD}{SEQ}
                 const accessionNumber = await generateAccessionNumber(modalityCode);
@@ -722,15 +719,13 @@ export class OrderService {
                 // Generate order number
                 const orderNumber = `ORD-${accessionNumber}`;
 
-                // Get modality ID from LOINC data
-                const modalityId = loincResult[0].loinc.id_modality;
-
+                // Modality is NULL on create - will be updated via update modality performer endpoint
                 const [detailOrder] = await db
                     .insert(detailOrderTable)
                     .values({
                         id_order: order.id,
                         id_loinc: loincId,
-                        id_modality: modalityId,
+                        id_modality: null, // Will be set via update modality performer endpoint
                         accession_number: accessionNumber,
                         order_number: orderNumber,
                         schedule_date: new Date(),
@@ -750,10 +745,17 @@ export class OrderService {
                 detailsCreated.push({
                     id_detail_order: detailOrder.id,
                     accession_number: accessionNumber,
+                    loinc: {
+                        id: loincData.id,
+                        code: loincData.code,
+                        name: loincData.name,
+                        loinc_code: loincData.loinc_code,
+                        loinc_display: loincData.loinc_display,
+                    },
                 });
             }
 
-            // Return response sesuai format baru
+            // Return response sesuai format baru dengan LOINC info
             return {
                 status: true,
                 data: {

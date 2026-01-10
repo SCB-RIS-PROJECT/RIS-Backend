@@ -418,11 +418,18 @@ export type DetailOrderIdParam = z.infer<typeof detailOrderIdParamSchema>;
 export const orderDetailCreatedSchema = z.object({
     id_detail_order: z.string().uuid().describe("ID detail order"),
     accession_number: z.string().describe("Accession number yang di-generate"),
+    loinc: z.object({
+        id: z.string().uuid().describe("LOINC ID"),
+        code: z.string().nullable().describe("LOINC code internal"),
+        name: z.string().describe("LOINC name"),
+        loinc_code: z.string().nullable().describe("LOINC code standard"),
+        loinc_display: z.string().nullable().describe("LOINC display name"),
+    }).describe("LOINC examination info"),
 });
 
 export const orderCreationSuccessSchema = z.object({
     id_order: z.string().uuid().describe("ID order yang dibuat"),
-    detail_orders: z.array(orderDetailCreatedSchema).describe("Array detail order dengan ACSN masing-masing"),
+    detail_orders: z.array(orderDetailCreatedSchema).describe("Array detail order dengan ACSN dan LOINC info masing-masing"),
 });
 
 export type OrderCreationSuccess = z.infer<typeof orderCreationSuccessSchema>;
