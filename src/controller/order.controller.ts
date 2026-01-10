@@ -1372,14 +1372,13 @@ const imageIds = series.images.map(
                 );
             }
 
-            // Get DICOM binary buffer
-            const dicomBuffer = await dicomResponse.arrayBuffer();
-
-            // Return DICOM binary with CORS headers
-            return c.body(dicomBuffer, {
+            // Stream DICOM directly to client (no buffering in memory)
+            // This is much faster for large files as client receives data immediately
+            return new Response(dicomResponse.body, {
                 status: HttpStatusCodes.OK,
                 headers: {
                     "Content-Type": "application/dicom",
+                    "Content-Length": dicomResponse.headers.get("Content-Length") || "",
                     "Access-Control-Allow-Origin": "*",
                     "Access-Control-Allow-Methods": "GET, OPTIONS",
                     "Access-Control-Allow-Headers": "Content-Type, Authorization",

@@ -141,6 +141,13 @@
       "when": 1767876739653,
       "tag": "0019_groovy_jackal",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1736553600000,
+      "tag": "0020_add_modality_to_detail_order",
+      "breakpoints": true
     }
   ]
 }

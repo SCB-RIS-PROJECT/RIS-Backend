@@ -512,15 +512,16 @@ export class OrderService {
         const { order, practitioner } = result[0];
 
         // Get order details with all raw fields
+        // Now modality is joined directly from detail_order.id_modality
         const details = await db
             .select({
                 detail: detailOrderTable,
                 loinc: loincTable,
-                modality: modalityTable,
+                modality: modalityTable, // from detail_order.id_modality
             })
             .from(detailOrderTable)
             .leftJoin(loincTable, eq(detailOrderTable.id_loinc, loincTable.id))
-            .leftJoin(modalityTable, eq(loincTable.id_modality, modalityTable.id))
+            .leftJoin(modalityTable, eq(detailOrderTable.id_modality, modalityTable.id))
             .where(eq(detailOrderTable.id_order, orderId));
 
         return {
@@ -692,43 +693,51 @@ export class OrderService {
             for (const detailData of data.details) {
                 const loincId = detailData.id_loinc;
 
-                // Get LOINC data from master (no need to join modality - will be set later)
+                // Get LOINC data from master
                 const loincResult = await db
                     .select({
                         loinc: loincTable,
+                        modality: modalityTable,
                     })
                     .from(loincTable)
+                    .leftJoin(modalityTable, eq(loincTable.id_modality, modalityTable.id))
                     .where(eq(loincTable.id, loincId))
                     .limit(1);
 
-                if (loincResult.length === 0) {
+                let modalityCode = "OT"; // Default: Other
+
+                if (loincResult.length > 0 && loincResult[0].loinc) {
+                    if (loincResult[0].modality?.code) {
+                        modalityCode = loincResult[0].modality.code;
+                    }
+                } else {
                     // Skip this detail if LOINC not found
                     console.warn(`[CreateOrder] LOINC ID "${loincId}" not found in master data. Skipping this detail.`);
                     continue;
                 }
 
-                // Use default modality code for ACSN generation (modality will be set later during update)
-                const modalityCode = "OT"; // Default: Other
-
-                // Generate ACSN with default modality code: {MODALITY}{YYYYMMDD}{SEQ}
+                // Generate ACSN with modality code: {MODALITY}{YYYYMMDD}{SEQ}
                 const accessionNumber = await generateAccessionNumber(modalityCode);
 
                 // Generate order number
                 const orderNumber = `ORD-${accessionNumber}`;
+
+                // Get modality ID from LOINC data
+                const modalityId = loincResult[0].loinc.id_modality;
 
                 const [detailOrder] = await db
                     .insert(detailOrderTable)
                     .values({
                         id_order: order.id,
                         id_loinc: loincId,
-                        id_modality: null, // Will be set later during update
+                        id_modality: modalityId,
                         accession_number: accessionNumber,
                         order_number: orderNumber,
                         schedule_date: new Date(),
                         order_priority: data.order_priority || "ROUTINE",
                         order_from: "EXTERNAL" as const,
                         order_status: "IN_REQUEST" as const,
-                        ae_title: null, // Will be set later during update
+                        ae_title: null,
                         // Diagnosis info
                         diagnosis_code: diagnosis_code,
                         diagnosis_display: diagnosis_display,
@@ -776,21 +785,6 @@ export class OrderService {
             accession_number: string;
             mwl_target: string;
             order_status: string;
-            mwl_data?: {
-                studyInstanceUID: string;
-                accessionNumber: string;
-                patientId: string;
-                patientName: string;
-                patientBirthDate: string;
-                patientSex: string;
-                modality: string;
-                stationAETitle: string;
-                scheduledDate: string;
-                scheduledTime: string;
-                scheduledStepId: string;
-                requestedProcedure: string;
-                referringPhysician?: string;
-            };
         };
     }> {
         // Get order and detail
@@ -865,28 +859,9 @@ export class OrderService {
                         message: `Failed to push to DCM4CHEE: ${dcm4cheeResult.error}`,
                     };
                 }
-
-                // Update status to IN_QUEUE after successful MWL push
-                await db
-                    .update(detailOrderTable)
-                    .set({ order_status: "IN_QUEUE" })
-                    .where(eq(detailOrderTable.id, detailId));
-
-                // Return complete MWL data from DCM4CHEE
-                return {
-                    success: true,
-                    message: `Order pushed to DCM4CHEE MWL successfully`,
-                    data: {
-                        detail_id: detailId,
-                        accession_number: detail.accession_number,
-                        mwl_target: mwlTarget,
-                        order_status: "IN_QUEUE",
-                        mwl_data: dcm4cheeResult.mwlData,
-                    },
-                };
             }
 
-            // Update status to IN_QUEUE after successful MWL push (Orthanc)
+            // Update status to IN_QUEUE after successful MWL push
             await db
                 .update(detailOrderTable)
                 .set({ order_status: "IN_QUEUE" })
