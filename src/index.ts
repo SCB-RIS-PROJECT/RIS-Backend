@@ -30,6 +30,15 @@ routes.forEach((route) => {
     app.route("/", route);
 });
 
+// Health check endpoint
+app.get("/health", (c) => {
+    return c.json({
+        status: "ok",
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+    });
+});
+
 export type AppType = (typeof routes)[number];
 
 export default {
