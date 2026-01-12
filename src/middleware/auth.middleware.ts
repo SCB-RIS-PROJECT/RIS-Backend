@@ -3,7 +3,6 @@ import * as HttpStatusCodes from "stoker/http-status-codes";
 import type { AppBindings } from "@/interface";
 import { verifyToken } from "@/lib/jwt";
 import { UserService } from "@/service/user.service";
-import { UNAUTHORIZED_SERVICE_RESPONSE } from "@/entities/Service";
 
 export const authMiddleware = createMiddleware<AppBindings>(async (c, next) => {
     const authHeader = c.req.header("Authorization");
