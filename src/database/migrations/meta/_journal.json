@@ -148,6 +148,13 @@
       "when": 1736553600000,
       "tag": "0020_add_modality_to_detail_order",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1768214444849,
+      "tag": "0021_petite_nico_minoru",
+      "breakpoints": true
     }
   ]
 }

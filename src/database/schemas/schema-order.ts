@@ -67,5 +67,6 @@ export const detailOrderTable = pgTable(
         orderNumberIdx: index("detail_order_order_number_idx").on(table.order_number),
         accessionNumberIdx: index("detail_order_accession_number_idx").on(table.accession_number),
         orderStatusIdx: index("detail_order_order_status_idx").on(table.order_status),
+        scheduleDateIdx: index("detail_order_schedule_date_idx").on(table.schedule_date),
     })
 );

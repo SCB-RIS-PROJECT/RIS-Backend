@@ -1,0 +1,1 @@
+CREATE INDEX "detail_order_schedule_date_idx" ON "tb_detail_order" USING btree ("schedule_date");
