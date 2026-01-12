@@ -216,7 +216,7 @@ export class OrderService {
         try {
             return await this._getAllOrdersInternal(query);
         } catch (err) {
-            console.error(`OrderService.getAllOrders: ${err}`);
+            loggerPino.error(`OrderService.getAllOrders: ${err}`);
             return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
         }
     }
@@ -464,7 +464,7 @@ export class OrderService {
                 data: orderData,
             };
         } catch (err) {
-            console.error(`OrderService.getOrderById: ${err}`);
+            loggerPino.error(`OrderService.getOrderById: ${err}`);
             return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
         }
     }
@@ -488,7 +488,7 @@ export class OrderService {
             // Then get the full order using the order ID
             return await OrderService.getOrderById(detailOrder.id_order);
         } catch (err) {
-            console.error(`OrderService.getOrderByAccessionNumber: ${err}`);
+            loggerPino.error(`OrderService.getOrderByAccessionNumber: ${err}`);
             return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
         }
     }
@@ -655,7 +655,7 @@ export class OrderService {
                 requesterId = requesterPractitioner[0].id;
             } else {
                 // Create new practitioner if not found
-                console.info(`[CreateOrder] Creating new practitioner with IHS number "${data.requester.id_practitioner}"`);
+                loggerPino.info(`[CreateOrder] Creating new practitioner with IHS number "${data.requester.id_practitioner}"`);
                 const [newPractitioner] = await db
                     .insert(practitionerTable)
                     .values({
@@ -706,7 +706,7 @@ export class OrderService {
 
                 if (!loincData) {
                     // Skip this detail if LOINC not found (should not happen due to validation above)
-                    console.warn(`[CreateOrder] LOINC ID "${loincId}" not found in master data. Skipping this detail.`);
+                    loggerPino.warn(`[CreateOrder] LOINC ID "${loincId}" not found in master data. Skipping this detail.`);
                     continue;
                 }
 
@@ -764,7 +764,7 @@ export class OrderService {
                 },
             };
         } catch (err) {
-            console.error(`OrderService.createOrder: ${err}`);
+            loggerPino.error(`OrderService.createOrder: ${err}`);
             return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
         }
     }
@@ -989,7 +989,7 @@ export class OrderService {
                 data: { deletedCount: result.length },
             };
         } catch (err) {
-            console.error(`OrderService.deleteOrder: ${err}`);
+            loggerPino.error(`OrderService.deleteOrder: ${err}`);
             return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
         }
     }
@@ -1519,7 +1519,7 @@ export class OrderService {
                 },
             };
         } catch (error) {
-            console.error("[OrderService] Fetch study from PACS error:", error);
+            loggerPino.error({ error, msg: "[OrderService] Fetch study from PACS error" });
             return {
                 success: false,
                 message: error instanceof Error ? error.message : "Failed to fetch study from PACS",
