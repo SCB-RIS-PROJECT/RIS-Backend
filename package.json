@@ -23,7 +23,7 @@
         "db:studio": "bunx drizzle-kit studio",
         "biome:check": "bunx biome check",
         "biome:fix": "bunx biome check --write",
-        "orthanc:sync": "bun run scripts/sync-patients.ts"
+        "test": "bun test"
     },
     "dependencies": {
         "@faker-js/faker": "^10.1.0",
