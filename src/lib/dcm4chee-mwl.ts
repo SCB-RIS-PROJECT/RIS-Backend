@@ -69,7 +69,7 @@ export interface DCM4CHEEMWLResult {
 // ===========================
 
 const DCM4CHEE_CONFIG: DCM4CHEEConfig = {
-    host: env.DCM4CHEE_HOST || "192.168.250.205",
+    host: env.DCM4CHEE_HOST || "192.168.101.103",
     port: Number(env.DCM4CHEE_PORT) || 8080,
     aeTitle: env.DCM4CHEE_AE_TITLE || "DCM4CHEE",
     restApiBase: env.DCM4CHEE_REST_API || `http://${env.DCM4CHEE_HOST || "192.168.250.205"}:${env.DCM4CHEE_PORT || 8080}/dcm4chee-arc`,
@@ -110,7 +110,7 @@ function toDicomTime(date: Date): string {
 function toDicomPersonName(name: string): string {
     // If already has ^, return as-is
     if (name.includes("^")) return name;
-    
+
     // Split by space and format
     const parts = name.split(" ");
     if (parts.length >= 2) {
@@ -283,7 +283,7 @@ export async function queryMWLFromDcm4chee(params?: {
     scheduledDate?: string;
 }): Promise<{ success: boolean; data?: any[]; error?: string }> {
     let url = `${DCM4CHEE_CONFIG.restApiBase}/aets/${DCM4CHEE_CONFIG.aeTitle}/rs/mwlitems`;
-    
+
     const queryParams: string[] = [];
     if (params?.accessionNumber) queryParams.push(`AccessionNumber=${params.accessionNumber}`);
     if (params?.patientId) queryParams.push(`PatientID=${params.patientId}`);
@@ -348,7 +348,7 @@ export async function queryPatientsFromDcm4chee(params?: {
     limit?: number;
 }): Promise<{ success: boolean; data?: any[]; error?: string }> {
     let url = `${DCM4CHEE_CONFIG.restApiBase}/aets/${DCM4CHEE_CONFIG.aeTitle}/rs/patients`;
-    
+
     const queryParams: string[] = [];
     if (params?.patientId) queryParams.push(`PatientID=${params.patientId}`);
     if (params?.patientName) queryParams.push(`PatientName=${params.patientName}*`);
