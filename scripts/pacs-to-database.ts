@@ -310,6 +310,7 @@ async function importStudyToDatabase(
                 : new Date(),
             notes: study.MainDicomTags.StudyDescription || null,
             pacs_study_url: `${ORTHANC_CONFIG.url}:${ORTHANC_CONFIG.port}/studies/${study.ID}`,
+            study_id: study.ID, // Store the PACS Study ID
             id_modality: modalityId,
             order_status: "FINAL" as const,
         };
