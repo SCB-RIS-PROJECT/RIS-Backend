@@ -626,7 +626,6 @@ export const printDetailOrderResponseSchema = z.object({
 
     // Clinical Information
     diagnosis: z.string().nullable(), // Diagnosa
-    service_type: z.string().nullable(), // Tipe pelayanan (order_from: INTERNAL/EXTERNAL)
     payment_method: z.string().nullable(), // Cara bayar
 
     // Referring Physician

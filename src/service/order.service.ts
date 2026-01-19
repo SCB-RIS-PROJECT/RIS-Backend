@@ -1610,13 +1610,6 @@ export class OrderService {
                 ? `${detail.diagnosis_code} - ${detail.diagnosis_display}`
                 : detail.diagnosis_display || detail.diagnosis_code || null;
 
-            // Format service type
-            const serviceType = detail.order_from === "INTERNAL"
-                ? "rawat inap"
-                : detail.order_from === "EXTERNAL"
-                    ? "rawat jalan"
-                    : detail.order_from ? String(detail.order_from).toLowerCase() : null;
-
             // Build response
             const printData: PrintDetailOrderResponse = {
                 examination_title: examinationTitle,
@@ -1635,7 +1628,6 @@ export class OrderService {
 
                 // Clinical Information
                 diagnosis: diagnosis,
-                service_type: serviceType,
                 payment_method: detail.cara_bayar,
 
                 // Referring Physician
