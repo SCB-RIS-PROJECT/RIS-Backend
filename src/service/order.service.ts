@@ -197,6 +197,8 @@ export class OrderService {
             notes: detail.notes,
             observation_notes: detail.observation_notes,
             diagnostic_conclusion: detail.diagnostic_conclusion,
+            study_id: detail.study_id,
+            cara_bayar: detail.cara_bayar,
             exam: exam,
             modality: modalityInfo,
             contrast: contrastInfo,
@@ -536,65 +538,6 @@ export class OrderService {
     }
 
     /**
-     * Map FHIR ServiceRequest from SIMRS to flat detail order fields
-     * Note: LOINC and modality data now come from master data tables only
-     */
-    private static mapSimrsServiceRequestToDetailOrder(sr: SimrsServiceRequest) {
-        const result: Record<string, unknown> = {};
-
-        // Map occurrence datetime
-        if (sr.occurrenceDateTime) result.occurrence_datetime = sr.occurrenceDateTime;
-
-        // Extract AE title from orderDetail
-        if (sr.orderDetail) {
-            const aeDetail = sr.orderDetail.find((d) =>
-                d.coding?.some((c) => c.system?.includes("ae-title"))
-            );
-            if (aeDetail?.coding?.[0]?.display) result.ae_title = aeDetail.coding[0].display;
-        }
-
-        // Map requester
-        if (sr.requester) {
-            result.id_requester_ss = sr.requester.reference?.split("/")[1];
-            result.requester_display = sr.requester.display;
-        }
-
-        // Map performer
-        if (sr.performer?.[0]) {
-            result.id_performer_ss = sr.performer[0].reference?.split("/")[1];
-            result.performer_display = sr.performer[0].display;
-        }
-
-        // Map reasonCode (diagnosis)
-        if (sr.reasonCode?.[0]?.coding?.[0]) {
-            result.reason_code = sr.reasonCode[0].coding[0].code;
-            result.reason_display = sr.reasonCode[0].coding[0].display;
-            result.diagnosis_code = sr.reasonCode[0].coding[0].code;
-            result.diagnosis_display = sr.reasonCode[0].coding[0].display;
-            result.diagnosis = `${sr.reasonCode[0].coding[0].code} - ${sr.reasonCode[0].coding[0].display}`;
-        }
-
-        // Map supportingInfo (extract IDs from references)
-        if (sr.supportingInfo) {
-            sr.supportingInfo.forEach((info) => {
-                const ref = info.reference;
-                if (ref?.startsWith("Observation/")) result.id_observation_ss = ref.split("/")[1];
-                if (ref?.startsWith("Procedure/")) result.id_procedure_ss = ref.split("/")[1];
-                if (ref?.startsWith("AllergyIntolerance/")) result.id_allergy_intolerance_ss = ref.split("/")[1];
-            });
-        }
-
-        // Extract encounter ID
-        if (sr.encounter?.reference) {
-            result.id_encounter_ss = sr.encounter.reference.split("/")[1];
-        }
-
-        return result;
-    }
-
-
-
-    /**
      * Create new order with details from SIMRS (NEW FORMAT)
      * Flow:
      * 1. Extract patient/practitioner info from new SIMRS format
@@ -738,6 +681,10 @@ export class OrderService {
                         diagnosis_display: diagnosis_display,
                         // Notes
                         notes: data.notes || null,
+                        // Payment method - set when creating order
+                        cara_bayar: data.cara_bayar || null,
+                        // Study ID - initially null, will be populated when retrieved from PACS
+                        study_id: null,
                         service_request_json: null,
                     })
                     .returning();
