@@ -23,6 +23,7 @@ import {
     updateDetailOrderSchema,
     updateOrderDetailWithModalityPerformerResponseSchema,
     updateOrderDetailWithModalityPerformerSchema,
+    printDetailOrderResponseSchema,
 } from "@/interface/order.interface";
 import { authMiddleware } from "@/middleware/auth.middleware";
 import { permissionMiddleware } from "@/middleware/role-permission.middleware";
@@ -1104,6 +1105,134 @@ orderController.openapi(
                 {
                     success: false,
                     message: error instanceof Error ? error.message : "Failed to fetch study from PACS",
+                },
+                HttpStatusCodes.INTERNAL_SERVER_ERROR
+            );
+        }
+    }
+);
+
+// ==================== PRINT DETAIL ORDER ====================
+orderController.openapi(
+    createRoute({
+        tags,
+        method: "get",
+        path: "/api/orders/{id}/details/{detailId}/print",
+        summary: "Get detail order data for printing radiology examination report",
+        description: `
+Retrieve formatted data for printing radiology examination report.
+
+**Data yang dikembalikan:**
+- Header: Judul pemeriksaan (e.g., "Pemeriksaan Radiologi Thorax PA")
+- Patient Information: Nama, Tgl Lahir, Jenis kelamin, No. Rekam medis, Umur
+- Order Information: No. Reg. Rad, Waktu Pemeriksaan, Waktu hasil keluar
+- Clinical Information: Diagnosa, Tipe pelayanan, Cara bayar
+- Referring Physician: Dokter pengirim
+- Results: Hasil ekspertise, Konklusi/kesan
+- Radiologist: Nama dokter radiologi
+
+**Use Case:**
+- Generate PDF report
+- Print examination results
+- Display formatted report on screen
+        `,
+        middleware: [authMiddleware] as const,
+        request: {
+            params: detailOrderIdParamSchema,
+        },
+        responses: {
+            [HttpStatusCodes.OK]: jsonContent(
+                z.object({
+                    content: z.object({
+                        data: printDetailOrderResponseSchema,
+                    }),
+                    message: z.string(),
+                    errors: z.array(z.unknown()),
+                }),
+                "Print data retrieved successfully"
+            ),
+            [HttpStatusCodes.NOT_FOUND]: jsonContent(
+                z.object({
+                    content: z.object({
+                        data: z.null(),
+                    }),
+                    message: z.string(),
+                    errors: z.array(z.unknown()),
+                }),
+                "Order detail not found"
+            ),
+            [HttpStatusCodes.UNAUTHORIZED]: jsonContent(
+                createMessageObjectSchema("Not authenticated"),
+                "User not authenticated"
+            ),
+            [HttpStatusCodes.INTERNAL_SERVER_ERROR]: jsonContent(
+                z.object({
+                    content: z.object({
+                        data: z.null(),
+                    }),
+                    message: z.string(),
+                    errors: z.array(z.unknown()),
+                }),
+                "Failed to retrieve print data"
+            ),
+        },
+    }),
+    async (c) => {
+        try {
+            const { id, detailId } = c.req.valid("param");
+
+            const result = await OrderService.getPrintDetailOrder(id, detailId);
+
+            if (!result.status) {
+                const errorMessage = result.err?.message || "Failed to retrieve print data";
+                const statusCode = errorMessage.includes("not found")
+                    ? HttpStatusCodes.NOT_FOUND
+                    : HttpStatusCodes.INTERNAL_SERVER_ERROR;
+
+                return c.json(
+                    {
+                        content: {
+                            data: null,
+                        },
+                        message: errorMessage,
+                        errors: [],
+                    },
+                    statusCode
+                );
+            }
+
+            if (!result.data) {
+                return c.json(
+                    {
+                        content: {
+                            data: null,
+                        },
+                        message: "No data found",
+                        errors: [],
+                    },
+                    HttpStatusCodes.NOT_FOUND
+                );
+            }
+
+            return c.json(
+                {
+                    content: {
+                        data: result.data,
+                    },
+                    message: "Print data retrieved successfully",
+                    errors: [],
+                },
+                HttpStatusCodes.OK
+            );
+        } catch (error) {
+            loggerPino.error(error);
+            return c.json(
+                {
+                    content: {
+                        data: null,
+                    },
+                    message: error instanceof Error ? error.message : "Failed to retrieve print data",
+                    errors: [],
                 },
                 HttpStatusCodes.INTERNAL_SERVER_ERROR
             );

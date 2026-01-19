@@ -19,6 +19,7 @@ import type {
     UpdateDetailOrderInput,
     UpdateOrderDetailWithModalityPerformerInput,
     FinalizeOrderDetailInput,
+    PrintDetailOrderResponse,
 } from "@/interface/order.interface";
 import { pushWorklistToOrthanc, type MWLWorklistItem } from "@/lib/orthanc-mwl";
 import { pushWorklistToDcm4chee, type DCM4CHEEMWLItem } from "@/lib/dcm4chee-mwl";
@@ -1529,6 +1530,132 @@ export class OrderService {
                 success: false,
                 message: error instanceof Error ? error.message : "Failed to test PACS connection",
             };
+        }
+    }
+
+    /**
+     * Get detail order data for printing radiology examination report
+     */
+    static async getPrintDetailOrder(orderId: string, detailId: string): Promise<ServiceResponse<PrintDetailOrderResponse>> {
+        try {
+            // Get order with detail
+            const result = await db
+                .select({
+                    order: orderTable,
+                    detail: detailOrderTable,
+                    loinc: loincTable,
+                    requester: practitionerTable,
+                })
+                .from(orderTable)
+                .innerJoin(detailOrderTable, eq(detailOrderTable.id_order, orderTable.id))
+                .leftJoin(loincTable, eq(detailOrderTable.id_loinc, loincTable.id))
+                .leftJoin(practitionerTable, eq(orderTable.id_practitioner, practitionerTable.id))
+                .where(and(
+                    eq(orderTable.id, orderId),
+                    eq(detailOrderTable.id, detailId)
+                ))
+                .limit(1);
+
+            if (result.length === 0) {
+                return NotFoundWithMessage("Order detail not found");
+            }
+
+            const { order, detail, loinc, requester } = result[0];
+
+            // Get performer (radiologist)
+            let performer: InferSelectModel<typeof practitionerTable> | null = null;
+            if (detail.id_performer) {
+                const performerResult = await db
+                    .select()
+                    .from(practitionerTable)
+                    .where(eq(practitionerTable.id, detail.id_performer))
+                    .limit(1);
+
+                if (performerResult.length > 0) {
+                    performer = performerResult[0];
+                }
+            }
+
+            // Format examination title
+            const examinationTitle = loinc?.loinc_display
+                ? `Pemeriksaan Radiologi ${loinc.loinc_display}`
+                : loinc?.name
+                    ? `Pemeriksaan Radiologi ${loinc.name}`
+                    : "Pemeriksaan Radiologi";
+
+            // Format dates
+            const formatDate = (date: Date | null | undefined): string | null => {
+                if (!date) return null;
+                return new Date(date).toLocaleString("id-ID", {
+                    day: "2-digit",
+                    month: "long",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    second: "2-digit",
+                });
+            };
+
+            const formatDateOnly = (date: Date | string | null | undefined): string | null => {
+                if (!date) return null;
+                return new Date(date).toLocaleDateString("id-ID", {
+                    day: "2-digit",
+                    month: "long",
+                    year: "numeric",
+                });
+            };
+
+            // Format diagnosis
+            const diagnosis = detail.diagnosis_code && detail.diagnosis_display
+                ? `${detail.diagnosis_code} - ${detail.diagnosis_display}`
+                : detail.diagnosis_display || detail.diagnosis_code || null;
+
+            // Format service type
+            const serviceType = detail.order_from === "INTERNAL"
+                ? "rawat inap"
+                : detail.order_from === "EXTERNAL"
+                    ? "rawat jalan"
+                    : detail.order_from ? String(detail.order_from).toLowerCase() : null;
+
+            // Build response
+            const printData: PrintDetailOrderResponse = {
+                examination_title: examinationTitle,
+
+                // Patient Information
+                patient_name: order.patient_name,
+                patient_birth_date: formatDateOnly(order.patient_birth_date),
+                patient_gender: order.patient_gender,
+                patient_mrn: order.patient_mrn,
+                patient_age: order.patient_age,
+
+                // Order Information
+                accession_number: detail.accession_number,
+                examination_date: formatDate(detail.schedule_date),
+                result_date: detail.order_status === "FINAL" ? formatDate(detail.updated_at) : null,
+
+                // Clinical Information
+                diagnosis: diagnosis,
+                service_type: serviceType,
+                payment_method: detail.cara_bayar,
+
+                // Referring Physician
+                referring_physician: requester?.name || null,
+
+                // Results
+                observation_notes: detail.observation_notes,
+                diagnostic_conclusion: detail.diagnostic_conclusion,
+
+                // Radiologist Information
+                radiologist_name: performer?.name || null,
+            };
+
+            return {
+                status: true,
+                data: printData,
+            };
+        } catch (err) {
+            loggerPino.error(`OrderService.getPrintDetailOrder: ${err}`);
+            return INTERNAL_SERVER_ERROR_SERVICE_RESPONSE;
         }
     }
 

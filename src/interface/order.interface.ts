@@ -606,3 +606,39 @@ export const updateOrderDetailWithModalityPerformerResponseSchema = z.object({
 });
 
 export type UpdateOrderDetailWithModalityPerformerResponse = z.infer<typeof updateOrderDetailWithModalityPerformerResponseSchema>;
+
+// ==================== Print Detail Order Response ====================
+export const printDetailOrderResponseSchema = z.object({
+    // Header - Judul Pemeriksaan
+    examination_title: z.string(), // e.g., "Pemeriksaan Radiologi Thorax PA"
+
+    // Patient Information (from Order)
+    patient_name: z.string().nullable(), // Nama
+    patient_birth_date: z.string().nullable(), // Tgl Lahir
+    patient_gender: z.string().nullable(), // Jenis kelamin
+    patient_mrn: z.string().nullable(), // No. Rekam medis
+    patient_age: z.number().nullable(), // Umur
+
+    // Order Information
+    accession_number: z.string().nullable(), // No. Reg. Rad
+    examination_date: z.string().nullable(), // Waktu Pemeriksaan
+    result_date: z.string().nullable(), // Waktu hasil keluar (updated_at when FINAL)
+
+    // Clinical Information
+    diagnosis: z.string().nullable(), // Diagnosa
+    service_type: z.string().nullable(), // Tipe pelayanan (order_from: INTERNAL/EXTERNAL)
+    payment_method: z.string().nullable(), // Cara bayar
+
+    // Referring Physician
+    referring_physician: z.string().nullable(), // Dokter pengirim
+
+    // Results
+    observation_notes: z.string().nullable(), // Hasil ekspertise
+    diagnostic_conclusion: z.string().nullable(), // Konklusi/kesan
+
+    // Radiologist Information
+    radiologist_name: z.string().nullable(), // Nama dokter rad
+    // radiologist_signature: z.string().nullable(), // TTD dr rad (elektronik) - untuk nanti
+});
+
+export type PrintDetailOrderResponse = z.infer<typeof printDetailOrderResponseSchema>;
