@@ -1445,13 +1445,37 @@ export class OrderService {
 
             const detailOrder = detailOrders[0];
 
-            // Update order with PACS URL
+            // Prepare update data
+            const updateData: {
+                pacs_study_url: string;
+                study_id?: string;
+                updated_at: Date;
+            } = {
+                pacs_study_url: study.studyUrl,
+                updated_at: new Date(),
+            };
+
+            // Only update study_id if it's currently null (not yet populated)
+            // This prevents overwriting existing study_id
+            if (!detailOrder.study_id) {
+                updateData.study_id = study.studyId;
+                loggerPino.info({
+                    msg: "[OrderService] Populating study_id from PACS",
+                    accessionNumber,
+                    studyId: study.studyId,
+                });
+            } else {
+                loggerPino.info({
+                    msg: "[OrderService] study_id already exists, skipping update",
+                    accessionNumber,
+                    existingStudyId: detailOrder.study_id,
+                });
+            }
+
+            // Update order with PACS URL and study_id (if applicable)
             await db
                 .update(detailOrderTable)
-                .set({
-                    pacs_study_url: study.studyUrl,
-                    updated_at: new Date(),
-                })
+                .set(updateData)
                 .where(eq(detailOrderTable.id, detailOrder.id));
 
             return {
@@ -1461,7 +1485,9 @@ export class OrderService {
                     detail_id: detailOrder.id,
                     accession_number: accessionNumber,
                     pacs_study_url: study.studyUrl,
-                    viewer_url: study.viewerUrl,
+                    viewer_url: study.viewerUrl || undefined,
+                    study_id: (updateData.study_id || detailOrder.study_id) || undefined, // Convert null to undefined
+                    study_id_updated: !detailOrder.study_id, // Flag to indicate if study_id was updated
                     study_data: detailResult.data, // Contains series and instances for Cornerstone
                 },
             };

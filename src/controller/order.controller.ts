@@ -1046,6 +1046,9 @@ orderController.openapi(
                         detail_id: z.string().uuid(),
                         accession_number: z.string(),
                         pacs_study_url: z.string(),
+                        viewer_url: z.string().optional(),
+                        study_id: z.string().optional(), // PACS Study ID (Orthanc ID)
+                        study_id_updated: z.boolean().optional(), // Flag if study_id was newly populated
                         study_data: z.any(),
                     }).optional(),
                 }),
