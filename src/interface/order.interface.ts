@@ -178,6 +178,8 @@ export const detailOrderResponseSchema = z.object({
     notes: z.string().nullable(),
     observation_notes: z.string().nullable(),
     diagnostic_conclusion: z.string().nullable(),
+    study_id: z.string().nullable(), // PACS Study ID
+    cara_bayar: z.string().nullable(), // Payment method
     // Exam info from LOINC
     exam: z.object({
         id: z.string().uuid(),
@@ -345,6 +347,9 @@ export const createOrderSchema = z.object({
 
     // Notes
     notes: z.string().optional().describe("Additional notes from SIMRS"),
+
+    // Payment method
+    cara_bayar: z.string().optional().describe("Payment method (e.g., BPJS, Umum, Asuransi)"),
 
     // Details - array of LOINC examinations (at least one required)
     details: z.array(simrsDetailSchema).min(1, "At least one examination detail is required").describe("Array of examination LOINC codes"),
