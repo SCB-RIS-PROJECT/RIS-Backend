@@ -103,64 +103,57 @@
     {
       "idx": 14,
       "version": "7",
-      "when": 1767861938344,
-      "tag": "0014_misty_wrecking_crew",
-      "breakpoints": true
-    },
-    {
-      "idx": 15,
-      "version": "7",
-      "when": 1767862156979,
-      "tag": "0015_bumpy_mongoose",
-      "breakpoints": true
-    },
-    {
-      "idx": 16,
-      "version": "7",
       "when": 1767864591974,
       "tag": "0016_spooky_paladin",
       "breakpoints": true
     },
     {
-      "idx": 17,
+      "idx": 15,
       "version": "7",
       "when": 1767865052195,
       "tag": "0017_daffy_post",
       "breakpoints": true
     },
     {
-      "idx": 18,
+      "idx": 16,
       "version": "7",
       "when": 1767866973869,
       "tag": "0018_flat_doctor_octopus",
       "breakpoints": true
     },
     {
-      "idx": 19,
+      "idx": 17,
       "version": "7",
       "when": 1767876739653,
       "tag": "0019_groovy_jackal",
       "breakpoints": true
     },
     {
-      "idx": 20,
+      "idx": 18,
       "version": "7",
       "when": 1736553600000,
       "tag": "0020_add_modality_to_detail_order",
       "breakpoints": true
     },
     {
-      "idx": 21,
+      "idx": 19,
       "version": "7",
       "when": 1768214444849,
       "tag": "0021_petite_nico_minoru",
       "breakpoints": true
     },
     {
-      "idx": 22,
+      "idx": 20,
       "version": "7",
       "when": 1768796726271,
       "tag": "0022_messy_ezekiel_stane",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1768969350951,
+      "tag": "0023_aberrant_wasp",
       "breakpoints": true
     }
   ]

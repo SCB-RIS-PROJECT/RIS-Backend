@@ -1,0 +1,1 @@
+ALTER TABLE "tb_detail_order" ADD COLUMN "tipe_pelayanan" varchar(100);

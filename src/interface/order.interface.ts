@@ -180,6 +180,7 @@ export const detailOrderResponseSchema = z.object({
     diagnostic_conclusion: z.string().nullable(),
     study_id: z.string().nullable(), // PACS Study ID
     cara_bayar: z.string().nullable(), // Payment method
+    tipe_pelayanan: z.string().nullable(), // Service type
     // Exam info from LOINC
     exam: z.object({
         id: z.string().uuid(),
@@ -350,6 +351,9 @@ export const createOrderSchema = z.object({
 
     // Payment method
     cara_bayar: z.string().optional().describe("Payment method (e.g., BPJS, Umum, Asuransi)"),
+
+    // Service type
+    tipe_pelayanan: z.string().optional().describe("Service type (e.g., Rawat Jalan, Rawat Inap, IGD)"),
 
     // Details - array of LOINC examinations (at least one required)
     details: z.array(simrsDetailSchema).min(1, "At least one examination detail is required").describe("Array of examination LOINC codes"),
@@ -627,6 +631,7 @@ export const printDetailOrderResponseSchema = z.object({
     // Clinical Information
     diagnosis: z.string().nullable(), // Diagnosa
     payment_method: z.string().nullable(), // Cara bayar
+    service_type: z.string().nullable(), // Tipe pelayanan
 
     // Referring Physician
     referring_physician: z.string().nullable(), // Dokter pengirim

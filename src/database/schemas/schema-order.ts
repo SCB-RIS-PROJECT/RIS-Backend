@@ -56,6 +56,7 @@ export const detailOrderTable = pgTable(
         pacs_study_url: varchar({ length: 500 }),
         study_id: varchar({ length: 255 }), // PACS Study ID - initially null, populated when retrieved from PACS
         cara_bayar: varchar({ length: 100 }), // Payment method - set when creating order
+        tipe_pelayanan: varchar({ length: 100 }), // Service type - set when creating order
         service_request_json: jsonb("service_request_json"),
         created_at: timestamp("created_at").notNull().defaultNow(),
         updated_at: timestamp("updated_at"),

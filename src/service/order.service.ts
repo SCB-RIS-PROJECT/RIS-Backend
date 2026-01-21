@@ -200,6 +200,7 @@ export class OrderService {
             diagnostic_conclusion: detail.diagnostic_conclusion,
             study_id: detail.study_id,
             cara_bayar: detail.cara_bayar,
+            tipe_pelayanan: detail.tipe_pelayanan,
             exam: exam,
             modality: modalityInfo,
             contrast: contrastInfo,
@@ -684,6 +685,8 @@ export class OrderService {
                         notes: data.notes || null,
                         // Payment method - set when creating order
                         cara_bayar: data.cara_bayar || null,
+                        // Service type - set when creating order
+                        tipe_pelayanan: data.tipe_pelayanan || null,
                         // Study ID - initially null, will be populated when retrieved from PACS
                         study_id: null,
                         service_request_json: null,
@@ -1629,6 +1632,7 @@ export class OrderService {
                 // Clinical Information
                 diagnosis: diagnosis,
                 payment_method: detail.cara_bayar,
+                service_type: detail.tipe_pelayanan,
 
                 // Referring Physician
                 referring_physician: requester?.name || null,
