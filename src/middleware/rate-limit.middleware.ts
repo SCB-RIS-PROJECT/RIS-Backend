@@ -229,7 +229,7 @@ export const rateLimitPresets = {
 	 */
 	auth: () =>
 		rateLimitMiddleware({
-			maxRequests: 15,
+			maxRequests: 150,
 			windowMs: 15 * 60 * 1000,
 			message: "Too many authentication attempts, please try again later.",
 		}),
