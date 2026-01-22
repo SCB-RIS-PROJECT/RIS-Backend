@@ -588,31 +588,50 @@ export class OrderService {
                 diagnosis_display = data.diagnosa.display;
             }
 
-            // Find or create requester practitioner by IHS number
+            // Find or create requester practitioner by IHS number or NIK
             let requesterId: string | null = null;
+
+            // First, try to find by IHS number
             let requesterPractitioner = await db
                 .select()
                 .from(practitionerTable)
                 .where(eq(practitionerTable.ihs_number, data.requester.id_practitioner))
                 .limit(1);
 
+            // If not found by IHS, try to find by NIK (in case practitioner exists with same NIK)
+            if (requesterPractitioner.length === 0) {
+                requesterPractitioner = await db
+                    .select()
+                    .from(practitionerTable)
+                    .where(eq(practitionerTable.nik, data.requester.id_practitioner))
+                    .limit(1);
+            }
+
             if (requesterPractitioner.length > 0) {
+                // Practitioner found, use existing ID
                 requesterId = requesterPractitioner[0].id;
+                loggerPino.info(`[CreateOrder] Using existing practitioner ID: ${requesterId} for IHS/NIK: "${data.requester.id_practitioner}"`);
             } else {
                 // Create new practitioner if not found
                 loggerPino.info(`[CreateOrder] Creating new practitioner with IHS number "${data.requester.id_practitioner}"`);
-                const [newPractitioner] = await db
-                    .insert(practitionerTable)
-                    .values({
-                        ihs_number: data.requester.id_practitioner,
-                        name: data.requester.name_practitioner,
-                        nik: data.requester.id_practitioner, // Use IHS as NIK placeholder
-                        gender: "MALE", // Default
-                        birth_date: new Date("1970-01-01"), // Default
-                        active: true,
-                    })
-                    .returning();
-                requesterId = newPractitioner.id;
+                try {
+                    const [newPractitioner] = await db
+                        .insert(practitionerTable)
+                        .values({
+                            ihs_number: data.requester.id_practitioner,
+                            name: data.requester.name_practitioner,
+                            nik: data.requester.id_practitioner, // Use IHS as NIK placeholder
+                            profession: "DOCTOR", // Default profession
+                            gender: "MALE", // Default
+                            birth_date: new Date("1970-01-01"), // Default
+                            active: true,
+                        })
+                        .returning();
+                    requesterId = newPractitioner.id;
+                } catch (insertError) {
+                    loggerPino.error(`[CreateOrder] Failed to insert practitioner: ${insertError}`);
+                    throw insertError;
+                }
             }
 
             // Create order record
