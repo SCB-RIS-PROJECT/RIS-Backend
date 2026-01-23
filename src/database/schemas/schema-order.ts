@@ -20,8 +20,8 @@ export const orderTable = pgTable(
         patient_birth_date: date("patient_birth_date"),
         patient_age: integer("patient_age"),
         patient_gender: varchar({ length: 10 }),
-        created_at: timestamp("created_at").notNull().defaultNow(),
-        updated_at: timestamp("updated_at").$onUpdate(() => new Date()),
+        created_at: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updated_at: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
     },
     (table) => ({
         patientIdx: index("order_patient_idx").on(table.id_patient),
@@ -43,7 +43,7 @@ export const detailOrderTable = pgTable(
         id_performer: uuid("id_performer").references(() => practitionerTable.id),
         accession_number: varchar({ length: 255 }).unique(),
         order_number: varchar({ length: 255 }),
-        schedule_date: timestamp("schedule_date").defaultNow(),
+        schedule_date: timestamp("schedule_date", { withTimezone: true }).defaultNow(),
         order_priority: orderPriorityEnum("order_priority").default("ROUTINE"),
         order_status: orderStatusEnum("order_status").default("IN_REQUEST"),
         order_from: orderFromEnum("order_from").default("INTERNAL"),
@@ -58,8 +58,8 @@ export const detailOrderTable = pgTable(
         cara_bayar: varchar({ length: 100 }), // Payment method - set when creating order
         tipe_pelayanan: varchar({ length: 100 }), // Service type - set when creating order
         service_request_json: jsonb("service_request_json"),
-        created_at: timestamp("created_at").notNull().defaultNow(),
-        updated_at: timestamp("updated_at"),
+        created_at: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updated_at: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
     },
     (table) => ({
         orderIdx: index("detail_order_order_idx").on(table.id_order),

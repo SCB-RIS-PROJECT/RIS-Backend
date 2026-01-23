@@ -692,7 +692,7 @@ export class OrderService {
                         id_modality: null, // Will be set via update modality performer endpoint
                         accession_number: accessionNumber,
                         order_number: orderNumber,
-                        schedule_date: new Date(),
+                        schedule_date: null,
                         order_priority: data.order_priority || "ROUTINE",
                         order_from: "EXTERNAL" as const,
                         order_status: "IN_REQUEST" as const,
