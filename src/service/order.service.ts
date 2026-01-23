@@ -7,7 +7,7 @@ import { patientTable } from "@/database/schemas/schema-patient";
 import { practitionerTable } from "@/database/schemas/schema-practitioner";
 import { userTable } from "@/database/schemas/schema-user";
 import type {
-    CreateDetailOrderItem,
+    // CreateDetailOrderItem,
     CreateOrderInput,
     DetailOrderResponse,
     FullOrderResponse,
@@ -15,7 +15,6 @@ import type {
     OrderPaginationResponse,
     OrderQuery,
     OrderResponse,
-    SimrsServiceRequest,
     UpdateDetailOrderInput,
     UpdateOrderDetailWithModalityPerformerInput,
     FinalizeOrderDetailInput,
@@ -25,8 +24,7 @@ import { pushWorklistToOrthanc, type MWLWorklistItem } from "@/lib/orthanc-mwl";
 import { pushWorklistToDcm4chee, type DCM4CHEEMWLItem } from "@/lib/dcm4chee-mwl";
 import { queryStudiesFromPACS, testPACSConnection, getStudyWithSeriesAndInstances, type PACSStudyQueryParams } from "@/lib/pacs-orthanc";
 import { generateAccessionNumber } from "@/lib/utils";
-import { SatuSehatService } from "@/service/satu-sehat.service";
-import env from "@/config/env";
+
 import { loggerPino } from "@/config/log";
 import type { ServiceResponse } from "@/entities/Service";
 import {
@@ -1378,12 +1376,12 @@ export class OrderService {
                 };
             }
 
-            if (!detail.schedule_date) {
-                return {
-                    success: false,
-                    message: "Order detail missing schedule date",
-                };
-            }
+            // if (!detail.schedule_date) {
+            //     return {
+            //         success: false,
+            //         message: "Order detail missing schedule date",
+            //     };
+            // }
 
             // 4. Update detail order with relation IDs only
             await db
